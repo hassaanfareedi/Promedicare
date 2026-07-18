@@ -15,7 +15,9 @@ export default async function AdminDoctorsPage() {
 
   const existingProfileIds = new Set(doctors.map((d) => d.profile?.id).filter(Boolean));
   const candidates = staff.filter(
-    (p) => p.role === "doctor" && !existingProfileIds.has(p.id),
+    (p) =>
+      !existingProfileIds.has(p.id) &&
+      (p.role === "doctor" || p.role === "receptionist"),
   );
 
   return (

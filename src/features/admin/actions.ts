@@ -90,11 +90,27 @@ export async function addDoctor(input: DoctorInput): Promise<MutationResult> {
   if (!profile || profile.hospital_id !== hid) {
     return { ok: false, error: "Staff member not found in your hospital." };
   }
-  if (profile.role !== "doctor") {
+  if (profile.role !== "doctor" && profile.role !== "receptionist") {
     return {
       ok: false,
-      error: "Assign the Doctor role on Staff before adding a clinical profile.",
+      error: "Only Doctor or Receptionist staff can be added. Assign a role on Staff first.",
     };
+  }
+
+  const { data: existingDoctor } = await supabase
+    .from("doctors")
+    .select("id")
+    .eq("profile_id", v.profileId)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (existingDoctor) {
+    return { ok: false, error: "This staff member already has a doctor profile." };
+  }
+
+  if (profile.role !== "doctor") {
+    const roleRes = await assignRole({ profileId: v.profileId, role: "doctor" });
+    if (!roleRes.ok) return roleRes;
   }
 
   const { data, error } = await supabase
@@ -111,9 +127,17 @@ export async function addDoctor(input: DoctorInput): Promise<MutationResult> {
     })
     .select("id")
     .single();
-  if (error) return { ok: false, error: error.message };
+
+  if (error) {
+    if (error.code === "23505") {
+      return { ok: false, error: "This staff member already has a doctor profile." };
+    }
+    return { ok: false, error: error.message };
+  }
+
   await logAudit({ action: "doctor.created", entityType: "doctor", entityId: data.id });
   revalidatePath("/admin/doctors");
+  revalidatePath("/admin/staff");
   return { ok: true };
 }
 

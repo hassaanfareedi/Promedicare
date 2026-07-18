@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -13,8 +14,9 @@ import {
 } from "@/features/admin/actions";
 import type { AdminDoctor } from "@/features/admin/data";
 import type { Department, Profile, Specialty } from "@/types";
+import { ROLE_LABEL } from "@/lib/constants";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -35,6 +37,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+function candidateLabel(c: Profile): string {
+  const name = c.full_name ?? c.email ?? c.id;
+  return `${name} · ${ROLE_LABEL[c.role]}`;
+}
 
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -89,6 +96,15 @@ function AddDoctorDialog({
   const [years, setYears] = useState("");
   const [fee, setFee] = useState("");
 
+  function resetForm() {
+    setProfileId("");
+    setSpecialtyId("");
+    setDepartmentId("");
+    setLicense("");
+    setYears("");
+    setFee("");
+  }
+
   function submit() {
     startTransition(async () => {
       const res = await addDoctor({
@@ -105,7 +121,7 @@ function AddDoctorDialog({
       }
       toast.success("Doctor added");
       setOpen(false);
-      setProfileId("");
+      resetForm();
       router.refresh();
     });
   }
@@ -114,20 +130,30 @@ function AddDoctorDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button size="sm" disabled={candidates.length === 0}>
+          <Button size="sm">
             <Plus className="size-4" /> Add doctor
           </Button>
         }
       />
-      <DialogContent className="max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Add doctor</DialogTitle>
         </DialogHeader>
         {candidates.length === 0 ? (
-          <p className="py-4 text-sm text-muted-foreground">
-            No eligible doctors. Assign the Doctor role on Staff first, then add their clinical
-            profile here.
-          </p>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              No eligible staff yet. On Staff, assign someone the Doctor or Receptionist role
+              (patients cannot be added here). Receptionists are promoted to Doctor when you add
+              them.
+            </p>
+            <Link
+              href="/admin/staff"
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+              onClick={() => setOpen(false)}
+            >
+              Go to Staff
+            </Link>
+          </div>
         ) : (
           <div className="grid gap-4">
             <div className="space-y-2">
@@ -139,7 +165,7 @@ function AddDoctorDialog({
                   { value: null, label: "Select a staff member" },
                   ...candidates.map((c) => ({
                     value: c.id,
-                    label: c.full_name ?? c.email ?? c.id,
+                    label: candidateLabel(c),
                   })),
                 ]}
               >
@@ -149,7 +175,7 @@ function AddDoctorDialog({
                 <SelectContent>
                   {candidates.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
-                      {c.full_name ?? c.email ?? c.id}
+                      {candidateLabel(c)}
                     </SelectItem>
                   ))}
                 </SelectContent>
