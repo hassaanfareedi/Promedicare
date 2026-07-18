@@ -63,7 +63,27 @@ GROQ_MODEL=llama-3.3-70b-versatile
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
-### 3. Install and run
+On Vercel production, set `NEXT_PUBLIC_SITE_URL=https://promedicare.vercel.app` (or your custom domain) so OAuth and password-reset redirects return to the correct host.
+
+### 3. Google sign-in (optional)
+
+The **Continue with Google** button calls Supabase OAuth. Enable it once:
+
+1. **Google Cloud Console** → APIs & Services → Credentials → Create OAuth client (Web application).  
+   Authorized redirect URI (Supabase callback):  
+   `https://<YOUR_PROJECT_REF>.supabase.co/auth/v1/callback`  
+   Example for this project: `https://dzczqdndnuwtirdtavmn.supabase.co/auth/v1/callback`
+2. **Supabase Dashboard** → Authentication → Providers → **Google** → Enable → paste Client ID and Client Secret → Save.
+3. **Supabase** → Authentication → URL Configuration:  
+   - Site URL: `https://promedicare.vercel.app` (production) or `http://localhost:3000` (local)  
+   - Redirect URLs (add both):  
+     `https://promedicare.vercel.app/auth/callback`  
+     `http://localhost:3000/auth/callback`
+4. Redeploy Vercel after setting `NEXT_PUBLIC_SITE_URL`.
+
+Until the provider is enabled, the button still works in the UI but shows a clear configuration error toast.
+
+### 4. Install and run
 
 ```bash
 npm install
@@ -72,7 +92,7 @@ npm run dev
 
 Database migrations live in `supabase/migrations/` and are applied to the Supabase project.
 
-### 4. Seed demo data
+### 5. Seed demo data
 
 ```bash
 npm run seed

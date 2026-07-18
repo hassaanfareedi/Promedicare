@@ -72,13 +72,27 @@ export async function register(_prev: ActionResult | null, formData: FormData): 
 
 export async function signInWithGoogle(): Promise<ActionResult> {
   const supabase = await createClient();
+  const redirectTo = `${await siteUrl()}/auth/callback`;
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
-    options: { redirectTo: `${await siteUrl()}/auth/callback` },
+    options: { redirectTo },
   });
-  if (error) return { error: error.message };
+  if (error) {
+    const msg = error.message.toLowerCase();
+    if (
+      msg.includes("provider is not enabled") ||
+      msg.includes("unsupported provider") ||
+      msg.includes("validation_failed")
+    ) {
+      return {
+        error:
+          "Google sign-in is not configured. Enable the Google provider in Supabase Auth and set NEXT_PUBLIC_SITE_URL.",
+      };
+    }
+    return { error: error.message };
+  }
   if (data.url) redirect(data.url);
-  return { error: "Unable to start Google sign-in" };
+  return { error: "Unable to start Google sign-in. Try again in a moment." };
 }
 
 export async function forgotPassword(_prev: ActionResult | null, formData: FormData): Promise<ActionResult> {
