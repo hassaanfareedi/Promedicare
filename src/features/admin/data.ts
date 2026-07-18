@@ -1,6 +1,30 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import type { AppointmentStatus, Department, DoctorAvailability, Profile, RiskLevel, Specialty } from "@/types";
+import { getCurrentUser } from "@/lib/auth/session";
+import type {
+  AppointmentStatus,
+  Department,
+  DoctorAvailability,
+  Hospital,
+  Profile,
+  RiskLevel,
+  Specialty,
+} from "@/types";
+
+/** Hospital linked to the signed-in hospital admin. */
+export async function getMyHospital(): Promise<Hospital | null> {
+  const user = await getCurrentUser();
+  const hid = user?.profile.hospital_id;
+  if (!hid) return null;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("hospitals")
+    .select("*")
+    .eq("id", hid)
+    .is("deleted_at", null)
+    .maybeSingle();
+  return data;
+}
 
 export type AdminDoctor = {
   id: string;

@@ -15,6 +15,16 @@ export const hospitalSchema = z.object({
 });
 export type HospitalInput = z.infer<typeof hospitalSchema>;
 
+export const updateHospitalSchema = z.object({
+  name: z.string().trim().min(2, "Enter a hospital name").max(160),
+  city: z.string().trim().max(120).optional().or(z.literal("")),
+  timezone: z.string().trim().max(60).optional().or(z.literal("")),
+  phone: z.string().trim().max(40).optional().or(z.literal("")),
+  address: z.string().trim().max(300).optional().or(z.literal("")),
+  email: z.string().trim().email("Enter a valid email").optional().or(z.literal("")),
+});
+export type UpdateHospitalInput = z.infer<typeof updateHospitalSchema>;
+
 export const specialtySchema = z.object({
   name: z.string().trim().min(2, "Enter a specialty name").max(120),
   slug,

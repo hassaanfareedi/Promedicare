@@ -37,12 +37,14 @@ export const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
     { label: "Schedule", href: "/doctor/schedule", icon: CalendarDays },
     { label: "Patients", href: "/doctor/patients", icon: Users },
     { label: "AI Reviews", href: "/doctor/reviews", icon: Stethoscope },
+    { label: "Settings", href: "/doctor/settings", icon: Settings },
   ],
   receptionist: [
     { label: "Dashboard", href: "/reception", icon: LayoutDashboard },
     { label: "Queue", href: "/reception/queue", icon: ListChecks },
     { label: "Appointments", href: "/reception/appointments", icon: CalendarDays },
     { label: "Patients", href: "/reception/patients", icon: Users },
+    { label: "Settings", href: "/reception/settings", icon: Settings },
   ],
   hospital_admin: [
     { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -51,6 +53,7 @@ export const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
     { label: "Departments", href: "/admin/departments", icon: Building2 },
     { label: "Appointments", href: "/admin/appointments", icon: CalendarDays },
     { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
+    { label: "Settings", href: "/admin/settings", icon: Settings },
   ],
   super_admin: [
     { label: "Dashboard", href: "/platform", icon: LayoutDashboard },

@@ -15,15 +15,35 @@ const NAV: Record<Role, { home: string; links: string[] }> = {
   },
   doctor: {
     home: "/doctor",
-    links: ["/doctor", "/doctor/schedule", "/doctor/patients", "/doctor/reviews"],
+    links: [
+      "/doctor",
+      "/doctor/schedule",
+      "/doctor/patients",
+      "/doctor/reviews",
+      "/doctor/settings",
+    ],
   },
   reception: {
     home: "/reception",
-    links: ["/reception", "/reception/queue", "/reception/appointments", "/reception/patients"],
+    links: [
+      "/reception",
+      "/reception/queue",
+      "/reception/appointments",
+      "/reception/patients",
+      "/reception/settings",
+    ],
   },
   admin: {
     home: "/admin",
-    links: ["/admin", "/admin/doctors", "/admin/staff", "/admin/departments", "/admin/appointments", "/admin/analytics"],
+    links: [
+      "/admin",
+      "/admin/doctors",
+      "/admin/staff",
+      "/admin/departments",
+      "/admin/appointments",
+      "/admin/analytics",
+      "/admin/settings",
+    ],
   },
   superadmin: {
     home: "/platform",

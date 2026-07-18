@@ -14,6 +14,15 @@ export const ROLE_HOME: Record<UserRole, string> = {
   super_admin: "/platform",
 };
 
+/** Account / settings page for each role. */
+export const ROLE_SETTINGS: Record<UserRole, string> = {
+  patient: "/patient/profile",
+  doctor: "/doctor/settings",
+  receptionist: "/reception/settings",
+  hospital_admin: "/admin/settings",
+  super_admin: "/platform/settings",
+};
+
 /** Path prefix each role is allowed to access (enforced in middleware + layouts). */
 export const ROLE_PREFIX: Record<UserRole, string> = {
   patient: "/patient",

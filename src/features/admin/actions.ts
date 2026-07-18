@@ -16,11 +16,49 @@ import {
   type AvailabilityInput,
   type RoleAssignInput,
 } from "@/schemas/admin";
+import {
+  updateHospitalSchema,
+  type UpdateHospitalInput,
+} from "@/schemas/platform";
 import type { MutationResult } from "@/features/patient/actions";
 
 async function hospitalId(): Promise<string | null> {
   const user = await requireRole(["hospital_admin", "super_admin"]);
   return user.profile.hospital_id;
+}
+
+/** Hospital admin updates their own hospital details. */
+export async function updateMyHospital(input: UpdateHospitalInput): Promise<MutationResult> {
+  const user = await requireRole(["hospital_admin"]);
+  const hid = user.profile.hospital_id;
+  if (!hid) return { ok: false, error: "Your account is not linked to a hospital." };
+  const parsed = updateHospitalSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid" };
+  const v = parsed.data;
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("hospitals")
+    .update({
+      name: v.name,
+      city: v.city || null,
+      timezone: v.timezone || "Asia/Karachi",
+      phone: v.phone || null,
+      address: v.address || null,
+      email: v.email || null,
+    })
+    .eq("id", hid);
+
+  if (error) return { ok: false, error: error.message };
+
+  await logAudit({
+    action: "hospital.updated",
+    entityType: "hospital",
+    entityId: hid,
+  });
+  revalidatePath("/admin/settings");
+  revalidatePath("/admin");
+  return { ok: true };
 }
 
 export async function createDepartment(input: DepartmentInput): Promise<MutationResult> {

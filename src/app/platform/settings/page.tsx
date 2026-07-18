@@ -2,17 +2,22 @@ import type { Metadata } from "next";
 import { CheckCircle2, XCircle, Sparkles, ShieldCheck } from "lucide-react";
 import { isGroqConfigured } from "@/lib/ai/groq-client";
 import { APP_NAME } from "@/lib/constants";
+import { requireRole } from "@/lib/auth/session";
 import { PageHeader } from "@/components/shared/page-header";
+import { AccountSettingsSections } from "@/features/account/components/account-settings-sections";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const metadata: Metadata = { title: "Settings" };
 
-export default function PlatformSettingsPage() {
+export default async function PlatformSettingsPage() {
+  await requireRole(["super_admin"]);
   const aiReady = isGroqConfigured();
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="Platform settings" description="System configuration and status." />
+    <div className="mx-auto max-w-2xl space-y-6">
+      <PageHeader title="Platform settings" description="Your account and system status." />
+
+      <AccountSettingsSections />
 
       <Card>
         <CardHeader>
@@ -20,7 +25,7 @@ export default function PlatformSettingsPage() {
             <Sparkles className="size-4 text-teal-600" /> AI screening
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-between">
+        <CardContent className="flex items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
             Groq-powered symptom screening {aiReady ? "is configured and active." : "is not configured."}
           </p>
@@ -44,7 +49,10 @@ export default function PlatformSettingsPage() {
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-muted-foreground">
           <p>Row-level security is enforced on every table with per-role policies.</p>
-          <p>Public record lookup requires a Patient ID plus a second verification factor and is rate limited.</p>
+          <p>
+            Public record lookup requires a Patient ID plus a second verification factor and is rate
+            limited.
+          </p>
           <p>All privileged actions are recorded in the audit log.</p>
         </CardContent>
       </Card>
