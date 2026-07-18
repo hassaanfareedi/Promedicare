@@ -13,11 +13,21 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { ROLE_HOME } from "@/lib/constants";
 import { buttonVariants } from "@/components/ui/button";
 import { Preloader } from "@/components/marketing/preloader";
-import { MarketingNav } from "@/components/marketing/marketing-nav";
+import { SpotlightNav } from "@/components/marketing/spotlight-nav";
+import { AuroraBackground } from "@/components/marketing/aurora-background";
+import { AnimatedHeading } from "@/components/marketing/animated-heading";
+import { SpotlightCard } from "@/components/marketing/spotlight-card";
 import { Reveal } from "@/components/marketing/reveal";
 import { VisitorLookup } from "@/features/visitor/components/visitor-lookup";
 import { AiDisclaimer } from "@/components/shared/ai-disclaimer";
 import { Logo } from "@/components/brand/logo";
+
+const STATS = [
+  { value: "6", label: "Connected roles" },
+  { value: "<3s", label: "AI screening" },
+  { value: "24/7", label: "Record lookup" },
+  { value: "100%", label: "RLS-protected" },
+];
 
 const STEPS = [
   {
@@ -54,12 +64,11 @@ export default async function HomePage() {
     <>
       <Preloader />
       <div className="flex min-h-svh flex-col">
-        <MarketingNav isAuthed={Boolean(user)} homeHref={homeHref} />
+        <SpotlightNav isAuthed={Boolean(user)} homeHref={homeHref} />
 
         {/* Hero */}
         <section className="relative overflow-hidden">
-          <div className="absolute inset-0 -z-10 bg-gradient-to-b from-teal-50 to-background dark:from-teal-950/20" />
-          <div className="absolute inset-x-0 top-0 -z-10 h-96 opacity-40 [background:radial-gradient(60%_60%_at_50%_0%,theme(colors.teal.200),transparent)] dark:opacity-20" />
+          <AuroraBackground />
           <div className="mx-auto grid max-w-6xl gap-12 px-4 py-16 md:px-6 lg:grid-cols-2 lg:py-24">
             <div className="flex flex-col justify-center">
               <Reveal>
@@ -67,14 +76,11 @@ export default async function HomePage() {
                   <Sparkles className="size-3.5" /> AI-assisted early screening
                 </span>
               </Reveal>
-              <Reveal delay={0.05}>
-                <h1 className="mt-5 text-4xl font-bold tracking-tight text-balance sm:text-5xl">
-                  Understand your symptoms.{" "}
-                  <span className="bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent">
-                    See the right doctor, sooner.
-                  </span>
-                </h1>
-              </Reveal>
+              <AnimatedHeading
+                lead="Understand your symptoms."
+                accent="See the right doctor, sooner."
+                className="mt-5 text-4xl font-bold tracking-tight text-balance sm:text-5xl"
+              />
               <Reveal delay={0.1}>
                 <p className="mt-5 max-w-xl text-lg text-muted-foreground text-pretty">
                   ProMediCare AI screens your symptoms for early disease risk, matches you to a
@@ -104,6 +110,25 @@ export default async function HomePage() {
               <div id="lookup" className="w-full scroll-mt-24">
                 <VisitorLookup />
               </div>
+            </Reveal>
+          </div>
+
+          {/* Stats band */}
+          <div className="mx-auto max-w-6xl px-4 pb-12 md:px-6">
+            <Reveal delay={0.15}>
+              <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border bg-border sm:grid-cols-4">
+                {STATS.map((s) => (
+                  <div key={s.label} className="bg-card px-4 py-5 text-center">
+                    <dt className="sr-only">{s.label}</dt>
+                    <dd>
+                      <span className="block text-2xl font-bold tracking-tight text-teal-600 dark:text-teal-400">
+                        {s.value}
+                      </span>
+                      <span className="mt-1 block text-xs text-muted-foreground">{s.label}</span>
+                    </dd>
+                  </div>
+                ))}
+              </dl>
             </Reveal>
           </div>
         </section>
@@ -155,13 +180,13 @@ export default async function HomePage() {
             <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {FEATURES.map((f, i) => (
                 <Reveal key={f.title} delay={(i % 3) * 0.06}>
-                  <div className="h-full rounded-2xl border bg-card p-6 transition-shadow hover:shadow-sm">
-                    <div className="mb-4 grid size-10 place-items-center rounded-lg bg-teal-50 text-teal-600 dark:bg-teal-950/50 dark:text-teal-400">
+                  <SpotlightCard>
+                    <div className="mb-4 grid size-10 place-items-center rounded-lg bg-teal-50 text-teal-600 transition-transform group-hover:scale-110 dark:bg-teal-950/50 dark:text-teal-400">
                       <f.icon className="size-5" />
                     </div>
                     <h3 className="font-medium">{f.title}</h3>
                     <p className="mt-2 text-sm text-muted-foreground">{f.body}</p>
-                  </div>
+                  </SpotlightCard>
                 </Reveal>
               ))}
             </div>

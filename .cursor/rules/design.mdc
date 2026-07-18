@@ -1,0 +1,53 @@
+---
+description: ProMediCare AI visual design system - tokens, brand, motion and accessibility rules for all UI work
+globs: src/**/*.tsx,src/**/*.css
+alwaysApply: false
+---
+
+# ProMediCare AI - design system
+
+On-repo brand guide. Apply before generating or editing any UI. Prefer these rules over generic "make it look nice" instincts.
+
+## Brand identity
+- Product is a calm, trustworthy, clinical-grade healthcare product. Aim for "premium medical SaaS", not playful consumer app.
+- Brand accent is a teal -> emerald gradient: `from-teal-500 to-emerald-600` (see `src/components/brand/logo.tsx`). Use teal/emerald for primary emphasis, links, active nav, focus and success states.
+- Surfaces are neutral. Depth comes from `border` + subtle shadow, not heavy color fills.
+
+## Tokens - use variables, not raw colors
+- ALWAYS style with the semantic token classes wired in `src/app/globals.css`: `bg-background`, `text-foreground`, `bg-card`, `text-muted-foreground`, `border-border`, `bg-muted`, `bg-accent`, `ring-ring`, `bg-popover`.
+- Brand accents use the Tailwind `teal-*` / `emerald-*` palettes directly (e.g. `text-teal-600 dark:text-teal-400`, `bg-teal-600`).
+- Destructive/danger uses the `destructive` token or `red-*`. Warning uses `amber-*`. Success uses `emerald-*`.
+- Radii use the scale (`rounded-lg`, `rounded-xl`, `rounded-2xl`); cards are `rounded-2xl`, controls `rounded-lg`.
+
+## Anti-generic rules (do NOT do these)
+- Do NOT use default Tailwind `blue-*`, `indigo-*`, `slate-*`, `gray-*`, `zinc-*` for surfaces or text. Use the semantic tokens (`muted-foreground`, `border`, etc.) or the teal/emerald brand palette.
+- Do NOT hardcode hex colors in components. Route new colors through CSS variables in `globals.css`.
+- Do NOT ship the "same blue-gray dashboard": every screen needs a clear hierarchy (page header + description), intentional spacing, and a brand accent somewhere meaningful.
+- Do NOT use pure black text on white; use `text-foreground` / `text-muted-foreground`.
+
+## Layout & spacing
+- Page content max width is `max-w-6xl` for marketing, portal content flows in the app shell. Use `space-y-6` between page sections, `gap-4`/`gap-6` in grids.
+- Every portal page starts with `<PageHeader title description actions />` (`src/components/shared/page-header.tsx`).
+- Use the shared primitives: `EmptyState`, `StatCard`, `RiskBadge`, `StatusBadge`, `ScrollableList`, skeletons. Never hand-roll an empty/loading state.
+- Cards: `rounded-2xl border bg-card`, padding `p-6` (content-dense tables `p-0` + internal padding).
+
+## Typography
+- Headings: `font-semibold tracking-tight`. Page titles `text-2xl`/`text-3xl`, section titles `text-lg`/`text-base`.
+- Body is `text-sm` in dense UI, `text-base` in marketing. Secondary copy is `text-muted-foreground`.
+- Use `text-balance` on hero headings and `text-pretty` on long paragraphs.
+
+## Motion (Framer Motion)
+- Motion should be subtle and purposeful: fade/slide of 8-16px, durations 0.4-0.6s, `ease: "easeOut"`.
+- Scroll reveals use the shared `Reveal` component; stagger with small delays (0.05-0.1s).
+- ALWAYS respect `prefers-reduced-motion`: gate non-essential animation and never block interaction. The preloader runs once per session only.
+- Hover/press affordances on interactive elements: `transition-colors`/`transition-shadow`, `hover:` + visible `active:` state.
+
+## Accessibility (WCAG 2.1 AA)
+- Icon-only buttons MUST have `aria-label`. Decorative icons get `aria-hidden`.
+- Maintain visible focus: rely on the `outline-ring/50` base or add `focus-visible:ring-2 focus-visible:ring-teal-500`.
+- Color is never the only signal - pair risk/status colors with text (see `RISK_META`, `StatusBadge`).
+- Interactive targets are >= 36px; forms use the shared `Form` primitives with label + error text.
+- Every AI screening surface keeps the "decision support only - not a medical diagnosis" disclaimer (`AiDisclaimer`).
+
+## Dark mode
+- Test both themes. Use `dark:` variants for brand accents (`dark:text-teal-400`, `dark:bg-teal-950/40`) and never rely on default palette shades that vanish in dark mode.
