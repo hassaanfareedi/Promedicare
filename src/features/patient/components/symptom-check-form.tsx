@@ -111,7 +111,7 @@ export function SymptomCheckForm() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Activity className="size-5 text-teal-600" /> Describe your symptoms
+          <Activity className="size-5 text-teal-600" aria-hidden /> Describe your symptoms
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -165,7 +165,7 @@ export function SymptomCheckForm() {
                 >
                   {s}
                   <button type="button" onClick={() => toggle(s)} aria-label={`Remove ${s}`}>
-                    <X className="size-3.5" />
+                    <X className="size-3.5" aria-hidden />
                   </button>
                 </span>
               ))}
@@ -207,6 +207,7 @@ export function SymptomCheckForm() {
                 <button
                   key={s}
                   type="button"
+                  aria-pressed={severity === s}
                   onClick={() => setSeverity(severity === s ? "" : s)}
                   className={cn(
                     "flex-1 rounded-lg border px-3 py-2 text-sm capitalize transition-colors",
@@ -225,6 +226,7 @@ export function SymptomCheckForm() {
                 <button
                   key={s}
                   type="button"
+                  aria-pressed={sex === s}
                   onClick={() => setSex(sex === s ? "" : s)}
                   className={cn(
                     "flex-1 rounded-lg border px-3 py-2 text-sm capitalize transition-colors",

@@ -12,10 +12,15 @@ type StatCardProps = {
 
 export function StatCard({ label, value, icon: Icon, hint, className }: StatCardProps) {
   return (
-    <Card className={cn("overflow-hidden", className)}>
+    <Card
+      className={cn(
+        "group overflow-hidden transition-shadow duration-300 hover:shadow-md",
+        className,
+      )}
+    >
       <CardContent className="flex items-center gap-4 p-5">
         {Icon && (
-          <div className="grid size-11 shrink-0 place-items-center rounded-lg bg-teal-50 text-teal-600 dark:bg-teal-950/50 dark:text-teal-400">
+          <div className="grid size-11 shrink-0 place-items-center rounded-lg bg-teal-50 text-teal-600 transition-transform duration-300 group-hover:scale-105 dark:bg-teal-950/50 dark:text-teal-400">
             <Icon className="size-5" aria-hidden />
           </div>
         )}

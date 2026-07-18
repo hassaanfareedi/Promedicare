@@ -30,7 +30,7 @@ export function AnalyticsCharts({ analytics }: { analytics: AdminAnalytics }) {
                   cursor={{ fill: "var(--color-muted)", opacity: 0.3 }}
                   contentStyle={{ borderRadius: 8, border: "1px solid var(--color-border)", fontSize: 12 }}
                 />
-                <Bar dataKey="count" fill="var(--color-teal-600, #0d9488)" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="count" fill="var(--color-chart-1)" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

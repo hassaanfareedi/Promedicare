@@ -67,6 +67,7 @@ export function ReviewDialog({ predictionId, prediction, patientName, alreadyRev
             <div className="flex gap-2">
               <button
                 type="button"
+                aria-pressed={decision === "reviewed"}
                 onClick={() => setDecision("reviewed")}
                 className={cn(
                   "flex flex-1 items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors",
@@ -75,10 +76,11 @@ export function ReviewDialog({ predictionId, prediction, patientName, alreadyRev
                     : "border-input hover:bg-accent",
                 )}
               >
-                <CheckCircle2 className="size-4" /> Acknowledge
+                <CheckCircle2 className="size-4" aria-hidden /> Acknowledge
               </button>
               <button
                 type="button"
+                aria-pressed={decision === "dismissed"}
                 onClick={() => setDecision("dismissed")}
                 className={cn(
                   "flex flex-1 items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors",
@@ -87,7 +89,7 @@ export function ReviewDialog({ predictionId, prediction, patientName, alreadyRev
                     : "border-input hover:bg-accent",
                 )}
               >
-                <XCircle className="size-4" /> Dismiss
+                <XCircle className="size-4" aria-hidden /> Dismiss
               </button>
             </div>
             <div className="space-y-2">

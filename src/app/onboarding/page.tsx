@@ -15,7 +15,7 @@ export default async function OnboardingPage() {
   if (user.profile.onboarding_completed) redirect("/patient");
 
   return (
-    <div className="mx-auto flex min-h-svh max-w-2xl flex-col gap-8 px-4 py-10">
+    <main id="main-content" className="mx-auto flex min-h-svh max-w-2xl flex-col gap-8 px-4 py-10">
       <Logo />
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight">Complete your health profile</h1>
@@ -25,6 +25,6 @@ export default async function OnboardingPage() {
       </div>
       <OnboardingForm defaultName={user.profile.full_name ?? ""} />
       <p className="text-xs text-muted-foreground">{AI_DISCLAIMER}</p>
-    </div>
+    </main>
   );
 }

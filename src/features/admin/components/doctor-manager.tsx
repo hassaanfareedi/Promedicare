@@ -265,7 +265,7 @@ function AvailabilityEditor({ doctor }: { doctor: AdminDoctor }) {
   return (
     <div className="rounded-lg border p-4">
       <p className="mb-3 flex items-center gap-2 text-sm font-medium">
-        <Clock className="size-4 text-teal-600" /> Weekly availability
+        <Clock className="size-4 text-teal-600" aria-hidden /> Weekly availability
       </p>
 
       {doctor.availability.length > 0 ? (
@@ -277,8 +277,14 @@ function AvailabilityEditor({ doctor }: { doctor: AdminDoctor }) {
                 <span>
                   {WEEKDAYS[a.weekday]} · {a.start_time.slice(0, 5)}–{a.end_time.slice(0, 5)} ({a.slot_minutes}m)
                 </span>
-                <Button variant="ghost" size="sm" onClick={() => remove(a.id)} disabled={pending}>
-                  <Trash2 className="size-4 text-destructive" />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => remove(a.id)}
+                  disabled={pending}
+                  aria-label={`Remove ${WEEKDAYS[a.weekday]} availability`}
+                >
+                  <Trash2 className="size-4 text-destructive" aria-hidden />
                 </Button>
               </li>
             ))}

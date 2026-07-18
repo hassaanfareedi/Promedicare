@@ -71,10 +71,18 @@ export function NotificationBell() {
     <Popover>
       <PopoverTrigger
         render={
-          <Button variant="ghost" size="icon" aria-label="Notifications" className="relative">
-            <Bell className="size-4" />
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={unread > 0 ? `Notifications, ${unread} unread` : "Notifications"}
+            className="relative"
+          >
+            <Bell className="size-4" aria-hidden />
             {unread > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 grid size-4 place-items-center rounded-full bg-teal-600 text-[10px] font-semibold text-white">
+              <span
+                aria-hidden
+                className="absolute -right-0.5 -top-0.5 grid size-4 place-items-center rounded-full bg-teal-600 text-[10px] font-semibold text-white"
+              >
                 {unread > 9 ? "9+" : unread}
               </span>
             )}
@@ -85,7 +93,10 @@ export function NotificationBell() {
         <div className="flex items-center justify-between border-b px-4 py-2.5">
           <span className="text-sm font-medium">Notifications</span>
           {unread > 0 && (
-            <button onClick={markAllRead} className="text-xs text-teal-600 hover:underline dark:text-teal-400">
+            <button
+              onClick={markAllRead}
+              className="rounded-sm text-xs text-teal-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 dark:text-teal-400"
+            >
               Mark all read
             </button>
           )}

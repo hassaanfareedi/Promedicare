@@ -14,6 +14,7 @@ export function LoginForm() {
   const params = useSearchParams();
   const redirectTo = params.get("redirectTo") ?? "";
   const [state, formAction] = useActionState<ActionResult | null, FormData>(login, null);
+  const error = state && "error" in state ? state.error : null;
 
   useEffect(() => {
     if (state && "error" in state) toast.error(state.error);
@@ -31,9 +32,27 @@ export function LoginForm() {
       </div>
       <form action={formAction} className="grid gap-4">
         <input type="hidden" name="redirectTo" value={redirectTo} />
+        {error && (
+          <p
+            role="alert"
+            id="login-error"
+            className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          >
+            {error}
+          </p>
+        )}
         <div className="grid gap-2">
           <Label htmlFor="email">Email</Label>
-          <Input id="email" name="email" type="email" autoComplete="email" placeholder="you@example.com" required />
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            placeholder="you@example.com"
+            required
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? "login-error" : undefined}
+          />
         </div>
         <div className="grid gap-2">
           <div className="flex items-center justify-between">
@@ -42,7 +61,15 @@ export function LoginForm() {
               Forgot password?
             </Link>
           </div>
-          <Input id="password" name="password" type="password" autoComplete="current-password" required />
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            required
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? "login-error" : undefined}
+          />
         </div>
         <SubmitButton className="w-full">Sign in</SubmitButton>
       </form>

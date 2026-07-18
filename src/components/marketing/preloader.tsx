@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Activity } from "lucide-react";
 
 /**
@@ -10,16 +10,22 @@ import { Activity } from "lucide-react";
  */
 export function Preloader() {
   const [visible, setVisible] = useState(false);
+  const reduce = useReducedMotion();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // Skip the animated splash entirely when the user prefers reduced motion.
+    if (reduce) {
+      sessionStorage.setItem("pmc_preloaded", "1");
+      return;
+    }
     const seen = sessionStorage.getItem("pmc_preloaded");
     if (seen) return;
     setVisible(true);
     sessionStorage.setItem("pmc_preloaded", "1");
     const t = setTimeout(() => setVisible(false), 1700);
     return () => clearTimeout(t);
-  }, []);
+  }, [reduce]);
 
   return (
     <AnimatePresence>

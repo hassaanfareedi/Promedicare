@@ -11,9 +11,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             <Logo />
           </Link>
         </div>
-        <div className="flex flex-1 items-center justify-center">
+        <main id="main-content" className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-sm">{children}</div>
-        </div>
+        </main>
         <p className="mx-auto max-w-sm text-center text-xs text-muted-foreground">
           {AI_DISCLAIMER}
         </p>

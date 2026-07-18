@@ -14,8 +14,13 @@ export function ScrollableList({
   return (
     <div className="max-h-80 overflow-y-auto">
       {loading ? (
-        <div className="flex items-center justify-center py-10 text-muted-foreground">
-          <Loader2 className="size-5 animate-spin" />
+        <div
+          role="status"
+          aria-busy="true"
+          className="flex items-center justify-center py-10 text-muted-foreground"
+        >
+          <Loader2 className="size-5 animate-spin" aria-hidden />
+          <span className="sr-only">Loading</span>
         </div>
       ) : empty ? (
         <p className="px-4 py-10 text-center text-sm text-muted-foreground">{emptyLabel}</p>

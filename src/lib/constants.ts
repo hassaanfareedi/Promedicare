@@ -62,10 +62,10 @@ export const APPOINTMENT_STATUS_META: Record<
   { label: string; tone: string }
 > = {
   pending: { label: "Pending", tone: "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300" },
-  confirmed: { label: "Confirmed", tone: "bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-300" },
-  checked_in: { label: "Checked in", tone: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-300" },
-  in_progress: { label: "In progress", tone: "bg-purple-100 text-purple-800 dark:bg-purple-950/50 dark:text-purple-300" },
+  confirmed: { label: "Confirmed", tone: "bg-teal-100 text-teal-800 dark:bg-teal-950/50 dark:text-teal-300" },
+  checked_in: { label: "Checked in", tone: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300" },
+  in_progress: { label: "In progress", tone: "bg-orange-100 text-orange-800 dark:bg-orange-950/50 dark:text-orange-300" },
   completed: { label: "Completed", tone: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300" },
   cancelled: { label: "Cancelled", tone: "bg-red-100 text-red-800 dark:bg-red-950/50 dark:text-red-300" },
-  no_show: { label: "No show", tone: "bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300" },
+  no_show: { label: "No show", tone: "bg-muted text-muted-foreground" },
 };

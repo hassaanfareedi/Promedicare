@@ -24,7 +24,7 @@ function AppointmentRow({ a }: { a: AppointmentView }) {
       <CardContent className="flex flex-wrap items-center justify-between gap-4 p-4">
         <div className="flex items-start gap-3">
           <span className="grid size-10 shrink-0 place-items-center rounded-full bg-teal-50 text-teal-600 dark:bg-teal-950/50">
-            <Stethoscope className="size-5" />
+            <Stethoscope className="size-5" aria-hidden />
           </span>
           <div className="min-w-0">
             <p className="font-medium">{a.doctorName ? `Dr. ${a.doctorName}` : "Doctor to be assigned"}</p>

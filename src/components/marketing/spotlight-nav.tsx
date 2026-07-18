@@ -86,7 +86,7 @@ export function SpotlightNav({ isAuthed, homeHref }: { isAuthed: boolean; homeHr
             onClick={() => setOpen((v) => !v)}
             className="grid size-9 place-items-center rounded-lg border text-muted-foreground md:hidden"
           >
-            {open ? <X className="size-4" /> : <Menu className="size-4" />}
+            {open ? <X className="size-4" aria-hidden /> : <Menu className="size-4" aria-hidden />}
           </button>
         </div>
       </div>
@@ -113,16 +113,37 @@ export function SpotlightNav({ isAuthed, homeHref }: { isAuthed: boolean; homeHr
                   </a>
                 </li>
               ))}
-              {!isAuthed && (
-                <li>
+              {isAuthed ? (
+                <li className="pt-2">
                   <Link
-                    href="/login"
+                    href={homeHref}
                     onClick={() => setOpen(false)}
-                    className="block rounded-lg px-3 py-2 text-muted-foreground hover:bg-accent hover:text-foreground"
+                    className={buttonVariants({ size: "sm", className: "w-full" })}
                   >
-                    Sign in
+                    Go to dashboard
                   </Link>
                 </li>
+              ) : (
+                <>
+                  <li>
+                    <Link
+                      href="/login"
+                      onClick={() => setOpen(false)}
+                      className="block rounded-lg px-3 py-2 text-muted-foreground hover:bg-accent hover:text-foreground"
+                    >
+                      Sign in
+                    </Link>
+                  </li>
+                  <li className="pt-1">
+                    <Link
+                      href="/register"
+                      onClick={() => setOpen(false)}
+                      className={buttonVariants({ size: "sm", className: "w-full" })}
+                    >
+                      Get started
+                    </Link>
+                  </li>
+                </>
               )}
             </ul>
           </motion.nav>

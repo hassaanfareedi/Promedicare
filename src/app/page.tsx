@@ -66,6 +66,7 @@ export default async function HomePage() {
       <div className="flex min-h-svh flex-col">
         <SpotlightNav isAuthed={Boolean(user)} homeHref={homeHref} />
 
+        <main id="main-content">
         {/* Hero */}
         <section className="relative overflow-hidden">
           <AuroraBackground />
@@ -73,7 +74,7 @@ export default async function HomePage() {
             <div className="flex flex-col justify-center">
               <Reveal>
                 <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs font-medium text-teal-700 dark:border-teal-900 dark:bg-teal-950/50 dark:text-teal-300">
-                  <Sparkles className="size-3.5" /> AI-assisted early screening
+                  <Sparkles className="size-3.5" aria-hidden /> AI-assisted early screening
                 </span>
               </Reveal>
               <AnimatedHeading
@@ -91,7 +92,7 @@ export default async function HomePage() {
                 <div className="mt-8 flex flex-wrap items-center gap-3">
                   <Link href={user ? homeHref : "/register"} className={buttonVariants({ size: "lg" })}>
                     {user ? "Go to dashboard" : "Start free screening"}
-                    <ArrowRight className="size-4" />
+                    <ArrowRight className="size-4" aria-hidden />
                   </Link>
                   <a href="#lookup" className={buttonVariants({ variant: "outline", size: "lg" })}>
                     Look up a record
@@ -100,7 +101,7 @@ export default async function HomePage() {
               </Reveal>
               <Reveal delay={0.2}>
                 <p className="mt-6 flex items-center gap-2 text-xs text-muted-foreground">
-                  <ShieldCheck className="size-4 text-teal-600" />
+                  <ShieldCheck className="size-4 text-teal-600" aria-hidden />
                   Decision support only — not a medical diagnosis.
                 </p>
               </Reveal>
@@ -147,7 +148,7 @@ export default async function HomePage() {
                 <Reveal key={step.title} delay={i * 0.08}>
                   <div className="relative h-full rounded-2xl border bg-card p-6">
                     <div className="mb-4 grid size-11 place-items-center rounded-xl bg-teal-600 text-white">
-                      <step.icon className="size-5" />
+                      <step.icon className="size-5" aria-hidden />
                     </div>
                     <span className="absolute right-6 top-6 text-3xl font-bold text-muted-foreground/15">
                       {i + 1}
@@ -182,7 +183,7 @@ export default async function HomePage() {
                 <Reveal key={f.title} delay={(i % 3) * 0.06}>
                   <SpotlightCard>
                     <div className="mb-4 grid size-10 place-items-center rounded-lg bg-teal-50 text-teal-600 transition-transform group-hover:scale-110 dark:bg-teal-950/50 dark:text-teal-400">
-                      <f.icon className="size-5" />
+                      <f.icon className="size-5" aria-hidden />
                     </div>
                     <h3 className="font-medium">{f.title}</h3>
                     <p className="mt-2 text-sm text-muted-foreground">{f.body}</p>
@@ -209,12 +210,13 @@ export default async function HomePage() {
                   className={buttonVariants({ variant: "secondary", size: "lg" })}
                 >
                   {user ? "Go to dashboard" : "Get started free"}
-                  <ArrowRight className="size-4" />
+                  <ArrowRight className="size-4" aria-hidden />
                 </Link>
               </div>
             </Reveal>
           </div>
         </section>
+        </main>
 
         <footer className="border-t py-10">
           <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 text-sm text-muted-foreground md:flex-row md:px-6">

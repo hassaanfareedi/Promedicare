@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { motion, useReducedMotion } from "framer-motion";
 import { Logo } from "@/components/brand/logo";
 import { SidebarNav } from "@/components/shell/sidebar-nav";
 import { MobileNav } from "@/components/shell/mobile-nav";
 import { UserMenu } from "@/components/shell/user-menu";
 import { NotificationBell } from "@/components/shell/notification-bell";
+import { SignOutButton } from "@/components/shell/sign-out-button";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { NAV_BY_ROLE } from "@/components/shell/nav-config";
 import { ROLE_HOME, ROLE_LABEL } from "@/lib/constants";
@@ -14,6 +17,8 @@ import type { SessionUser } from "@/lib/auth/session";
 export function AppShell({ user, children }: { user: SessionUser; children: React.ReactNode }) {
   const role = user.profile.role;
   const items = NAV_BY_ROLE[role];
+  const pathname = usePathname();
+  const reduce = useReducedMotion();
 
   return (
     <div className="flex min-h-svh">
@@ -30,6 +35,17 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
           </p>
           <SidebarNav items={items} />
         </div>
+        <div className="border-t p-3">
+          <div className="mb-2 px-2">
+            <p className="truncate text-sm font-medium">
+              {user.profile.full_name ?? user.email ?? "Account"}
+            </p>
+            {user.email && (
+              <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+            )}
+          </div>
+          <SignOutButton />
+        </div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -44,8 +60,21 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
             <UserMenu fullName={user.profile.full_name} email={user.email} role={role} />
           </div>
         </header>
-        <main className="flex-1 px-4 py-6 md:px-6 lg:px-8">
-          <div className="mx-auto w-full max-w-6xl">{children}</div>
+        <main id="main-content" className="flex-1 px-4 py-6 md:px-6 lg:px-8">
+          <div className="mx-auto w-full max-w-6xl">
+            {reduce ? (
+              children
+            ) : (
+              <motion.div
+                key={pathname}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+              >
+                {children}
+              </motion.div>
+            )}
+          </div>
         </main>
       </div>
     </div>

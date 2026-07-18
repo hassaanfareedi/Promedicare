@@ -13,11 +13,11 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
     <div className="grid min-h-svh place-items-center px-4">
       <div className="flex max-w-md flex-col items-center text-center">
         <div className="mb-4 grid size-12 place-items-center rounded-full bg-red-50 text-red-600 dark:bg-red-950/50">
-          <AlertTriangle className="size-6" />
+          <AlertTriangle className="size-6" aria-hidden />
         </div>
         <h1 className="text-xl font-semibold">Something went wrong</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          An unexpected error occurred. You can try again, and if the problem persists, contact support.
+          An unexpected error occurred. Try again — if it keeps happening, contact your administrator.
         </p>
         <Button onClick={reset} className="mt-6">
           Try again
