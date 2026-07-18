@@ -2,6 +2,9 @@ import type { Database, Tables, Enums } from "@/types/database";
 
 export type { Database };
 
+/** Non-sensitive doctor info exposed to patients via the `doctor_directory` view. */
+export type DoctorDirectory = Tables<"doctor_directory">;
+
 export type UserRole = Enums<"user_role">;
 export type AppointmentStatus = Enums<"appointment_status">;
 export type AppointmentSource = Enums<"appointment_source">;
