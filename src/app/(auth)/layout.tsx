@@ -5,7 +5,7 @@ import { AI_DISCLAIMER } from "@/lib/constants";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="grid min-h-svh lg:grid-cols-2">
+    <div className="grid min-h-svh lg:grid-cols-2 lg:items-stretch">
       <div className="flex flex-col gap-6 p-6 md:p-10">
         <div className="flex justify-center gap-2 md:justify-start">
           <Link href="/">

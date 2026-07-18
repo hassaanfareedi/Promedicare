@@ -15,12 +15,31 @@ import {
 export type ActionResult = { error: string } | { ok: true; message?: string };
 
 async function siteUrl(): Promise<string> {
-  const envUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  if (envUrl) return envUrl;
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host");
   const proto = h.get("x-forwarded-proto") ?? "http";
-  return `${proto}://${host}`;
+  const requestUrl = host ? `${proto}://${host}` : null;
+  const envUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+
+  // Prefer the live request host when env is missing or still points at localhost
+  // while the user is on a real deployment (common Vercel misconfig).
+  if (requestUrl && !requestUrl.includes("localhost")) {
+    if (!envUrl || envUrl.includes("localhost")) return requestUrl;
+  }
+  if (envUrl) return envUrl;
+  return requestUrl ?? "http://localhost:3000";
+}
+
+function googleProviderDisabledMessage(raw: string): string | null {
+  const msg = raw.toLowerCase();
+  if (
+    msg.includes("provider is not enabled") ||
+    msg.includes("unsupported provider") ||
+    msg.includes("validation_failed")
+  ) {
+    return "Google sign-in is not configured. Enable the Google provider in Supabase Auth (Authentication → Providers → Google) and set NEXT_PUBLIC_SITE_URL on Vercel.";
+  }
+  return null;
 }
 
 export async function login(_prev: ActionResult | null, formData: FormData): Promise<ActionResult> {
@@ -75,24 +94,38 @@ export async function signInWithGoogle(): Promise<ActionResult> {
   const redirectTo = `${await siteUrl()}/auth/callback`;
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
-    options: { redirectTo },
+    options: { redirectTo, skipBrowserRedirect: true },
   });
   if (error) {
-    const msg = error.message.toLowerCase();
-    if (
-      msg.includes("provider is not enabled") ||
-      msg.includes("unsupported provider") ||
-      msg.includes("validation_failed")
-    ) {
+    return { error: googleProviderDisabledMessage(error.message) ?? error.message };
+  }
+  if (!data.url) {
+    return { error: "Unable to start Google sign-in. Try again in a moment." };
+  }
+
+  // Supabase still returns an authorize URL when Google is disabled; probing
+  // avoids dumping the user onto a raw JSON error page.
+  try {
+    const probe = await fetch(data.url, {
+      method: "GET",
+      redirect: "manual",
+      headers: { Accept: "application/json" },
+    });
+    const contentType = probe.headers.get("content-type") ?? "";
+    if (contentType.includes("application/json") || probe.status === 400) {
+      const body = (await probe.json().catch(() => null)) as { msg?: string; error_code?: string } | null;
+      const raw = body?.msg ?? body?.error_code ?? `HTTP ${probe.status}`;
       return {
         error:
-          "Google sign-in is not configured. Enable the Google provider in Supabase Auth and set NEXT_PUBLIC_SITE_URL.",
+          googleProviderDisabledMessage(raw) ??
+          "Google sign-in failed. Check that the Google provider is enabled in Supabase.",
       };
     }
-    return { error: error.message };
+  } catch {
+    // Network probe failed — still attempt the redirect; Google/Supabase may work.
   }
-  if (data.url) redirect(data.url);
-  return { error: "Unable to start Google sign-in. Try again in a moment." };
+
+  redirect(data.url);
 }
 
 export async function forgotPassword(_prev: ActionResult | null, formData: FormData): Promise<ActionResult> {
