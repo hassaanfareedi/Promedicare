@@ -53,7 +53,11 @@ function StaffRow({ profile }: { profile: Profile }) {
         {locked ? (
           <span className="text-sm text-muted-foreground">{ROLE_LABEL[profile.role]}</span>
         ) : (
-          <Select value={role} onValueChange={(v) => setRole(v ?? "")}>
+          <Select
+            value={role}
+            onValueChange={(v) => setRole(v ?? "")}
+            items={ASSIGNABLE.map((r) => ({ value: r, label: ROLE_LABEL[r] }))}
+          >
             <SelectTrigger className="w-36">
               <SelectValue />
             </SelectTrigger>

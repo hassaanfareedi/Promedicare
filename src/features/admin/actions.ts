@@ -7,10 +7,12 @@ import { logAudit } from "@/lib/audit";
 import {
   departmentSchema,
   doctorSchema,
+  updateDoctorSchema,
   availabilitySchema,
   roleAssignSchema,
   type DepartmentInput,
   type DoctorInput,
+  type UpdateDoctorInput,
   type AvailabilityInput,
   type RoleAssignInput,
 } from "@/schemas/admin";
@@ -77,9 +79,23 @@ export async function addDoctor(input: DoctorInput): Promise<MutationResult> {
   const v = parsed.data;
   const supabase = await createClient();
 
-  // Ensure the staff member is a doctor within this hospital.
-  const roleRes = await assignRole({ profileId: v.profileId, role: "doctor" });
-  if (!roleRes.ok) return roleRes;
+  const { data: profile, error: profileErr } = await supabase
+    .from("profiles")
+    .select("id, role, hospital_id")
+    .eq("id", v.profileId)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (profileErr) return { ok: false, error: profileErr.message };
+  if (!profile || profile.hospital_id !== hid) {
+    return { ok: false, error: "Staff member not found in your hospital." };
+  }
+  if (profile.role !== "doctor") {
+    return {
+      ok: false,
+      error: "Assign the Doctor role on Staff before adding a clinical profile.",
+    };
+  }
 
   const { data, error } = await supabase
     .from("doctors")
@@ -97,6 +113,56 @@ export async function addDoctor(input: DoctorInput): Promise<MutationResult> {
     .single();
   if (error) return { ok: false, error: error.message };
   await logAudit({ action: "doctor.created", entityType: "doctor", entityId: data.id });
+  revalidatePath("/admin/doctors");
+  return { ok: true };
+}
+
+export async function updateDoctor(input: UpdateDoctorInput): Promise<MutationResult> {
+  const hid = await hospitalId();
+  if (!hid) return { ok: false, error: "Your account is not linked to a hospital." };
+  const parsed = updateDoctorSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid" };
+  const v = parsed.data;
+  const supabase = await createClient();
+
+  const { data: doctor, error: doctorErr } = await supabase
+    .from("doctors")
+    .select("id, profile_id, hospital_id")
+    .eq("id", v.doctorId)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (doctorErr) return { ok: false, error: doctorErr.message };
+  if (!doctor || doctor.hospital_id !== hid) {
+    return { ok: false, error: "Doctor not found in your hospital." };
+  }
+
+  const { error: profileErr } = await supabase
+    .from("profiles")
+    .update({ full_name: v.fullName })
+    .eq("id", doctor.profile_id);
+
+  if (profileErr) return { ok: false, error: profileErr.message };
+
+  const { error } = await supabase
+    .from("doctors")
+    .update({
+      specialty_id: v.specialtyId || null,
+      department_id: v.departmentId || null,
+      license_number: v.licenseNumber || null,
+      years_experience: v.yearsExperience ?? null,
+      consultation_fee: v.consultationFee ?? null,
+    })
+    .eq("id", doctor.id);
+
+  if (error) return { ok: false, error: error.message };
+
+  await logAudit({
+    action: "doctor.updated",
+    entityType: "doctor",
+    entityId: doctor.id,
+    metadata: { fullName: v.fullName },
+  });
   revalidatePath("/admin/doctors");
   return { ok: true };
 }

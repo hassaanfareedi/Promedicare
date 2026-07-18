@@ -96,10 +96,19 @@ export function ProfileForm({ patient }: { patient: Patient }) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Gender</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
+                <Select
+                  onValueChange={field.onChange}
+                  value={field.value}
+                  items={[
+                    { value: "male", label: "Male" },
+                    { value: "female", label: "Female" },
+                    { value: "other", label: "Other" },
+                    { value: "prefer_not_to_say", label: "Prefer not to say" },
+                  ]}
+                >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select" />
+                      <SelectValue />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -132,10 +141,17 @@ export function ProfileForm({ patient }: { patient: Patient }) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Blood group</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
+                <Select
+                  onValueChange={field.onChange}
+                  value={field.value}
+                  items={BLOOD_GROUPS.map((bg) => ({
+                    value: bg,
+                    label: bg === "unknown" ? "Unknown" : bg,
+                  }))}
+                >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select" />
+                      <SelectValue />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>

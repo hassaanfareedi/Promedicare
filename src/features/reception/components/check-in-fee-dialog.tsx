@@ -82,6 +82,11 @@ export function CheckInFeeDialog({ open, onOpenChange, appointmentId, defaultFee
               onValueChange={(v) => {
                 if (v === "cash" || v === "card" || v === "other") setMethod(v);
               }}
+              items={[
+                { value: "cash", label: "Cash" },
+                { value: "card", label: "Card" },
+                { value: "other", label: "Other" },
+              ]}
             >
               <SelectTrigger>
                 <SelectValue />

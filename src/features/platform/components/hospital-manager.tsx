@@ -168,9 +168,19 @@ function AssignAdminDialog({ hospital, profiles }: { hospital: Hospital; profile
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>User</Label>
-            <Select value={profileId} onValueChange={(v) => setProfileId(v ?? "")}>
+            <Select
+              value={profileId || null}
+              onValueChange={(v) => setProfileId(v ?? "")}
+              items={[
+                { value: null, label: "Select a user" },
+                ...profiles.map((p) => ({
+                  value: p.id,
+                  label: p.full_name ?? p.email ?? p.id,
+                })),
+              ]}
+            >
               <SelectTrigger>
-                <SelectValue placeholder="Select a user" />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {profiles.map((p) => (

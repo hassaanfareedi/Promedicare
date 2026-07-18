@@ -17,6 +17,17 @@ export const doctorSchema = z.object({
 });
 export type DoctorInput = z.infer<typeof doctorSchema>;
 
+export const updateDoctorSchema = z.object({
+  doctorId: z.string().uuid(),
+  fullName: z.string().trim().min(2, "Enter a name").max(120),
+  specialtyId: z.string().uuid().optional().or(z.literal("")),
+  departmentId: z.string().uuid().optional().or(z.literal("")),
+  licenseNumber: z.string().trim().max(80).optional().or(z.literal("")),
+  yearsExperience: z.coerce.number().int().min(0).max(70).optional(),
+  consultationFee: z.coerce.number().min(0).max(100000).optional(),
+});
+export type UpdateDoctorInput = z.infer<typeof updateDoctorSchema>;
+
 const timeString = z.string().regex(/^\d{2}:\d{2}$/, "Use HH:MM");
 
 export const availabilitySchema = z

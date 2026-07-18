@@ -3,9 +3,10 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, Plus, BriefcaseMedical, Clock, Trash2 } from "lucide-react";
+import { Loader2, Plus, BriefcaseMedical, Clock, Trash2, Pencil } from "lucide-react";
 import {
   addDoctor,
+  updateDoctor,
   setDoctorActive,
   addAvailability,
   removeAvailability,
@@ -22,6 +23,7 @@ import { formatDoctorName } from "@/lib/format";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -55,7 +57,12 @@ export function DoctorManager({ doctors, candidates, specialties, departments }:
       ) : (
         <div className="space-y-4">
           {doctors.map((d) => (
-            <DoctorCard key={d.id} doctor={d} />
+            <DoctorCard
+              key={d.id}
+              doctor={d}
+              specialties={specialties}
+              departments={departments}
+            />
           ))}
         </div>
       )}
@@ -118,15 +125,26 @@ function AddDoctorDialog({
         </DialogHeader>
         {candidates.length === 0 ? (
           <p className="py-4 text-sm text-muted-foreground">
-            No eligible staff. Team members must sign up and belong to your hospital first.
+            No eligible doctors. Assign the Doctor role on Staff first, then add their clinical
+            profile here.
           </p>
         ) : (
           <div className="grid gap-4">
             <div className="space-y-2">
               <Label>Staff member</Label>
-              <Select value={profileId} onValueChange={(v) => setProfileId(v ?? "")}>
+              <Select
+                value={profileId || null}
+                onValueChange={(v) => setProfileId(v ?? "")}
+                items={[
+                  { value: null, label: "Select a staff member" },
+                  ...candidates.map((c) => ({
+                    value: c.id,
+                    label: c.full_name ?? c.email ?? c.id,
+                  })),
+                ]}
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a staff member" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {candidates.map((c) => (
@@ -140,9 +158,16 @@ function AddDoctorDialog({
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Specialty</Label>
-                <Select value={specialtyId} onValueChange={(v) => setSpecialtyId(v ?? "")}>
+                <Select
+                  value={specialtyId || null}
+                  onValueChange={(v) => setSpecialtyId(v ?? "")}
+                  items={[
+                    { value: null, label: "Optional" },
+                    ...specialties.map((s) => ({ value: s.id, label: s.name })),
+                  ]}
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder="Optional" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {specialties.map((s) => (
@@ -155,9 +180,16 @@ function AddDoctorDialog({
               </div>
               <div className="space-y-2">
                 <Label>Department</Label>
-                <Select value={departmentId} onValueChange={(v) => setDepartmentId(v ?? "")}>
+                <Select
+                  value={departmentId || null}
+                  onValueChange={(v) => setDepartmentId(v ?? "")}
+                  items={[
+                    { value: null, label: "Optional" },
+                    ...departments.map((dep) => ({ value: dep.id, label: dep.name })),
+                  ]}
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder="Optional" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {departments.map((dep) => (
@@ -194,7 +226,24 @@ function AddDoctorDialog({
   );
 }
 
-function DoctorCard({ doctor }: { doctor: AdminDoctor }) {
+function doctorSubtitle(doctor: AdminDoctor): string {
+  const specialty = doctor.specialty?.name ?? null;
+  const department = doctor.department?.name ?? null;
+  if (specialty && department) {
+    return specialty === department ? specialty : `${specialty} · ${department}`;
+  }
+  return specialty ?? department ?? "General";
+}
+
+function DoctorCard({
+  doctor,
+  specialties,
+  departments,
+}: {
+  doctor: AdminDoctor;
+  specialties: Specialty[];
+  departments: Department[];
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -209,25 +258,202 @@ function DoctorCard({ doctor }: { doctor: AdminDoctor }) {
   return (
     <Card>
       <CardContent className="space-y-4 p-5">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="font-medium">
               {formatDoctorName(doctor.profile?.full_name ?? "Unnamed")}
             </p>
-            <p className="text-sm text-muted-foreground">
-              {doctor.specialty?.name ?? "General"}
-              {doctor.department?.name ? ` · ${doctor.department.name}` : ""}
-            </p>
+            <p className="text-sm text-muted-foreground">{doctorSubtitle(doctor)}</p>
           </div>
-          <label className="flex items-center gap-2 text-sm text-muted-foreground">
-            {doctor.is_active ? "Active" : "Inactive"}
-            <Switch checked={doctor.is_active} onCheckedChange={toggle} disabled={pending} />
-          </label>
+          <div className="flex items-center gap-3">
+            <EditDoctorDialog
+              doctor={doctor}
+              specialties={specialties}
+              departments={departments}
+            />
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              {doctor.is_active ? "Active" : "Inactive"}
+              <Switch checked={doctor.is_active} onCheckedChange={toggle} disabled={pending} />
+            </label>
+          </div>
         </div>
 
         <AvailabilityEditor doctor={doctor} />
       </CardContent>
     </Card>
+  );
+}
+
+function EditDoctorDialog({
+  doctor,
+  specialties,
+  departments,
+}: {
+  doctor: AdminDoctor;
+  specialties: Specialty[];
+  departments: Department[];
+}) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const [fullName, setFullName] = useState(doctor.profile?.full_name ?? "");
+  const [specialtyId, setSpecialtyId] = useState(doctor.specialty?.id ?? "");
+  const [departmentId, setDepartmentId] = useState(doctor.department?.id ?? "");
+  const [license, setLicense] = useState(doctor.license_number ?? "");
+  const [years, setYears] = useState(
+    doctor.years_experience != null ? String(doctor.years_experience) : "",
+  );
+  const [fee, setFee] = useState(
+    doctor.consultation_fee != null ? String(doctor.consultation_fee) : "",
+  );
+
+  function syncFromDoctor() {
+    setFullName(doctor.profile?.full_name ?? "");
+    setSpecialtyId(doctor.specialty?.id ?? "");
+    setDepartmentId(doctor.department?.id ?? "");
+    setLicense(doctor.license_number ?? "");
+    setYears(doctor.years_experience != null ? String(doctor.years_experience) : "");
+    setFee(doctor.consultation_fee != null ? String(doctor.consultation_fee) : "");
+  }
+
+  function submit() {
+    startTransition(async () => {
+      const res = await updateDoctor({
+        doctorId: doctor.id,
+        fullName,
+        specialtyId: specialtyId || undefined,
+        departmentId: departmentId || undefined,
+        licenseNumber: license || undefined,
+        yearsExperience: years ? Number(years) : undefined,
+        consultationFee: fee ? Number(fee) : undefined,
+      });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success("Doctor updated");
+      setOpen(false);
+      router.refresh();
+    });
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (next) syncFromDoctor();
+      }}
+    >
+      <DialogTrigger
+        render={
+          <Button size="sm" variant="outline">
+            <Pencil className="size-4" /> Edit
+          </Button>
+        }
+      />
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Edit doctor</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-4">
+          <div className="space-y-2">
+            <Label htmlFor={`name-${doctor.id}`}>Full name</Label>
+            <Input
+              id={`name-${doctor.id}`}
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Dua Rahman"
+            />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Specialty</Label>
+              <Select
+                value={specialtyId || null}
+                onValueChange={(v) => setSpecialtyId(v ?? "")}
+                items={[
+                  { value: null, label: "Optional" },
+                  ...specialties.map((s) => ({ value: s.id, label: s.name })),
+                ]}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {specialties.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Department</Label>
+              <Select
+                value={departmentId || null}
+                onValueChange={(v) => setDepartmentId(v ?? "")}
+                items={[
+                  { value: null, label: "Optional" },
+                  ...departments.map((dep) => ({ value: dep.id, label: dep.name })),
+                ]}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments.map((dep) => (
+                    <SelectItem key={dep.id} value={dep.id}>
+                      {dep.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor={`license-${doctor.id}`}>License</Label>
+              <Input
+                id={`license-${doctor.id}`}
+                value={license}
+                onChange={(e) => setLicense(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`years-${doctor.id}`}>Years exp.</Label>
+              <Input
+                id={`years-${doctor.id}`}
+                type="number"
+                min={0}
+                value={years}
+                onChange={(e) => setYears(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`fee-${doctor.id}`}>Fee</Label>
+              <Input
+                id={`fee-${doctor.id}`}
+                type="number"
+                min={0}
+                value={fee}
+                onChange={(e) => setFee(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" disabled={pending} onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button type="button" disabled={pending || fullName.trim().length < 2} onClick={submit}>
+            {pending && <Loader2 className="size-4 animate-spin" />}
+            Save changes
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -299,7 +525,11 @@ function AvailabilityEditor({ doctor }: { doctor: AdminDoctor }) {
       <div className="flex flex-wrap items-end gap-2">
         <div className="space-y-1">
           <Label className="text-xs">Day</Label>
-          <Select value={weekday} onValueChange={(v) => setWeekday(v ?? "")}>
+          <Select
+            value={weekday}
+            onValueChange={(v) => setWeekday(v ?? "1")}
+            items={WEEKDAYS.map((w, i) => ({ value: String(i), label: w }))}
+          >
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
