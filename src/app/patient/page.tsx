@@ -13,8 +13,8 @@ import { formatDateTime, formatDate, formatDoctorName } from "@/lib/format";
 import type { RiskLevel } from "@/types";
 
 export default async function PatientDashboard() {
-  const { patient, upcoming, recentScreenings, stats } = await getPatientOverview();
-  const firstName = patient?.full_name?.split(" ")[0] ?? "there";
+  const { displayName, upcoming, recentScreenings, stats } = await getPatientOverview();
+  const firstName = displayName?.split(" ")[0] ?? "there";
 
   return (
     <div className="space-y-6">

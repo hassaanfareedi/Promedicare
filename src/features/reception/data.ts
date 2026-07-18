@@ -61,17 +61,21 @@ async function enrich(rows: Appointment[]): Promise<StaffAppointment[]> {
   });
 }
 
+/** Columns used by front-desk lists and status controls (avoids select *). */
+const STAFF_APPT_COLUMNS =
+  "id, hospital_id, patient_id, doctor_id, status, scheduled_start, scheduled_end, reason, source, queue_number" as const;
+
 /** Today's appointments across the receptionist's hospital (RLS-scoped). */
 export async function getTodayAppointments(): Promise<StaffAppointment[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("appointments")
-    .select("*")
+    .select(STAFF_APPT_COLUMNS)
     .is("deleted_at", null)
     .gte("scheduled_start", startOfToday())
     .lte("scheduled_start", endOfToday())
     .order("scheduled_start", { ascending: true });
-  return enrich(data ?? []);
+  return enrich((data ?? []) as Appointment[]);
 }
 
 /** All hospital appointments (RLS-scoped), most recent first. */
@@ -79,11 +83,11 @@ export async function getHospitalAppointments(): Promise<StaffAppointment[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("appointments")
-    .select("*")
+    .select(STAFF_APPT_COLUMNS)
     .is("deleted_at", null)
     .order("scheduled_start", { ascending: false })
     .limit(200);
-  return enrich(data ?? []);
+  return enrich((data ?? []) as Appointment[]);
 }
 
 /** Patients in the receptionist's hospital (RLS-scoped). */
@@ -106,11 +110,10 @@ export type ReceptionOverview = {
 
 export async function getReceptionOverview(): Promise<ReceptionOverview> {
   const supabase = await createClient();
-  const today = await getTodayAppointments();
-  const { count: patients } = await supabase
-    .from("patients")
-    .select("id", { count: "exact", head: true })
-    .is("deleted_at", null);
+  const [today, { count: patients }] = await Promise.all([
+    getTodayAppointments(),
+    supabase.from("patients").select("id", { count: "exact", head: true }).is("deleted_at", null),
+  ]);
 
   const waiting = today.filter((a) => a.status === "checked_in").length;
   return { today, waiting, patientCount: patients ?? 0 };

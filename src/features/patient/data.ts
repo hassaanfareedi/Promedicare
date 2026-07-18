@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth/session";
 import type { Appointment, Patient, Prediction } from "@/types";
 
 export type AppointmentView = Appointment & {
@@ -11,11 +12,9 @@ export type AppointmentView = Appointment & {
 
 /** The signed-in user's own patient record, if onboarding is complete. */
 export async function getMyPatient(): Promise<Patient | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return null;
+  const supabase = await createClient();
   const { data } = await supabase
     .from("patients")
     .select("*")
@@ -25,19 +24,29 @@ export async function getMyPatient(): Promise<Patient | null> {
 }
 
 /** Enriches appointment rows with doctor / specialty / department / hospital names. */
-async function enrichAppointments(rows: Appointment[]): Promise<AppointmentView[]> {
+async function enrichAppointments(
+  rows: Appointment[],
+  opts: { includeHospitalDept?: boolean } = {},
+): Promise<AppointmentView[]> {
   if (rows.length === 0) return [];
   const supabase = await createClient();
+  const includeHospitalDept = opts.includeHospitalDept ?? true;
 
   const doctorIds = [...new Set(rows.map((r) => r.doctor_id).filter((v): v is string => Boolean(v)))];
-  const hospitalIds = [...new Set(rows.map((r) => r.hospital_id))];
-  const departmentIds = [...new Set(rows.map((r) => r.department_id).filter((v): v is string => Boolean(v)))];
+  const hospitalIds = includeHospitalDept
+    ? [...new Set(rows.map((r) => r.hospital_id))]
+    : [];
+  const departmentIds = includeHospitalDept
+    ? [...new Set(rows.map((r) => r.department_id).filter((v): v is string => Boolean(v)))]
+    : [];
 
   const [{ data: doctors }, { data: hospitals }, { data: departments }] = await Promise.all([
     doctorIds.length
       ? supabase.from("doctor_directory").select("id, full_name, specialty_name").in("id", doctorIds)
       : Promise.resolve({ data: [] as { id: string | null; full_name: string | null; specialty_name: string | null }[] }),
-    supabase.from("hospitals").select("id, name").in("id", hospitalIds),
+    hospitalIds.length
+      ? supabase.from("hospitals").select("id, name").in("id", hospitalIds)
+      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
     departmentIds.length
       ? supabase.from("departments").select("id, name").in("id", departmentIds)
       : Promise.resolve({ data: [] as { id: string; name: string }[] }),
@@ -81,24 +90,32 @@ export async function getMyScreenings(): Promise<Prediction[]> {
   return data ?? [];
 }
 
+export type OverviewScreening = Pick<
+  Prediction,
+  "id" | "recommended_specialty_label" | "risk_level" | "created_at"
+>;
+
 export type PatientOverview = {
-  patient: Patient | null;
+  displayName: string | null;
   upcoming: AppointmentView[];
-  recentScreenings: Prediction[];
+  recentScreenings: OverviewScreening[];
   stats: { totalAppointments: number; upcomingCount: number; screeningCount: number };
 };
+
+const OVERVIEW_APPT_COLUMNS =
+  "id, hospital_id, patient_id, doctor_id, department_id, status, scheduled_start, scheduled_end, reason, source, created_at, updated_at, deleted_at, notes, prediction_id, queue_number, checked_in_at, checked_out_at, cancelled_at, cancelled_reason, created_by" as const;
 
 /** Aggregated data for the patient dashboard. */
 export async function getPatientOverview(): Promise<PatientOverview> {
   const supabase = await createClient();
-  const patient = await getMyPatient();
-
+  const user = await getCurrentUser();
   const nowIso = new Date().toISOString();
+
   const [{ data: appts }, { data: screenings }, { count: apptCount }, { count: screenCount }] =
     await Promise.all([
       supabase
         .from("appointments")
-        .select("*")
+        .select(OVERVIEW_APPT_COLUMNS)
         .is("deleted_at", null)
         .gte("scheduled_start", nowIso)
         .in("status", ["pending", "confirmed", "checked_in", "in_progress"])
@@ -106,7 +123,7 @@ export async function getPatientOverview(): Promise<PatientOverview> {
         .limit(5),
       supabase
         .from("predictions")
-        .select("*")
+        .select("id, recommended_specialty_label, risk_level, created_at")
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
         .limit(3),
@@ -114,9 +131,11 @@ export async function getPatientOverview(): Promise<PatientOverview> {
       supabase.from("predictions").select("id", { count: "exact", head: true }).is("deleted_at", null),
     ]);
 
-  const upcoming = await enrichAppointments(appts ?? []);
+  const upcoming = await enrichAppointments((appts ?? []) as Appointment[], {
+    includeHospitalDept: false,
+  });
   return {
-    patient,
+    displayName: user?.profile.full_name ?? null,
     upcoming,
     recentScreenings: screenings ?? [],
     stats: {

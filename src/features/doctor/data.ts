@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth/session";
 import type { Appointment, Doctor, Patient, Prediction } from "@/types";
 
 export type DoctorAppointment = Appointment & {
@@ -12,14 +13,12 @@ export type PredictionWithPatient = Prediction & {
 
 /** The signed-in doctor's own record. */
 export async function getMyDoctor(): Promise<Doctor | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return null;
+  const supabase = await createClient();
   const { data } = await supabase
     .from("doctors")
-    .select("*")
+    .select("id, hospital_id, profile_id, specialty_id, department_id, license_number, years_experience, consultation_fee, bio, is_active, created_at, updated_at, deleted_at")
     .eq("profile_id", user.id)
     .is("deleted_at", null)
     .maybeSingle();
@@ -46,7 +45,9 @@ export async function getDoctorAppointments(
   const supabase = await createClient();
   let query = supabase
     .from("appointments")
-    .select("*, patient:patients(id, full_name, patient_code)")
+    .select(
+      "id, hospital_id, patient_id, doctor_id, department_id, status, scheduled_start, scheduled_end, reason, source, queue_number, notes, prediction_id, checked_in_at, checked_out_at, cancelled_at, cancelled_reason, created_at, updated_at, deleted_at, created_by, patient:patients(id, full_name, patient_code)",
+    )
     .eq("doctor_id", doctorId)
     .is("deleted_at", null);
 
@@ -87,6 +88,7 @@ export async function getReviewablePredictions(
 
 export type DoctorOverview = {
   doctor: Doctor | null;
+  displayName: string | null;
   today: DoctorAppointment[];
   pendingReviews: number;
   patientCount: number;
@@ -94,9 +96,16 @@ export type DoctorOverview = {
 
 export async function getDoctorOverview(): Promise<DoctorOverview> {
   const supabase = await createClient();
+  const user = await getCurrentUser();
   const doctor = await getMyDoctor();
   if (!doctor) {
-    return { doctor: null, today: [], pendingReviews: 0, patientCount: 0 };
+    return {
+      doctor: null,
+      displayName: user?.profile.full_name ?? null,
+      today: [],
+      pendingReviews: 0,
+      patientCount: 0,
+    };
   }
 
   const [today, { count: pending }, { count: patients }] = await Promise.all([
@@ -111,6 +120,7 @@ export async function getDoctorOverview(): Promise<DoctorOverview> {
 
   return {
     doctor,
+    displayName: user?.profile.full_name ?? null,
     today,
     pendingReviews: pending ?? 0,
     patientCount: patients ?? 0,

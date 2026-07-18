@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/session";
-import { ROLE_HOME } from "@/lib/constants";
+import { ROLE_HOME, ROLE_PREFIX } from "@/lib/constants";
 import {
   loginSchema,
   registerSchema,
@@ -56,7 +56,13 @@ export async function login(_prev: ActionResult | null, formData: FormData): Pro
   if (error) return { error: error.message };
 
   const user = await getCurrentUser();
-  const redirectTo = (formData.get("redirectTo") as string) || (user ? ROLE_HOME[user.profile.role] : "/");
+  if (!user) redirect("/");
+  const requested = (formData.get("redirectTo") as string) || "";
+  const allowedPrefix = ROLE_PREFIX[user.profile.role];
+  const redirectTo =
+    requested.startsWith(allowedPrefix) && !requested.startsWith("//")
+      ? requested
+      : ROLE_HOME[user.profile.role];
   redirect(redirectTo);
 }
 

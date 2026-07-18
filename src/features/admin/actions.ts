@@ -128,10 +128,10 @@ export async function addDoctor(input: DoctorInput): Promise<MutationResult> {
   if (!profile || profile.hospital_id !== hid) {
     return { ok: false, error: "Staff member not found in your hospital." };
   }
-  if (profile.role !== "doctor" && profile.role !== "receptionist") {
+  if (profile.role !== "doctor") {
     return {
       ok: false,
-      error: "Only Doctor or Receptionist staff can be added. Assign a role on Staff first.",
+      error: "Only staff with the Doctor role can be added. Assign Doctor on Staff first.",
     };
   }
 
@@ -144,11 +144,6 @@ export async function addDoctor(input: DoctorInput): Promise<MutationResult> {
 
   if (existingDoctor) {
     return { ok: false, error: "This staff member already has a doctor profile." };
-  }
-
-  if (profile.role !== "doctor") {
-    const roleRes = await assignRole({ profileId: v.profileId, role: "doctor" });
-    if (!roleRes.ok) return roleRes;
   }
 
   const { data, error } = await supabase

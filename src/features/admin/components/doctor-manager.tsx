@@ -142,9 +142,8 @@ function AddDoctorDialog({
         {candidates.length === 0 ? (
           <div className="space-y-4 py-2">
             <p className="text-sm text-muted-foreground">
-              No eligible staff yet. On Staff, assign someone the Doctor or Receptionist role
-              (patients cannot be added here). Receptionists are promoted to Doctor when you add
-              them.
+              No eligible staff yet. On Staff, assign someone the Doctor role, then return here to
+              link their clinical profile.
             </p>
             <Link
               href="/admin/staff"
