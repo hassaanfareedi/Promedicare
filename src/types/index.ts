@@ -23,8 +23,12 @@ export type DoctorAvailability = Tables<"doctor_availability">;
 export type Prediction = Tables<"predictions">;
 export type Appointment = Tables<"appointments">;
 export type ConsultationNote = Tables<"consultation_notes">;
+export type AppointmentPayment = Tables<"appointment_payments">;
+export type MedicalAttachment = Tables<"medical_attachments">;
 export type Notification = Tables<"notifications">;
 export type AuditLog = Tables<"audit_logs">;
+
+export type { MedicationLine } from "@/schemas/clinical";
 
 /** A single condition predicted by the AI screening layer. */
 export type PredictedCondition = {

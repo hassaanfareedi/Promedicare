@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Stepper } from "@/components/ui/stepper";
 import { cn } from "@/lib/utils";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, formatDoctorName } from "@/lib/format";
 
 const STEPS = [
   { id: "hospital", label: "Hospital" },
@@ -152,7 +152,7 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
                       <Stethoscope className="size-5" />
                     </span>
                     <div>
-                      <p className="font-medium">Dr. {d.full_name}</p>
+                      <p className="font-medium">{formatDoctorName(d.full_name)}</p>
                       <p className="text-sm text-muted-foreground">
                         {d.specialty_name ?? "General"}
                         {d.years_experience ? ` · ${d.years_experience} yrs exp` : ""}
@@ -185,7 +185,7 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
             </div>
           ) : slots.length === 0 ? (
             <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-              Dr. {doctor?.full_name} has no available slots in the next two weeks.
+              {formatDoctorName(doctor?.full_name)} has no available slots in the next two weeks.
             </p>
           ) : (
             <div className="space-y-4">
@@ -227,7 +227,7 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
             </Button>
             <div className="grid gap-3 rounded-lg bg-muted/50 p-4 text-sm">
               <Row label="Hospital" value={hospitals.find((h) => h.id === hospitalId)?.name ?? "—"} />
-              <Row label="Doctor" value={`Dr. ${doctor.full_name}`} />
+              <Row label="Doctor" value={formatDoctorName(doctor.full_name)} />
               <Row label="Specialty" value={doctor.specialty_name ?? "General"} />
               <Row label="When" value={formatDateTime(slot)} />
             </div>

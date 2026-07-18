@@ -4,7 +4,14 @@ import { stateFile, type Role } from "./constants";
 const NAV: Record<Role, { home: string; links: string[] }> = {
   patient: {
     home: "/patient",
-    links: ["/patient", "/patient/symptom-check", "/patient/appointments", "/patient/screenings", "/patient/profile"],
+    links: [
+      "/patient",
+      "/patient/symptom-check",
+      "/patient/appointments",
+      "/patient/records",
+      "/patient/screenings",
+      "/patient/profile",
+    ],
   },
   doctor: {
     home: "/doctor",

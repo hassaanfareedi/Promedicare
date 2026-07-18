@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { Users } from "lucide-react";
 import { getDoctorPatients } from "@/features/doctor/data";
@@ -41,7 +42,14 @@ export default async function DoctorPatientsPage() {
               <TableBody>
                 {patients.map((p) => (
                   <TableRow key={p.id}>
-                    <TableCell className="font-medium">{p.full_name}</TableCell>
+                    <TableCell className="font-medium">
+                      <Link
+                        href={`/doctor/patients/${p.id}`}
+                        className="text-teal-700 hover:underline dark:text-teal-400"
+                      >
+                        {p.full_name}
+                      </Link>
+                    </TableCell>
                     <TableCell className="font-mono text-sm">{p.patient_code}</TableCell>
                     <TableCell className="hidden capitalize sm:table-cell">
                       {p.gender?.replace(/_/g, " ") ?? "—"}

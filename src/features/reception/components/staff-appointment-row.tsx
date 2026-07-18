@@ -2,7 +2,7 @@ import { Stethoscope } from "lucide-react";
 import type { StaffAppointment } from "@/features/reception/data";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, formatDoctorName } from "@/lib/format";
 import { AppointmentStatusControl } from "@/features/doctor/components/appointment-status-control";
 import { RescheduleDialog } from "@/features/appointments/components/reschedule-dialog";
 
@@ -28,7 +28,7 @@ export function StaffAppointmentRow({
               {a.patientCode} · {formatDateTime(a.scheduled_start)}
             </p>
             <p className="text-xs text-muted-foreground">
-              {a.doctorName ? `Dr. ${a.doctorName}` : "Unassigned"}
+              {a.doctorName ? formatDoctorName(a.doctorName) : "Unassigned"}
               {a.specialtyName ? ` · ${a.specialtyName}` : ""}
             </p>
           </div>
@@ -38,7 +38,12 @@ export function StaffAppointmentRow({
           {allowReschedule && ACTIVE.has(a.status) && (
             <RescheduleDialog appointmentId={a.id} doctorId={a.doctor_id} />
           )}
-          <AppointmentStatusControl appointmentId={a.id} status={a.status} />
+          <AppointmentStatusControl
+            mode="reception"
+            appointmentId={a.id}
+            status={a.status}
+            consultationFee={a.consultationFee}
+          />
         </div>
       </CardContent>
     </Card>

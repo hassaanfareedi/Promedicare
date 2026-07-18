@@ -10,8 +10,13 @@ import {
   updateAppointmentStatusSchema,
   type UpdateAppointmentStatusInput,
 } from "@/schemas/appointment";
+import {
+  completeConsultationSchema,
+  type CompleteConsultationInput,
+} from "@/schemas/clinical";
 import type { MutationResult } from "@/features/patient/actions";
-import type { TablesUpdate } from "@/types/database";
+import type { Json, TablesUpdate } from "@/types/database";
+import { getMyDoctor } from "@/features/doctor/data";
 
 /** Doctor reviews an AI screening, recording an outcome and optional notes. */
 export async function reviewPrediction(
@@ -62,21 +67,40 @@ export async function reviewPrediction(
   return { ok: true };
 }
 
-/** Doctor updates the status of one of their appointments (check-in, complete, etc.). */
+/**
+ * Staff updates appointment status (confirm / start / cancel / no-show).
+ * Completed requires the consult wizard; check-in with fee uses reception action.
+ */
 export async function updateAppointmentStatus(
   input: UpdateAppointmentStatusInput,
 ): Promise<MutationResult> {
-  await requireRole(["doctor", "receptionist", "hospital_admin", "super_admin"]);
+  const user = await requireRole(["doctor", "receptionist", "hospital_admin", "super_admin"]);
   const parsed = updateAppointmentStatusSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid status" };
   }
   const v = parsed.data;
-  const supabase = await createClient();
 
+  if (v.status === "completed") {
+    return {
+      ok: false,
+      error: "Complete the consultation form to mark this visit completed.",
+    };
+  }
+
+  if (v.status === "checked_in") {
+    return {
+      ok: false,
+      error: "Use check-in with fee collection from reception.",
+    };
+  }
+
+  if (v.status === "in_progress" && user.profile.role !== "doctor") {
+    return { ok: false, error: "Only the attending doctor can start a consultation." };
+  }
+
+  const supabase = await createClient();
   const patch: TablesUpdate<"appointments"> = { status: v.status };
-  if (v.status === "checked_in") patch.checked_in_at = new Date().toISOString();
-  if (v.status === "completed") patch.checked_out_at = new Date().toISOString();
 
   const { data: updated, error } = await supabase
     .from("appointments")
@@ -98,5 +122,96 @@ export async function updateAppointmentStatus(
   revalidatePath("/doctor/schedule");
   revalidatePath("/doctor");
   revalidatePath("/reception/queue");
+  revalidatePath("/reception/appointments");
   return { ok: true };
+}
+
+/** Doctor saves SOAP + Rx and marks the appointment completed. */
+export async function completeConsultation(
+  input: CompleteConsultationInput,
+): Promise<MutationResult<{ noteId: string }>> {
+  await requireRole(["doctor"]);
+  const parsed = completeConsultationSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid consultation" };
+  }
+  const v = parsed.data;
+  const doctor = await getMyDoctor();
+  if (!doctor) return { ok: false, error: "Doctor profile not found." };
+
+  const supabase = await createClient();
+  const { data: appt, error: apptErr } = await supabase
+    .from("appointments")
+    .select("id, patient_id, doctor_id, status, hospital_id")
+    .eq("id", v.appointmentId)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (apptErr) return { ok: false, error: apptErr.message };
+  if (!appt) return { ok: false, error: "Appointment not found or not accessible." };
+  if (appt.doctor_id !== doctor.id) {
+    return { ok: false, error: "You can only complete consultations assigned to you." };
+  }
+  if (appt.status !== "in_progress") {
+    return { ok: false, error: "Start the consultation before completing it." };
+  }
+
+  const medsJson = (v.medications ?? []) as unknown as Json;
+  const notePayload = {
+    appointment_id: appt.id,
+    doctor_id: doctor.id,
+    patient_id: appt.patient_id,
+    subjective: v.subjective,
+    objective: v.objective,
+    assessment: v.assessment,
+    diagnosis: v.diagnosis,
+    plan: v.plan,
+    prescription: v.prescription,
+    medications: medsJson,
+  };
+
+  const { data: existing } = await supabase
+    .from("consultation_notes")
+    .select("id")
+    .eq("appointment_id", appt.id)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  const noteRes = existing
+    ? await supabase
+        .from("consultation_notes")
+        .update(notePayload)
+        .eq("id", existing.id)
+        .select("id")
+        .single()
+    : await supabase.from("consultation_notes").insert(notePayload).select("id").single();
+
+  const note = noteRes.data;
+  if (noteRes.error || !note) {
+    return { ok: false, error: noteRes.error?.message ?? "Could not save consultation notes." };
+  }
+
+  const { error: statusErr } = await supabase
+    .from("appointments")
+    .update({
+      status: "completed",
+      checked_out_at: new Date().toISOString(),
+    })
+    .eq("id", appt.id);
+
+  if (statusErr) return { ok: false, error: statusErr.message };
+
+  await logAudit({
+    action: "appointment.consultation_completed",
+    entityType: "appointment",
+    entityId: appt.id,
+    metadata: { noteId: note.id },
+  });
+
+  revalidatePath("/doctor/schedule");
+  revalidatePath("/doctor");
+  revalidatePath(`/doctor/patients/${appt.patient_id}`);
+  revalidatePath("/reception/queue");
+  revalidatePath("/patient");
+  return { ok: true, data: { noteId: note.id } };
 }

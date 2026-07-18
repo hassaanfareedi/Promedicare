@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { EmptyState } from "@/components/shared/empty-state";
+import { formatDoctorName } from "@/lib/format";
 import {
   Dialog,
   DialogContent,
@@ -210,7 +211,9 @@ function DoctorCard({ doctor }: { doctor: AdminDoctor }) {
       <CardContent className="space-y-4 p-5">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="font-medium">Dr. {doctor.profile?.full_name ?? "Unnamed"}</p>
+            <p className="font-medium">
+              {formatDoctorName(doctor.profile?.full_name ?? "Unnamed")}
+            </p>
             <p className="text-sm text-muted-foreground">
               {doctor.specialty?.name ?? "General"}
               {doctor.department?.name ? ` · ${doctor.department.name}` : ""}

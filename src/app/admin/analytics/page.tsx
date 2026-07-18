@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CalendarDays, Users, BriefcaseMedical, Building2 } from "lucide-react";
+import { CalendarDays, Users, BriefcaseMedical, Wallet } from "lucide-react";
 import { getAdminAnalytics, getAdminOverview } from "@/features/admin/data";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
@@ -18,7 +18,11 @@ export default async function AdminAnalyticsPage() {
         <StatCard label="Total appointments" value={analytics.totalAppointments} icon={CalendarDays} />
         <StatCard label="Doctors" value={overview.doctors} icon={BriefcaseMedical} />
         <StatCard label="Patients" value={overview.patients} icon={Users} />
-        <StatCard label="Departments" value={overview.departments} icon={Building2} />
+        <StatCard
+          label="Fee income (PKR)"
+          value={Math.round(analytics.totalIncome).toLocaleString()}
+          icon={Wallet}
+        />
       </div>
 
       <AnalyticsCharts analytics={analytics} />

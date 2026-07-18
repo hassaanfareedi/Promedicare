@@ -12,6 +12,10 @@ function weekdayLabel(iso: string): string {
 
 export function AnalyticsCharts({ analytics }: { analytics: AdminAnalytics }) {
   const trend = analytics.weeklyTrend.map((t) => ({ label: weekdayLabel(t.date), count: t.count }));
+  const income = analytics.incomeTrend.map((t) => ({
+    label: weekdayLabel(t.date),
+    amount: t.amount,
+  }));
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
@@ -31,6 +35,29 @@ export function AnalyticsCharts({ analytics }: { analytics: AdminAnalytics }) {
                   contentStyle={{ borderRadius: 8, border: "1px solid var(--color-border)", fontSize: 12 }}
                 />
                 <Bar dataKey="count" fill="var(--color-chart-1)" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="lg:col-span-2">
+        <CardHeader>
+          <CardTitle className="text-base">Fee income — last 7 days (PKR)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={income} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
+                <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={12} />
+                <YAxis tickLine={false} axisLine={false} fontSize={12} />
+                <Tooltip
+                  cursor={{ fill: "var(--color-muted)", opacity: 0.3 }}
+                  contentStyle={{ borderRadius: 8, border: "1px solid var(--color-border)", fontSize: 12 }}
+                  formatter={(value) => [`${Number(value).toLocaleString()} PKR`, "Income"]}
+                />
+                <Bar dataKey="amount" fill="var(--color-chart-2)" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

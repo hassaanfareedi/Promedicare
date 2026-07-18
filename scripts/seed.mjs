@@ -112,8 +112,8 @@ async function main() {
   const adminId = await ensureUser("admin@promedicare.test", "Adnan Admin");
   await setProfile(adminId, { role: "hospital_admin", hospital_id: central.id, full_name: "Adnan Admin", onboarding_completed: true });
 
-  const doctorId = await ensureUser("doctor@promedicare.test", "Dr. Dua Rahman");
-  await setProfile(doctorId, { role: "doctor", hospital_id: central.id, full_name: "Dr. Dua Rahman", onboarding_completed: true });
+  const doctorId = await ensureUser("doctor@promedicare.test", "Dua Rahman");
+  await setProfile(doctorId, { role: "doctor", hospital_id: central.id, full_name: "Dua Rahman", onboarding_completed: true });
 
   const recepId = await ensureUser("reception@promedicare.test", "Rida Reception");
   await setProfile(recepId, { role: "receptionist", hospital_id: central.id, full_name: "Rida Reception", onboarding_completed: true });

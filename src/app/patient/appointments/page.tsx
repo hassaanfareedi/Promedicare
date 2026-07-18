@@ -8,7 +8,7 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, formatDoctorName } from "@/lib/format";
 import { CancelAppointmentButton } from "@/features/appointments/components/cancel-appointment-button";
 import { RescheduleDialog } from "@/features/appointments/components/reschedule-dialog";
 
@@ -27,7 +27,9 @@ function AppointmentRow({ a }: { a: AppointmentView }) {
             <Stethoscope className="size-5" aria-hidden />
           </span>
           <div className="min-w-0">
-            <p className="font-medium">{a.doctorName ? `Dr. ${a.doctorName}` : "Doctor to be assigned"}</p>
+            <p className="font-medium">
+              {a.doctorName ? formatDoctorName(a.doctorName) : "Doctor to be assigned"}
+            </p>
             <p className="text-sm text-muted-foreground">{formatDateTime(a.scheduled_start)}</p>
             <p className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
               {a.specialtyName && <span>{a.specialtyName}</span>}

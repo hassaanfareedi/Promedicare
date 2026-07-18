@@ -150,3 +150,24 @@
     navigation: auto;
   }
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .rx-print,
+  .rx-print * {
+    visibility: visible;
+  }
+  .rx-print {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 1.5cm !important;
+    background: white !important;
+    color: black !important;
+  }
+}

@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { formatDoctorName } from "@/lib/format";
 import {
   Form,
   FormField,
@@ -91,7 +92,9 @@ export function VisitorLookup() {
                 <span>{safeDate(record.nextAppointment.date, true)}</span>
                 <StatusBadge status={record.nextAppointment.status} />
                 {record.nextAppointment.doctor && (
-                  <span className="text-muted-foreground">Dr. {record.nextAppointment.doctor}</span>
+                  <span className="text-muted-foreground">
+                    {formatDoctorName(record.nextAppointment.doctor)}
+                  </span>
                 )}
                 {record.nextAppointment.department && (
                   <span className="text-muted-foreground">{record.nextAppointment.department}</span>
@@ -112,7 +115,9 @@ export function VisitorLookup() {
                   <li key={i} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
                     <span>{safeDate(h.date, true)}</span>
                     <span className="flex items-center gap-3">
-                      {h.doctor && <span className="text-muted-foreground">Dr. {h.doctor}</span>}
+                      {h.doctor && (
+                        <span className="text-muted-foreground">{formatDoctorName(h.doctor)}</span>
+                      )}
                       <StatusBadge status={h.status} />
                     </span>
                   </li>

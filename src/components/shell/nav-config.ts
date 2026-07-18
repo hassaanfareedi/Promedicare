@@ -12,6 +12,7 @@ import {
   ScrollText,
   Settings,
   ListChecks,
+  FolderOpen,
   type LucideIcon,
 } from "lucide-react";
 import type { UserRole } from "@/types";
@@ -27,6 +28,7 @@ export const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
     { label: "Dashboard", href: "/patient", icon: LayoutDashboard },
     { label: "Symptom Check", href: "/patient/symptom-check", icon: Activity },
     { label: "Appointments", href: "/patient/appointments", icon: CalendarDays },
+    { label: "Records", href: "/patient/records", icon: FolderOpen },
     { label: "Screenings", href: "/patient/screenings", icon: ClipboardList },
     { label: "Profile", href: "/patient/profile", icon: UserCog },
   ],

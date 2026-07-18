@@ -9,7 +9,7 @@ import { RiskBadge } from "@/components/shared/risk-badge";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
-import { formatDateTime, formatDate } from "@/lib/format";
+import { formatDateTime, formatDate, formatDoctorName } from "@/lib/format";
 import type { RiskLevel } from "@/types";
 
 export default async function PatientDashboard() {
@@ -63,7 +63,7 @@ export default async function PatientDashboard() {
                   <li key={a.id} className="flex items-center justify-between gap-3 py-3">
                     <div className="min-w-0">
                       <p className="truncate font-medium">
-                        {a.doctorName ? `Dr. ${a.doctorName}` : "Doctor to be assigned"}
+                        {a.doctorName ? formatDoctorName(a.doctorName) : "Doctor to be assigned"}
                       </p>
                       <p className="truncate text-sm text-muted-foreground">
                         {formatDateTime(a.scheduled_start)}

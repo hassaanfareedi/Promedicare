@@ -95,14 +95,17 @@ export type AdminAnalytics = {
   statusCounts: { status: AppointmentStatus; count: number }[];
   riskCounts: { level: RiskLevel; count: number }[];
   weeklyTrend: { date: string; count: number }[];
+  totalIncome: number;
+  incomeTrend: { date: string; amount: number }[];
 };
 
 /** Aggregated analytics for the admin's hospital (RLS-scoped). */
 export async function getAdminAnalytics(): Promise<AdminAnalytics> {
   const supabase = await createClient();
-  const [{ data: appts }, { data: preds }] = await Promise.all([
+  const [{ data: appts }, { data: preds }, { data: payments }] = await Promise.all([
     supabase.from("appointments").select("status, scheduled_start").is("deleted_at", null),
     supabase.from("predictions").select("risk_level").is("deleted_at", null),
+    supabase.from("appointment_payments").select("amount, collected_at, currency"),
   ]);
 
   const statusMap = new Map<AppointmentStatus, number>();
@@ -133,10 +136,33 @@ export async function getAdminAnalytics(): Promise<AdminAnalytics> {
     weeklyTrend.push({ date: key, count: trendMap.get(key) ?? 0 });
   }
 
+  const incomeMap = new Map<string, number>();
+  let totalIncome = 0;
+  const lookbackStart = new Date(today.getTime() - 6 * 86_400_000);
+  for (const p of payments ?? []) {
+    const amount = Number(p.amount) || 0;
+    totalIncome += amount;
+    const d = new Date(p.collected_at);
+    d.setHours(0, 0, 0, 0);
+    if (d >= lookbackStart && d <= today) {
+      const key = d.toISOString().slice(0, 10);
+      incomeMap.set(key, (incomeMap.get(key) ?? 0) + amount);
+    }
+  }
+
+  const incomeTrend: { date: string; amount: number }[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today.getTime() - i * 86_400_000);
+    const key = d.toISOString().slice(0, 10);
+    incomeTrend.push({ date: key, amount: incomeMap.get(key) ?? 0 });
+  }
+
   return {
     totalAppointments: (appts ?? []).length,
     statusCounts: [...statusMap.entries()].map(([status, count]) => ({ status, count })),
     riskCounts: [...riskMap.entries()].map(([level, count]) => ({ level, count })),
     weeklyTrend,
+    totalIncome,
+    incomeTrend,
   };
 }

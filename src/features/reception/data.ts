@@ -7,6 +7,7 @@ export type StaffAppointment = Appointment & {
   patientCode: string | null;
   doctorName: string | null;
   specialtyName: string | null;
+  consultationFee: number | null;
 };
 
 function startOfToday(): string {
@@ -29,8 +30,18 @@ async function enrich(rows: Appointment[]): Promise<StaffAppointment[]> {
   const [{ data: patients }, { data: doctors }] = await Promise.all([
     supabase.from("patients").select("id, full_name, patient_code").in("id", patientIds),
     doctorIds.length
-      ? supabase.from("doctor_directory").select("id, full_name, specialty_name").in("id", doctorIds)
-      : Promise.resolve({ data: [] as { id: string | null; full_name: string | null; specialty_name: string | null }[] }),
+      ? supabase
+          .from("doctor_directory")
+          .select("id, full_name, specialty_name, consultation_fee")
+          .in("id", doctorIds)
+      : Promise.resolve({
+          data: [] as {
+            id: string | null;
+            full_name: string | null;
+            specialty_name: string | null;
+            consultation_fee: number | null;
+          }[],
+        }),
   ]);
 
   const pMap = new Map((patients ?? []).map((p) => [p.id, p]));
@@ -45,6 +56,7 @@ async function enrich(rows: Appointment[]): Promise<StaffAppointment[]> {
       patientCode: p?.patient_code ?? null,
       doctorName: d?.full_name ?? null,
       specialtyName: d?.specialty_name ?? null,
+      consultationFee: d?.consultation_fee ?? null,
     };
   });
 }

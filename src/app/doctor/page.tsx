@@ -8,9 +8,14 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatTime } from "@/lib/format";
 import { AppointmentStatusControl } from "@/features/doctor/components/appointment-status-control";
+import { getCurrentUser } from "@/lib/auth/session";
 
 export default async function DoctorDashboard() {
-  const { today, pendingReviews, patientCount } = await getDoctorOverview();
+  const [{ today, pendingReviews, patientCount }, user] = await Promise.all([
+    getDoctorOverview(),
+    getCurrentUser(),
+  ]);
+  const doctorName = user?.profile.full_name ?? "Doctor";
 
   return (
     <div className="space-y-6">
@@ -45,7 +50,15 @@ export default async function DoctorDashboard() {
                   </div>
                   <div className="flex items-center gap-3">
                     <StatusBadge status={a.status} />
-                    <AppointmentStatusControl appointmentId={a.id} status={a.status} />
+                    <AppointmentStatusControl
+                      mode="doctor"
+                      appointmentId={a.id}
+                      status={a.status}
+                      patientId={a.patient?.id ?? a.patient_id}
+                      patientName={a.patient?.full_name ?? "Patient"}
+                      patientCode={a.patient?.patient_code}
+                      doctorName={doctorName}
+                    />
                   </div>
                 </li>
               ))}

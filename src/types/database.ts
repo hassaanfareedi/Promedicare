@@ -14,6 +14,70 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointment_payments: {
+        Row: {
+          amount: number
+          appointment_id: string
+          collected_at: string
+          collected_by: string | null
+          created_at: string
+          currency: string
+          hospital_id: string
+          id: string
+          method: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          appointment_id: string
+          collected_at?: string
+          collected_by?: string | null
+          created_at?: string
+          currency?: string
+          hospital_id: string
+          id?: string
+          method?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          appointment_id?: string
+          collected_at?: string
+          collected_by?: string | null
+          created_at?: string
+          currency?: string
+          hospital_id?: string
+          id?: string
+          method?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_payments_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_payments_collected_by_fkey"
+            columns: ["collected_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_payments_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
           cancelled_at: string | null
@@ -183,6 +247,7 @@ export type Database = {
           diagnosis: string | null
           doctor_id: string | null
           id: string
+          medications: Json | null
           objective: string | null
           patient_id: string | null
           plan: string | null
@@ -198,6 +263,7 @@ export type Database = {
           diagnosis?: string | null
           doctor_id?: string | null
           id?: string
+          medications?: Json | null
           objective?: string | null
           patient_id?: string | null
           plan?: string | null
@@ -213,6 +279,7 @@ export type Database = {
           diagnosis?: string | null
           doctor_id?: string | null
           id?: string
+          medications?: Json | null
           objective?: string | null
           patient_id?: string | null
           plan?: string | null
@@ -224,7 +291,7 @@ export type Database = {
           {
             foreignKeyName: "consultation_notes_appointment_id_fkey"
             columns: ["appointment_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "appointments"
             referencedColumns: ["id"]
           },
@@ -416,6 +483,80 @@ export type Database = {
             columns: ["specialty_id"]
             isOneToOne: false
             referencedRelation: "specialties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medical_attachments: {
+        Row: {
+          appointment_id: string | null
+          created_at: string
+          deleted_at: string | null
+          file_name: string
+          file_path: string
+          hospital_id: string
+          id: string
+          kind: string
+          mime_type: string | null
+          patient_id: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          appointment_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          file_name: string
+          file_path: string
+          hospital_id: string
+          id?: string
+          kind?: string
+          mime_type?: string | null
+          patient_id: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          appointment_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          file_name?: string
+          file_path?: string
+          hospital_id?: string
+          id?: string
+          kind?: string
+          mime_type?: string | null
+          patient_id?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medical_attachments_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medical_attachments_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medical_attachments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medical_attachments_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
