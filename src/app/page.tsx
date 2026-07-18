@@ -1,65 +1,203 @@
-import Image from "next/image";
+import Link from "next/link";
+import {
+  Activity,
+  Brain,
+  CalendarCheck,
+  ShieldCheck,
+  Stethoscope,
+  Building2,
+  ArrowRight,
+  Sparkles,
+} from "lucide-react";
+import { getCurrentUser } from "@/lib/auth/session";
+import { ROLE_HOME } from "@/lib/constants";
+import { buttonVariants } from "@/components/ui/button";
+import { Preloader } from "@/components/marketing/preloader";
+import { MarketingNav } from "@/components/marketing/marketing-nav";
+import { Reveal } from "@/components/marketing/reveal";
+import { VisitorLookup } from "@/features/visitor/components/visitor-lookup";
+import { AiDisclaimer } from "@/components/shared/ai-disclaimer";
+import { Logo } from "@/components/brand/logo";
 
-export default function Home() {
+const STEPS = [
+  {
+    icon: Activity,
+    title: "Describe your symptoms",
+    body: "Enter what you're experiencing through a simple, guided form — no medical jargon required.",
+  },
+  {
+    icon: Brain,
+    title: "Get an AI risk read",
+    body: "Our AI screens your symptoms, estimates a risk level and explains its reasoning in plain language.",
+  },
+  {
+    icon: CalendarCheck,
+    title: "See the right specialist",
+    body: "We recommend a specialist and let you book an appointment that your doctor can review instantly.",
+  },
+];
+
+const FEATURES = [
+  { icon: Brain, title: "AI symptom screening", body: "Fast, structured risk assessment powered by Groq — decision support, never a diagnosis." },
+  { icon: Stethoscope, title: "Specialist matching", body: "Automatically routed to the most relevant specialty for your symptoms." },
+  { icon: CalendarCheck, title: "Effortless booking", body: "Real-time slots with no double-booking, plus reminders and easy rescheduling." },
+  { icon: ShieldCheck, title: "Privacy by design", body: "Row-level security and least-privilege access protect every record." },
+  { icon: Building2, title: "Multi-hospital", body: "Built for many hospitals with role-based portals for every kind of user." },
+  { icon: Sparkles, title: "Doctor-in-the-loop", body: "Every AI screening is logged for clinicians to review and act on." },
+];
+
+export default async function HomePage() {
+  const user = await getCurrentUser();
+  const homeHref = user ? ROLE_HOME[user.profile.role] : "/login";
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <>
+      <Preloader />
+      <div className="flex min-h-svh flex-col">
+        <MarketingNav isAuthed={Boolean(user)} homeHref={homeHref} />
+
+        {/* Hero */}
+        <section className="relative overflow-hidden">
+          <div className="absolute inset-0 -z-10 bg-gradient-to-b from-teal-50 to-background dark:from-teal-950/20" />
+          <div className="absolute inset-x-0 top-0 -z-10 h-96 opacity-40 [background:radial-gradient(60%_60%_at_50%_0%,theme(colors.teal.200),transparent)] dark:opacity-20" />
+          <div className="mx-auto grid max-w-6xl gap-12 px-4 py-16 md:px-6 lg:grid-cols-2 lg:py-24">
+            <div className="flex flex-col justify-center">
+              <Reveal>
+                <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs font-medium text-teal-700 dark:border-teal-900 dark:bg-teal-950/50 dark:text-teal-300">
+                  <Sparkles className="size-3.5" /> AI-assisted early screening
+                </span>
+              </Reveal>
+              <Reveal delay={0.05}>
+                <h1 className="mt-5 text-4xl font-bold tracking-tight text-balance sm:text-5xl">
+                  Understand your symptoms.{" "}
+                  <span className="bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent">
+                    See the right doctor, sooner.
+                  </span>
+                </h1>
+              </Reveal>
+              <Reveal delay={0.1}>
+                <p className="mt-5 max-w-xl text-lg text-muted-foreground text-pretty">
+                  ProMediCare AI screens your symptoms for early disease risk, matches you to a
+                  specialist and books your appointment — all in one secure platform.
+                </p>
+              </Reveal>
+              <Reveal delay={0.15}>
+                <div className="mt-8 flex flex-wrap items-center gap-3">
+                  <Link href={user ? homeHref : "/register"} className={buttonVariants({ size: "lg" })}>
+                    {user ? "Go to dashboard" : "Start free screening"}
+                    <ArrowRight className="size-4" />
+                  </Link>
+                  <a href="#lookup" className={buttonVariants({ variant: "outline", size: "lg" })}>
+                    Look up a record
+                  </a>
+                </div>
+              </Reveal>
+              <Reveal delay={0.2}>
+                <p className="mt-6 flex items-center gap-2 text-xs text-muted-foreground">
+                  <ShieldCheck className="size-4 text-teal-600" />
+                  Decision support only — not a medical diagnosis.
+                </p>
+              </Reveal>
+            </div>
+
+            <Reveal delay={0.1} className="flex items-center">
+              <div id="lookup" className="w-full scroll-mt-24">
+                <VisitorLookup />
+              </div>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* How it works */}
+        <section id="how" className="border-t bg-muted/30 py-16 md:py-24">
+          <div className="mx-auto max-w-6xl px-4 md:px-6">
+            <Reveal>
+              <div className="mx-auto max-w-2xl text-center">
+                <h2 className="text-3xl font-semibold tracking-tight">How it works</h2>
+                <p className="mt-3 text-muted-foreground">Three simple steps from symptom to specialist.</p>
+              </div>
+            </Reveal>
+            <div className="mt-12 grid gap-6 md:grid-cols-3">
+              {STEPS.map((step, i) => (
+                <Reveal key={step.title} delay={i * 0.08}>
+                  <div className="relative h-full rounded-2xl border bg-card p-6">
+                    <div className="mb-4 grid size-11 place-items-center rounded-xl bg-teal-600 text-white">
+                      <step.icon className="size-5" />
+                    </div>
+                    <span className="absolute right-6 top-6 text-3xl font-bold text-muted-foreground/15">
+                      {i + 1}
+                    </span>
+                    <h3 className="text-lg font-medium">{step.title}</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">{step.body}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+            <Reveal delay={0.1}>
+              <div className="mx-auto mt-10 max-w-3xl">
+                <AiDisclaimer />
+              </div>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* Features */}
+        <section id="features" className="py-16 md:py-24">
+          <div className="mx-auto max-w-6xl px-4 md:px-6">
+            <Reveal>
+              <div className="mx-auto max-w-2xl text-center">
+                <h2 className="text-3xl font-semibold tracking-tight">Everything in one platform</h2>
+                <p className="mt-3 text-muted-foreground">
+                  For patients, doctors, receptionists and administrators.
+                </p>
+              </div>
+            </Reveal>
+            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {FEATURES.map((f, i) => (
+                <Reveal key={f.title} delay={(i % 3) * 0.06}>
+                  <div className="h-full rounded-2xl border bg-card p-6 transition-shadow hover:shadow-sm">
+                    <div className="mb-4 grid size-10 place-items-center rounded-lg bg-teal-50 text-teal-600 dark:bg-teal-950/50 dark:text-teal-400">
+                      <f.icon className="size-5" />
+                    </div>
+                    <h3 className="font-medium">{f.title}</h3>
+                    <p className="mt-2 text-sm text-muted-foreground">{f.body}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* CTA */}
+        <section className="border-t bg-gradient-to-br from-teal-600 to-emerald-700 py-16 text-white md:py-20">
+          <div className="mx-auto max-w-4xl px-4 text-center md:px-6">
+            <Reveal>
+              <h2 className="text-3xl font-semibold tracking-tight text-balance">
+                Take charge of your health today
+              </h2>
+              <p className="mx-auto mt-3 max-w-xl text-white/85">
+                Create a free account and get your first AI-assisted screening in minutes.
+              </p>
+              <div className="mt-8 flex justify-center">
+                <Link
+                  href={user ? homeHref : "/register"}
+                  className={buttonVariants({ variant: "secondary", size: "lg" })}
+                >
+                  {user ? "Go to dashboard" : "Get started free"}
+                  <ArrowRight className="size-4" />
+                </Link>
+              </div>
+            </Reveal>
+          </div>
+        </section>
+
+        <footer className="border-t py-10">
+          <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 text-sm text-muted-foreground md:flex-row md:px-6">
+            <Logo size="sm" />
+            <p>© {new Date().getFullYear()} ProMediCare AI. Decision support only — not a diagnosis.</p>
+          </div>
+        </footer>
+      </div>
+    </>
   );
 }
