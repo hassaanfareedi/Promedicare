@@ -8,8 +8,10 @@ import { notify } from "@/lib/notifications";
 import {
   bookAppointmentSchema,
   cancelAppointmentSchema,
+  rescheduleAppointmentSchema,
   type BookAppointmentInput,
   type CancelAppointmentInput,
+  type RescheduleAppointmentInput,
 } from "@/schemas/appointment";
 import { buildSlots, type SlotGroup } from "@/features/appointments/slots";
 import type { MutationResult } from "@/features/patient/actions";
@@ -77,6 +79,66 @@ export async function bookAppointment(
   revalidatePath("/patient/appointments");
   revalidatePath("/patient");
   return { ok: true, data: { appointmentId } };
+}
+
+/** Reschedules an appointment to a new start, preserving its duration. */
+export async function rescheduleAppointment(
+  input: RescheduleAppointmentInput,
+): Promise<MutationResult> {
+  await requireUser();
+  const parsed = rescheduleAppointmentSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid request" };
+  }
+  const supabase = await createClient();
+
+  const { data: appt } = await supabase
+    .from("appointments")
+    .select("id, scheduled_start, scheduled_end, doctor_id, created_by")
+    .eq("id", parsed.data.appointmentId)
+    .maybeSingle();
+  if (!appt) return { ok: false, error: "Appointment not found or not accessible." };
+
+  const durationMs =
+    new Date(appt.scheduled_end).getTime() - new Date(appt.scheduled_start).getTime();
+  const newStart = new Date(parsed.data.scheduledStart);
+  const newEnd = new Date(newStart.getTime() + (durationMs > 0 ? durationMs : 30 * 60_000));
+
+  const { error } = await supabase
+    .from("appointments")
+    .update({
+      scheduled_start: newStart.toISOString(),
+      scheduled_end: newEnd.toISOString(),
+      status: "confirmed",
+    })
+    .eq("id", appt.id);
+
+  if (error) {
+    const conflict = error.code === "23P01" || /overlap|exclusion/i.test(error.message);
+    return { ok: false, error: conflict ? "That time slot is unavailable. Please choose another." : error.message };
+  }
+
+  if (appt.created_by) {
+    await notify({
+      recipientId: appt.created_by,
+      type: "appointment_rescheduled",
+      title: "Appointment rescheduled",
+      body: "Your appointment time has been updated.",
+      data: { appointmentId: appt.id },
+    });
+  }
+
+  await logAudit({
+    action: "appointment.rescheduled",
+    entityType: "appointment",
+    entityId: appt.id,
+  });
+
+  revalidatePath("/patient/appointments");
+  revalidatePath("/patient");
+  revalidatePath("/reception/appointments");
+  revalidatePath("/doctor/schedule");
+  return { ok: true };
 }
 
 /** Patient-initiated cancellation of their own appointment. */

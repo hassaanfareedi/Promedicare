@@ -10,6 +10,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { formatDateTime } from "@/lib/format";
 import { CancelAppointmentButton } from "@/features/appointments/components/cancel-appointment-button";
+import { RescheduleDialog } from "@/features/appointments/components/reschedule-dialog";
 
 export const metadata: Metadata = { title: "Appointments" };
 
@@ -38,9 +39,14 @@ function AppointmentRow({ a }: { a: AppointmentView }) {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <StatusBadge status={a.status} />
-          {upcoming && CANCELLABLE.has(a.status) && <CancelAppointmentButton appointmentId={a.id} />}
+          {upcoming && CANCELLABLE.has(a.status) && (
+            <>
+              <RescheduleDialog appointmentId={a.id} doctorId={a.doctor_id} />
+              <CancelAppointmentButton appointmentId={a.id} />
+            </>
+          )}
         </div>
       </CardContent>
     </Card>

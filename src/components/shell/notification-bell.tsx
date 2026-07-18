@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Bell } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -26,6 +27,34 @@ export function NotificationBell() {
 
   useEffect(() => {
     void load();
+
+    const supabase = createClient();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    // Realtime push (when the notifications table is in the realtime publication).
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      channel = supabase
+        .channel(`notifications:${user.id}`)
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "notifications", filter: `recipient_id=eq.${user.id}` },
+          (payload) => {
+            const n = payload.new as Notification;
+            setItems((prev) => (prev.some((p) => p.id === n.id) ? prev : [n, ...prev].slice(0, 15)));
+            toast(n.title, { description: n.body ?? undefined });
+          },
+        )
+        .subscribe();
+    });
+
+    // Polling fallback so notifications stay fresh even without realtime enabled.
+    const interval = setInterval(() => void load(), 30_000);
+
+    return () => {
+      clearInterval(interval);
+      if (channel) void supabase.removeChannel(channel);
+    };
   }, [load]);
 
   const unread = items.filter((n) => !n.read_at).length;

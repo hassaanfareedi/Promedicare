@@ -1,0 +1,40 @@
+import { z } from "zod";
+
+export const departmentSchema = z.object({
+  name: z.string().trim().min(2, "Enter a department name").max(120),
+  description: z.string().trim().max(500).optional().or(z.literal("")),
+});
+export type DepartmentInput = z.infer<typeof departmentSchema>;
+
+export const doctorSchema = z.object({
+  profileId: z.string().uuid("Select a staff member"),
+  specialtyId: z.string().uuid().optional().or(z.literal("")),
+  departmentId: z.string().uuid().optional().or(z.literal("")),
+  licenseNumber: z.string().trim().max(80).optional().or(z.literal("")),
+  yearsExperience: z.coerce.number().int().min(0).max(70).optional(),
+  consultationFee: z.coerce.number().min(0).max(100000).optional(),
+  bio: z.string().trim().max(1000).optional().or(z.literal("")),
+});
+export type DoctorInput = z.infer<typeof doctorSchema>;
+
+const timeString = z.string().regex(/^\d{2}:\d{2}$/, "Use HH:MM");
+
+export const availabilitySchema = z
+  .object({
+    doctorId: z.string().uuid(),
+    weekday: z.coerce.number().int().min(0).max(6),
+    startTime: timeString,
+    endTime: timeString,
+    slotMinutes: z.coerce.number().int().min(5).max(240),
+  })
+  .refine((v) => v.startTime < v.endTime, {
+    message: "End time must be after start time",
+    path: ["endTime"],
+  });
+export type AvailabilityInput = z.infer<typeof availabilitySchema>;
+
+export const roleAssignSchema = z.object({
+  profileId: z.string().uuid(),
+  role: z.enum(["patient", "doctor", "receptionist"]),
+});
+export type RoleAssignInput = z.infer<typeof roleAssignSchema>;
