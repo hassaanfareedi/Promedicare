@@ -1,0 +1,192 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { Loader2, Plus, Building2, UserCog } from "lucide-react";
+import { createHospital, setHospitalActive, assignHospitalAdmin } from "@/features/platform/actions";
+import type { Hospital, Profile } from "@/types";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { EmptyState } from "@/components/shared/empty-state";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+export function HospitalManager({
+  hospitals,
+  profiles,
+}: {
+  hospitals: Hospital[];
+  profiles: Profile[];
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [city, setCity] = useState("");
+
+  function add() {
+    startTransition(async () => {
+      const res = await createHospital({ name, slug: slug || slugify(name), city: city || undefined });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success("Hospital created");
+      setName("");
+      setSlug("");
+      setCity("");
+      router.refresh();
+    });
+  }
+
+  function toggle(id: string, active: boolean) {
+    startTransition(async () => {
+      const res = await setHospitalActive(id, active);
+      if (!res.ok) toast.error(res.error);
+      else router.refresh();
+    });
+  }
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
+      <Card>
+        <CardContent className="space-y-4 p-5">
+          <h2 className="font-medium">Add hospital</h2>
+          <div className="space-y-2">
+            <Label htmlFor="h-name">Name</Label>
+            <Input
+              id="h-name"
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                setSlug(slugify(e.target.value));
+              }}
+              placeholder="City General Hospital"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="h-slug">Slug</Label>
+            <Input id="h-slug" value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="city-general" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="h-city">City (optional)</Label>
+            <Input id="h-city" value={city} onChange={(e) => setCity(e.target.value)} />
+          </div>
+          <Button onClick={add} disabled={pending || name.trim().length < 2}>
+            {pending ? <Loader2 className="animate-spin" /> : <Plus className="size-4" />}
+            Add hospital
+          </Button>
+        </CardContent>
+      </Card>
+
+      <div className="space-y-3">
+        {hospitals.length === 0 ? (
+          <EmptyState icon={Building2} title="No hospitals" description="Create your first hospital." />
+        ) : (
+          hospitals.map((h) => (
+            <Card key={h.id}>
+              <CardContent className="flex flex-wrap items-center justify-between gap-4 p-4">
+                <div className="min-w-0">
+                  <p className="font-medium">{h.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {h.city ? `${h.city} · ` : ""}
+                    <span className="font-mono">{h.slug}</span>
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <AssignAdminDialog hospital={h} profiles={profiles} />
+                  <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                    {h.is_active ? "Active" : "Inactive"}
+                    <Switch checked={h.is_active} onCheckedChange={(c) => toggle(h.id, c)} disabled={pending} />
+                  </label>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+function AssignAdminDialog({ hospital, profiles }: { hospital: Hospital; profiles: Profile[] }) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const [profileId, setProfileId] = useState("");
+
+  function submit() {
+    startTransition(async () => {
+      const res = await assignHospitalAdmin({ profileId, hospitalId: hospital.id });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success("Hospital admin assigned");
+      setOpen(false);
+      router.refresh();
+    });
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger
+        render={
+          <Button variant="outline" size="sm">
+            <UserCog className="size-4" /> Assign admin
+          </Button>
+        }
+      />
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Assign admin — {hospital.name}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>User</Label>
+            <Select value={profileId} onValueChange={(v) => setProfileId(v ?? "")}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a user" />
+              </SelectTrigger>
+              <SelectContent>
+                {profiles.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.full_name ?? p.email ?? p.id}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button onClick={submit} disabled={pending || !profileId} className="w-full">
+            {pending ? <Loader2 className="animate-spin" /> : null}
+            Make hospital admin
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
