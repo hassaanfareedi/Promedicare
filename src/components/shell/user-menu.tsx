@@ -1,17 +1,16 @@
 "use client";
 
-import { LogOut } from "lucide-react";
-import { logout } from "@/lib/auth/actions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
+  DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { SignOutButton } from "@/components/shell/sign-out-button";
 import { ROLE_LABEL } from "@/lib/constants";
 import type { UserRole } from "@/types";
 
@@ -34,7 +33,11 @@ export function UserMenu({
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button variant="ghost" className="h-9 gap-2 pl-1.5 pr-2.5">
+          <Button
+            variant="ghost"
+            className="h-9 gap-2 pl-1.5 pr-2.5"
+            aria-label="Account menu"
+          >
             <Avatar className="size-7">
               <AvatarFallback className="bg-teal-100 text-xs text-teal-700 dark:bg-teal-900 dark:text-teal-200">
                 {initials(fullName, email)}
@@ -47,17 +50,17 @@ export function UserMenu({
         }
       />
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel className="flex flex-col gap-0.5">
-          <span className="truncate text-sm text-foreground">{fullName ?? "Account"}</span>
-          <span className="truncate text-xs font-normal text-muted-foreground">{email}</span>
-          <span className="mt-1 text-xs font-normal text-teal-600 dark:text-teal-400">
-            {ROLE_LABEL[role]}
-          </span>
-        </DropdownMenuLabel>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="flex flex-col gap-0.5">
+            <span className="truncate text-sm text-foreground">{fullName ?? "Account"}</span>
+            <span className="truncate text-xs font-normal text-muted-foreground">{email}</span>
+            <span className="mt-1 text-xs font-normal text-teal-600 dark:text-teal-400">
+              {ROLE_LABEL[role]}
+            </span>
+          </DropdownMenuLabel>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive" onClick={() => logout()}>
-          <LogOut className="size-4" /> Sign out
-        </DropdownMenuItem>
+        <SignOutButton className="h-8 px-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive dark:hover:bg-destructive/20" />
       </DropdownMenuContent>
     </DropdownMenu>
   );
