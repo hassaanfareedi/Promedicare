@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/session";
@@ -109,13 +110,17 @@ export async function uploadMedicalAttachment(
 export async function getAttachmentSignedUrl(
   attachmentId: string,
 ): Promise<MutationResult<{ url: string }>> {
-  await requireRole(["doctor", "patient", "hospital_admin", "receptionist", "super_admin"]);
+  // Front-desk (receptionist) is intentionally excluded: clinical attachments
+  // (labs/imaging) are not part of the check-in workflow.
+  await requireRole(["doctor", "patient", "hospital_admin", "super_admin"]);
+  const id = z.string().uuid().safeParse(attachmentId);
+  if (!id.success) return { ok: false, error: "Invalid attachment reference." };
   const supabase = await createClient();
 
   const { data: att, error } = await supabase
     .from("medical_attachments")
     .select("id, file_path")
-    .eq("id", attachmentId)
+    .eq("id", id.data)
     .is("deleted_at", null)
     .maybeSingle();
 

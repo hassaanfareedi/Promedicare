@@ -1,9 +1,12 @@
 "use server";
 
+import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/session";
 import { logAudit } from "@/lib/audit";
+
+const uuidSchema = z.string().uuid();
 import {
   departmentSchema,
   doctorSchema,
@@ -82,9 +85,20 @@ export async function createDepartment(input: DepartmentInput): Promise<Mutation
 
 export async function setDepartmentActive(id: string, isActive: boolean): Promise<MutationResult> {
   await requireRole(["hospital_admin", "super_admin"]);
+  const parsed = uuidSchema.safeParse(id);
+  if (!parsed.success) return { ok: false, error: "Invalid department reference." };
   const supabase = await createClient();
-  const { error } = await supabase.from("departments").update({ is_active: isActive }).eq("id", id);
+  const { error } = await supabase
+    .from("departments")
+    .update({ is_active: Boolean(isActive) })
+    .eq("id", parsed.data);
   if (error) return { ok: false, error: error.message };
+  await logAudit({
+    action: "department.active_changed",
+    entityType: "department",
+    entityId: parsed.data,
+    metadata: { isActive: Boolean(isActive) },
+  });
   revalidatePath("/admin/departments");
   return { ok: true };
 }
@@ -288,9 +302,20 @@ export async function updateDoctor(input: UpdateDoctorInput): Promise<MutationRe
 
 export async function setDoctorActive(id: string, isActive: boolean): Promise<MutationResult> {
   await requireRole(["hospital_admin", "super_admin"]);
+  const parsed = uuidSchema.safeParse(id);
+  if (!parsed.success) return { ok: false, error: "Invalid doctor reference." };
   const supabase = await createClient();
-  const { error } = await supabase.from("doctors").update({ is_active: isActive }).eq("id", id);
+  const { error } = await supabase
+    .from("doctors")
+    .update({ is_active: Boolean(isActive) })
+    .eq("id", parsed.data);
   if (error) return { ok: false, error: error.message };
+  await logAudit({
+    action: "doctor.active_changed",
+    entityType: "doctor",
+    entityId: parsed.data,
+    metadata: { isActive: Boolean(isActive) },
+  });
   revalidatePath("/admin/doctors");
   return { ok: true };
 }
@@ -301,23 +326,40 @@ export async function addAvailability(input: AvailabilityInput): Promise<Mutatio
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid" };
   const v = parsed.data;
   const supabase = await createClient();
-  const { error } = await supabase.from("doctor_availability").insert({
-    doctor_id: v.doctorId,
-    weekday: v.weekday,
-    start_time: `${v.startTime}:00`,
-    end_time: `${v.endTime}:00`,
-    slot_minutes: v.slotMinutes,
-  });
+  const { data, error } = await supabase
+    .from("doctor_availability")
+    .insert({
+      doctor_id: v.doctorId,
+      weekday: v.weekday,
+      start_time: `${v.startTime}:00`,
+      end_time: `${v.endTime}:00`,
+      slot_minutes: v.slotMinutes,
+    })
+    .select("id")
+    .single();
   if (error) return { ok: false, error: error.message };
+  await logAudit({
+    action: "availability.added",
+    entityType: "doctor_availability",
+    entityId: data.id,
+    metadata: { doctorId: v.doctorId, weekday: v.weekday },
+  });
   revalidatePath("/admin/doctors");
   return { ok: true };
 }
 
 export async function removeAvailability(id: string): Promise<MutationResult> {
   await requireRole(["hospital_admin", "super_admin"]);
+  const parsed = uuidSchema.safeParse(id);
+  if (!parsed.success) return { ok: false, error: "Invalid availability reference." };
   const supabase = await createClient();
-  const { error } = await supabase.from("doctor_availability").delete().eq("id", id);
+  const { error } = await supabase.from("doctor_availability").delete().eq("id", parsed.data);
   if (error) return { ok: false, error: error.message };
+  await logAudit({
+    action: "availability.removed",
+    entityType: "doctor_availability",
+    entityId: parsed.data,
+  });
   revalidatePath("/admin/doctors");
   return { ok: true };
 }

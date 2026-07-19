@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { CalendarDays, Users, UserCheck, Clock } from "lucide-react";
+import { CalendarDays, Users, UserCheck, Clock, CalendarPlus } from "lucide-react";
 import { getReceptionOverview, getWalkInDoctors } from "@/features/reception/data";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { buttonVariants } from "@/components/ui/button";
 import { StaffAppointmentRow } from "@/features/reception/components/staff-appointment-row";
 import { WalkInDialog } from "@/features/reception/components/walk-in-dialog";
 
@@ -19,7 +20,17 @@ export default async function ReceptionDashboard() {
       <PageHeader
         title="Front desk"
         description="Manage today's queue and patient registrations."
-        actions={<WalkInDialog doctors={doctors} />}
+        actions={
+          <>
+            <Link
+              href="/reception/appointments/new"
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              <CalendarPlus className="size-4" aria-hidden /> Book appointment
+            </Link>
+            <WalkInDialog doctors={doctors} />
+          </>
+        }
       />
 
       <div className="grid gap-4 sm:grid-cols-3">

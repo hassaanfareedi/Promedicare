@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/session";
@@ -38,9 +39,20 @@ export async function createHospital(input: HospitalInput): Promise<MutationResu
 
 export async function setHospitalActive(id: string, isActive: boolean): Promise<MutationResult> {
   await requireRole(["super_admin"]);
+  const parsed = z.string().uuid().safeParse(id);
+  if (!parsed.success) return { ok: false, error: "Invalid hospital reference." };
   const supabase = await createClient();
-  const { error } = await supabase.from("hospitals").update({ is_active: isActive }).eq("id", id);
+  const { error } = await supabase
+    .from("hospitals")
+    .update({ is_active: Boolean(isActive) })
+    .eq("id", parsed.data);
   if (error) return { ok: false, error: error.message };
+  await logAudit({
+    action: "hospital.active_changed",
+    entityType: "hospital",
+    entityId: parsed.data,
+    metadata: { isActive: Boolean(isActive) },
+  });
   revalidatePath("/platform/hospitals");
   return { ok: true };
 }

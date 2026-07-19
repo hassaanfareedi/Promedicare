@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth/session";
@@ -19,11 +20,13 @@ import type { MutationResult } from "@/features/patient/actions";
 /** Candidate booking slots for a doctor over the next two weeks. */
 export async function getDoctorSlots(doctorId: string): Promise<SlotGroup[]> {
   await requireUser();
+  const id = z.string().uuid().safeParse(doctorId);
+  if (!id.success) return [];
   const supabase = await createClient();
   const { data } = await supabase
     .from("doctor_availability")
     .select("*")
-    .eq("doctor_id", doctorId)
+    .eq("doctor_id", id.data)
     .eq("is_active", true);
   return buildSlots(data ?? []);
 }
@@ -110,6 +113,11 @@ export async function rescheduleAppointment(
     .eq("id", parsed.data.appointmentId)
     .maybeSingle();
   if (!appt) return { ok: false, error: "Appointment not found or not accessible." };
+
+  // Only active bookings can be moved; completed/cancelled/no-show are terminal.
+  if (!["pending", "confirmed"].includes(appt.status)) {
+    return { ok: false, error: "Only pending or confirmed appointments can be rescheduled." };
+  }
 
   const durationMs =
     new Date(appt.scheduled_end).getTime() - new Date(appt.scheduled_start).getTime();

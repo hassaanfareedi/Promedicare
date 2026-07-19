@@ -30,6 +30,17 @@ export async function reviewPrediction(
   const v = parsed.data;
   const supabase = await createClient();
 
+  // Explicit accessibility check (defense-in-depth): the select is RLS-scoped,
+  // so a returned row confirms the reviewer is permitted to see this screening.
+  const { data: existing, error: fetchErr } = await supabase
+    .from("predictions")
+    .select("id")
+    .eq("id", v.predictionId)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (fetchErr) return { ok: false, error: fetchErr.message };
+  if (!existing) return { ok: false, error: "Screening not found or not accessible." };
+
   const { data: updated, error } = await supabase
     .from("predictions")
     .update({
@@ -100,6 +111,26 @@ export async function updateAppointmentStatus(
   }
 
   const supabase = await createClient();
+
+  // Fetch first (RLS-scoped) so we can enforce object-level authz in code rather
+  // than trusting RLS alone: a doctor may only act on their own appointments.
+  const { data: appt, error: apptErr } = await supabase
+    .from("appointments")
+    .select("id, patient_id, doctor_id")
+    .eq("id", v.appointmentId)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (apptErr) return { ok: false, error: apptErr.message };
+  if (!appt) return { ok: false, error: "Appointment not found or not accessible." };
+
+  if (user.profile.role === "doctor") {
+    const doctor = await getMyDoctor();
+    if (!doctor || appt.doctor_id !== doctor.id) {
+      return { ok: false, error: "You can only change appointments assigned to you." };
+    }
+  }
+
   const patch: TablesUpdate<"appointments"> = { status: v.status };
 
   const { data: updated, error } = await supabase
