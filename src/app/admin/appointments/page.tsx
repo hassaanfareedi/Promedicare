@@ -15,7 +15,10 @@ export default async function AdminAppointmentsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Appointments" description="All appointments across your hospital." />
+      <PageHeader
+        title="Appointments"
+        description="All appointments across your hospital. Pending requests first, then by time."
+      />
       {appointments.length === 0 ? (
         <EmptyState icon={CalendarDays} title="No appointments" description="Appointments will appear here." />
       ) : (

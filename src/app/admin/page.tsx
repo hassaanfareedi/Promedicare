@@ -1,7 +1,18 @@
 import Link from "next/link";
-import { BriefcaseMedical, UserCog, Building2, Users, CalendarDays, Inbox } from "lucide-react";
+import {
+  BriefcaseMedical,
+  UserCog,
+  Building2,
+  Users,
+  CalendarDays,
+  Inbox,
+  CalendarCheck,
+} from "lucide-react";
 import { getAdminOverview } from "@/features/admin/data";
-import { getPendingHospitalAppointments } from "@/features/reception/data";
+import {
+  getPendingHospitalAppointments,
+  getConfirmedUpcomingAppointments,
+} from "@/features/reception/data";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -19,9 +30,10 @@ const LINKS = [
 ];
 
 export default async function AdminDashboard() {
-  const [o, pendingList] = await Promise.all([
+  const [o, pendingList, confirmedList] = await Promise.all([
     getAdminOverview(),
     getPendingHospitalAppointments(5),
+    getConfirmedUpcomingAppointments(5),
   ]);
 
   return (
@@ -35,7 +47,7 @@ export default async function AdminDashboard() {
         <StatCard label="Patients" value={o.patients} icon={Users} />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-4">
         <Card className="lg:col-span-2">
           <CardHeader className="flex-row items-center justify-between space-y-0">
             <CardTitle className="text-base">Appointments today</CardTitle>
@@ -71,30 +83,71 @@ export default async function AdminDashboard() {
             </Link>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-base">Confirmed upcoming</CardTitle>
+            <CalendarCheck className="size-4 text-muted-foreground" aria-hidden />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-3xl font-semibold tabular-nums">{o.confirmedUpcoming}</p>
+            <p className="text-sm text-muted-foreground">
+              Confirmed visits scheduled from now onward ({APPOINTMENT_STATUS_META.confirmed.label}).
+            </p>
+            <Link href="/admin/appointments" className={buttonVariants({ variant: "outline", size: "sm" })}>
+              View appointments
+            </Link>
+          </CardContent>
+        </Card>
       </div>
 
-      <Card>
-        <CardHeader className="flex-row items-center justify-between space-y-0">
-          <CardTitle className="text-base">Latest booking requests</CardTitle>
-          <Link
-            href="/admin/appointments"
-            className="text-sm text-teal-600 hover:underline dark:text-teal-400"
-          >
-            View all
-          </Link>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {pendingList.length === 0 ? (
-            <EmptyState
-              icon={CalendarDays}
-              title="No pending requests"
-              description="New patient bookings will appear here until confirmed."
-            />
-          ) : (
-            pendingList.map((a) => <StaffAppointmentRow key={a.id} a={a} />)
-          )}
-        </CardContent>
-      </Card>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader className="flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-base">Latest booking requests</CardTitle>
+            <Link
+              href="/admin/appointments"
+              className="text-sm text-teal-600 hover:underline dark:text-teal-400"
+            >
+              View all
+            </Link>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {pendingList.length === 0 ? (
+              <EmptyState
+                icon={CalendarDays}
+                title="No pending requests"
+                description="New patient bookings will appear here until confirmed."
+              />
+            ) : (
+              pendingList.map((a) => <StaffAppointmentRow key={a.id} a={a} />)
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-base">Upcoming confirmed</CardTitle>
+            <Link
+              href="/admin/appointments"
+              className="text-sm text-teal-600 hover:underline dark:text-teal-400"
+            >
+              View all
+            </Link>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {confirmedList.length === 0 ? (
+              <EmptyState
+                icon={CalendarCheck}
+                title="No confirmed upcoming"
+                description="Confirmed appointments stay visible here until their visit time."
+              />
+            ) : (
+              confirmedList.map((a) => <StaffAppointmentRow key={a.id} a={a} />)
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       <Card>
         <CardContent className="grid gap-3 p-5 sm:grid-cols-2">

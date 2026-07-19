@@ -93,6 +93,25 @@ export async function assignRole(input: RoleAssignInput): Promise<MutationResult
   const parsed = roleAssignSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid" };
   const supabase = await createClient();
+
+  const { data: profile, error: profileErr } = await supabase
+    .from("profiles")
+    .select("id, role, hospital_id")
+    .eq("id", parsed.data.profileId)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (profileErr) return { ok: false, error: profileErr.message };
+  if (!profile || profile.hospital_id !== hid) {
+    return { ok: false, error: "Staff member not found in your hospital." };
+  }
+  if (profile.role !== "doctor" && profile.role !== "receptionist") {
+    return {
+      ok: false,
+      error: "Only Doctor or Receptionist roles can be changed here. Patients are not managed on Staff.",
+    };
+  }
+
   const { error } = await supabase
     .from("profiles")
     .update({ role: parsed.data.role, hospital_id: hid })

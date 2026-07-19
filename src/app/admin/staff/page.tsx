@@ -14,13 +14,13 @@ export default async function AdminStaffPage() {
     <div className="space-y-6">
       <PageHeader
         title="Staff"
-        description="Assign roles to people in your hospital. Users appear here once they belong to your hospital."
+        description="Assign Doctor or Receptionist among hospital staff. Patients are not listed here."
       />
       {staff.length === 0 ? (
         <EmptyState
           icon={UserCog}
           title="No staff yet"
-          description="Invite team members to sign up; once linked to your hospital you can assign their roles here."
+          description="Hospital staff with Doctor or Receptionist roles will appear here so you can switch their assignment."
         />
       ) : (
         <StaffTable staff={staff} />

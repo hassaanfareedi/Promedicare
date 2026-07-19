@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/session";
+import { dayBoundsInTimeZone } from "@/lib/datetime";
 import type {
   AppointmentStatus,
   Department,
@@ -54,12 +55,15 @@ export async function getSpecialties(): Promise<Specialty[]> {
   return data ?? [];
 }
 
-/** All profiles within the admin's hospital (RLS-scoped). */
+const STAFF_ROLES = ["doctor", "receptionist", "hospital_admin"] as const;
+
+/** Hospital staff profiles only (excludes patients). RLS-scoped. */
 export async function getStaff(): Promise<Profile[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("profiles")
     .select("*")
+    .in("role", [...STAFF_ROLES])
     .is("deleted_at", null)
     .order("full_name");
   return data ?? [];
@@ -95,31 +99,42 @@ export type AdminOverview = {
   appointmentsToday: number;
   todayByStatus: { status: AppointmentStatus; count: number }[];
   pendingRequests: number;
+  confirmedUpcoming: number;
 };
 
 export async function getAdminOverview(): Promise<AdminOverview> {
   const supabase = await createClient();
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  const end = new Date();
-  end.setHours(23, 59, 59, 999);
+  const hospital = await getMyHospital();
+  const timeZone = hospital?.timezone?.trim() || "Asia/Karachi";
+  const { startIso, endIso } = dayBoundsInTimeZone(timeZone);
+  const nowIso = new Date().toISOString();
 
-  const [doctors, staff, departments, patients, todayRows, pending] = await Promise.all([
+  const [doctors, staff, departments, patients, todayRows, pending, confirmed] = await Promise.all([
     supabase.from("doctors").select("id", { count: "exact", head: true }).is("deleted_at", null),
-    supabase.from("profiles").select("id", { count: "exact", head: true }).is("deleted_at", null),
+    supabase
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .in("role", [...STAFF_ROLES])
+      .is("deleted_at", null),
     supabase.from("departments").select("id", { count: "exact", head: true }).is("deleted_at", null),
     supabase.from("patients").select("id", { count: "exact", head: true }).is("deleted_at", null),
     supabase
       .from("appointments")
       .select("status")
       .is("deleted_at", null)
-      .gte("scheduled_start", start.toISOString())
-      .lte("scheduled_start", end.toISOString()),
+      .gte("scheduled_start", startIso)
+      .lte("scheduled_start", endIso),
     supabase
       .from("appointments")
       .select("id", { count: "exact", head: true })
       .eq("status", "pending")
       .is("deleted_at", null),
+    supabase
+      .from("appointments")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "confirmed")
+      .is("deleted_at", null)
+      .gte("scheduled_start", nowIso),
   ]);
 
   const statusMap = new Map<AppointmentStatus, number>();
@@ -140,6 +155,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     appointmentsToday,
     todayByStatus,
     pendingRequests: pending.count ?? 0,
+    confirmedUpcoming: confirmed.count ?? 0,
   };
 }
 

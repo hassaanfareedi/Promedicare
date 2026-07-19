@@ -46,6 +46,6 @@ export type AvailabilityInput = z.infer<typeof availabilitySchema>;
 
 export const roleAssignSchema = z.object({
   profileId: z.string().uuid(),
-  role: z.enum(["patient", "doctor", "receptionist"]),
+  role: z.enum(["doctor", "receptionist"]),
 });
 export type RoleAssignInput = z.infer<typeof roleAssignSchema>;

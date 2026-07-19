@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const ASSIGNABLE: UserRole[] = ["patient", "doctor", "receptionist"];
+const ASSIGNABLE: UserRole[] = ["doctor", "receptionist"];
 
 function StaffRow({ profile }: { profile: Profile }) {
   const router = useRouter();
@@ -35,7 +35,7 @@ function StaffRow({ profile }: { profile: Profile }) {
 
   function save() {
     startTransition(async () => {
-      const res = await assignRole({ profileId: profile.id, role: role as "patient" | "doctor" | "receptionist" });
+      const res = await assignRole({ profileId: profile.id, role: role as "doctor" | "receptionist" });
       if (!res.ok) {
         toast.error(res.error);
         return;

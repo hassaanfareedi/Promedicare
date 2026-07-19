@@ -103,6 +103,20 @@ export async function getPendingHospitalAppointments(limit = 5): Promise<StaffAp
   return enrich((data ?? []) as Appointment[]);
 }
 
+/** Confirmed upcoming appointments (hospital-scoped), soonest first. */
+export async function getConfirmedUpcomingAppointments(limit = 5): Promise<StaffAppointment[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("appointments")
+    .select(STAFF_APPT_COLUMNS)
+    .eq("status", "confirmed")
+    .is("deleted_at", null)
+    .gte("scheduled_start", new Date().toISOString())
+    .order("scheduled_start", { ascending: true })
+    .limit(limit);
+  return enrich((data ?? []) as Appointment[]);
+}
+
 /** Count of pending appointment requests (hospital-scoped via RLS). */
 export async function getPendingAppointmentRequestCount(): Promise<number> {
   const supabase = await createClient();
