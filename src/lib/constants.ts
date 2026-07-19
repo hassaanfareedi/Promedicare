@@ -68,13 +68,41 @@ export const RISK_META: Record<
 
 export const APPOINTMENT_STATUS_META: Record<
   AppointmentStatus,
-  { label: string; tone: string }
+  { label: string; tone: string; hint: string }
 > = {
-  pending: { label: "Pending", tone: "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300" },
-  confirmed: { label: "Confirmed", tone: "bg-teal-100 text-teal-800 dark:bg-teal-950/50 dark:text-teal-300" },
-  checked_in: { label: "Checked in", tone: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300" },
-  in_progress: { label: "In progress", tone: "bg-orange-100 text-orange-800 dark:bg-orange-950/50 dark:text-orange-300" },
-  completed: { label: "Completed", tone: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300" },
-  cancelled: { label: "Cancelled", tone: "bg-red-100 text-red-800 dark:bg-red-950/50 dark:text-red-300" },
-  no_show: { label: "No show", tone: "bg-muted text-muted-foreground" },
+  pending: {
+    label: "Pending",
+    tone: "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300",
+    hint: "Waiting for clinic confirmation",
+  },
+  confirmed: {
+    label: "Confirmed",
+    tone: "bg-teal-100 text-teal-800 dark:bg-teal-950/50 dark:text-teal-300",
+    hint: "Your visit is booked — arrive on time",
+  },
+  checked_in: {
+    label: "Checked in",
+    tone: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300",
+    hint: "You are checked in at the clinic",
+  },
+  in_progress: {
+    label: "In progress",
+    tone: "bg-orange-100 text-orange-800 dark:bg-orange-950/50 dark:text-orange-300",
+    hint: "Your consultation is underway",
+  },
+  completed: {
+    label: "Completed",
+    tone: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300",
+    hint: "This visit is finished",
+  },
+  cancelled: {
+    label: "Cancelled",
+    tone: "bg-red-100 text-red-800 dark:bg-red-950/50 dark:text-red-300",
+    hint: "This appointment was cancelled",
+  },
+  no_show: {
+    label: "No show",
+    tone: "bg-muted text-muted-foreground",
+    hint: "Marked as missed",
+  },
 };

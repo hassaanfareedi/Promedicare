@@ -1,14 +1,12 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { CalendarDays, CalendarPlus, MapPin, Stethoscope } from "lucide-react";
+import { CalendarDays, CalendarPlus } from "lucide-react";
 import { getMyAppointments, type AppointmentView } from "@/features/patient/data";
+import { PatientAppointmentCard } from "@/features/patient/components/patient-appointment-card";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
-import { StatusBadge } from "@/components/shared/status-badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { formatDateTime, formatDoctorName } from "@/lib/format";
 import { CancelAppointmentButton } from "@/features/appointments/components/cancel-appointment-button";
 import { RescheduleDialog } from "@/features/appointments/components/reschedule-dialog";
 
@@ -20,38 +18,17 @@ const ACTIVE = new Set(["pending", "confirmed", "checked_in", "in_progress"]);
 function AppointmentRow({ a }: { a: AppointmentView }) {
   const upcoming = new Date(a.scheduled_start) >= new Date() && ACTIVE.has(a.status);
   return (
-    <Card>
-      <CardContent className="flex flex-wrap items-center justify-between gap-4 p-4">
-        <div className="flex items-start gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-teal-50 text-teal-600 dark:bg-teal-950/50">
-            <Stethoscope className="size-5" aria-hidden />
-          </span>
-          <div className="min-w-0">
-            <p className="font-medium">
-              {a.doctorName ? formatDoctorName(a.doctorName) : "Doctor to be assigned"}
-            </p>
-            <p className="text-sm text-muted-foreground">{formatDateTime(a.scheduled_start)}</p>
-            <p className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-              {a.specialtyName && <span>{a.specialtyName}</span>}
-              {a.hospitalName && (
-                <span className="inline-flex items-center gap-1">
-                  <MapPin className="size-3" /> {a.hospitalName}
-                </span>
-              )}
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <StatusBadge status={a.status} />
-          {upcoming && CANCELLABLE.has(a.status) && (
-            <>
-              <RescheduleDialog appointmentId={a.id} doctorId={a.doctor_id} />
-              <CancelAppointmentButton appointmentId={a.id} />
-            </>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+    <PatientAppointmentCard
+      appointment={a}
+      actions={
+        upcoming && CANCELLABLE.has(a.status) ? (
+          <>
+            <RescheduleDialog appointmentId={a.id} doctorId={a.doctor_id} />
+            <CancelAppointmentButton appointmentId={a.id} />
+          </>
+        ) : undefined
+      }
+    />
   );
 }
 
@@ -67,10 +44,10 @@ export default async function AppointmentsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Appointments"
-        description="View and manage your upcoming and past appointments."
+        description="See what is coming up, what the clinic confirmed, and manage your bookings."
         actions={
-          <Link href="/patient/appointments/new" className={buttonVariants({ size: "sm" })}>
-            <CalendarPlus className="size-4" /> Book appointment
+          <Link href="/patient/appointments/new" className={buttonVariants({ size: "default" })}>
+            <CalendarPlus className="size-4" aria-hidden /> Book appointment
           </Link>
         }
       />
@@ -86,10 +63,10 @@ export default async function AppointmentsPage() {
             <EmptyState
               icon={CalendarDays}
               title="No upcoming appointments"
-              description="Book a visit with a specialist."
+              description="Book a visit with a specialist when you are ready."
               action={
-                <Link href="/patient/appointments/new" className={buttonVariants({ size: "sm" })}>
-                  <CalendarPlus className="size-4" /> Book appointment
+                <Link href="/patient/appointments/new" className={buttonVariants({ size: "default" })}>
+                  <CalendarPlus className="size-4" aria-hidden /> Book appointment
                 </Link>
               }
             />
@@ -100,7 +77,11 @@ export default async function AppointmentsPage() {
 
         <TabsContent value="past" className="mt-4 space-y-3">
           {past.length === 0 ? (
-            <EmptyState icon={CalendarDays} title="Nothing here yet" description="Your past appointments will appear here." />
+            <EmptyState
+              icon={CalendarDays}
+              title="Nothing here yet"
+              description="Completed and cancelled visits will show up here."
+            />
           ) : (
             past.map((a) => <AppointmentRow key={a.id} a={a} />)
           )}

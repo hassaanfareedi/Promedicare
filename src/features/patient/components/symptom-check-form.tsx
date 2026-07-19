@@ -125,7 +125,7 @@ export function SymptomCheckForm() {
                 onClick={() => toggle(s)}
                 aria-pressed={symptoms.includes(s)}
                 className={cn(
-                  "rounded-full border px-3 py-1 text-sm transition-colors",
+                  "min-h-10 rounded-full border px-3.5 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   symptoms.includes(s)
                     ? "border-teal-600 bg-teal-600 text-white"
                     : "border-input bg-background hover:bg-accent",

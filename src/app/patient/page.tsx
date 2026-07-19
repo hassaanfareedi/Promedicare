@@ -1,137 +1,158 @@
 import Link from "next/link";
-import { Activity, CalendarDays, ClipboardList, CalendarPlus, ArrowRight, Stethoscope } from "lucide-react";
+import {
+  Activity,
+  CalendarDays,
+  ClipboardList,
+  CalendarPlus,
+  ArrowRight,
+  Stethoscope,
+} from "lucide-react";
 import { getPatientOverview } from "@/features/patient/data";
-import { PageHeader } from "@/components/shared/page-header";
-import { StatCard } from "@/components/shared/stat-card";
+import { PatientAppointmentCard } from "@/features/patient/components/patient-appointment-card";
 import { EmptyState } from "@/components/shared/empty-state";
 import { AiDisclaimer } from "@/components/shared/ai-disclaimer";
 import { RiskBadge } from "@/components/shared/risk-badge";
-import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
-import { formatDateTime, formatDate, formatDoctorName } from "@/lib/format";
+import { formatDate } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { RiskLevel } from "@/types";
 
 export default async function PatientDashboard() {
   const { displayName, upcoming, recentScreenings, stats } = await getPatientOverview();
   const firstName = displayName?.split(" ")[0] ?? "there";
+  const nextVisit = upcoming[0] ?? null;
+  const primaryHref = nextVisit ? "/patient/symptom-check" : "/patient/appointments/new";
+  const primaryLabel = nextVisit ? "Check symptoms" : "Book a visit";
+  const PrimaryIcon = nextVisit ? Activity : CalendarPlus;
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title={`Welcome back, ${firstName}`}
-        description="Track your screenings and appointments in one place."
-        actions={
-          <Link href="/patient/symptom-check" className={buttonVariants({ size: "sm" })}>
-            <Activity className="size-4" /> Symptom check
-          </Link>
-        }
-      />
+    <div className="space-y-8">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-1.5">
+          <h1 className="font-heading text-3xl font-semibold tracking-tight text-balance">
+            Welcome back, {firstName}
+          </h1>
+          <p className="max-w-xl text-pretty text-sm text-foreground/70 sm:text-base">
+            {nextVisit
+              ? "Your next visit is below. Check symptoms anytime if you need guidance before you go."
+              : "Start with a symptom check or book a visit with a specialist."}
+          </p>
+        </div>
+        <Link
+          href={primaryHref}
+          className={cn(buttonVariants({ size: "default" }), "shrink-0 gap-2 self-start sm:self-auto")}
+        >
+          <PrimaryIcon className="size-4" aria-hidden />
+          {primaryLabel}
+        </Link>
+      </header>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Upcoming appointments" value={stats.upcomingCount} icon={CalendarDays} />
-        <StatCard label="Total appointments" value={stats.totalAppointments} icon={CalendarPlus} />
-        <StatCard label="AI screenings" value={stats.screeningCount} icon={ClipboardList} />
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader className="flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-base">Upcoming appointments</CardTitle>
+      {nextVisit ? (
+        <section aria-labelledby="next-visit-heading" className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <h2 id="next-visit-heading" className="sr-only">
+              Next appointment
+            </h2>
             <Link
               href="/patient/appointments"
-              className="text-sm text-teal-600 hover:underline dark:text-teal-400"
+              className="ml-auto text-sm font-medium text-teal-700 underline-offset-4 hover:underline dark:text-teal-400"
             >
-              View all
+              View all appointments
             </Link>
-          </CardHeader>
-          <CardContent>
-            {upcoming.length === 0 ? (
-              <EmptyState
-                icon={CalendarDays}
-                title="No upcoming appointments"
-                description="Book a visit with a specialist to get started."
-                action={
-                  <Link href="/patient/appointments/new" className={buttonVariants({ size: "sm" })}>
-                    <CalendarPlus className="size-4" /> Book appointment
-                  </Link>
-                }
-              />
-            ) : (
-              <ul className="divide-y">
-                {upcoming.map((a) => (
-                  <li key={a.id} className="flex items-center justify-between gap-3 py-3">
-                    <div className="min-w-0">
-                      <p className="truncate font-medium">
-                        {a.doctorName ? formatDoctorName(a.doctorName) : "Doctor to be assigned"}
-                      </p>
-                      <p className="truncate text-sm text-muted-foreground">
-                        {formatDateTime(a.scheduled_start)}
-                        {a.specialtyName ? ` · ${a.specialtyName}` : ""}
-                      </p>
-                    </div>
-                    <StatusBadge status={a.status} />
-                  </li>
-                ))}
-              </ul>
-            )}
+          </div>
+          <PatientAppointmentCard appointment={nextVisit} featured />
+        </section>
+      ) : (
+        <Card className="border-dashed">
+          <CardContent className="p-2">
+            <EmptyState
+              icon={CalendarDays}
+              title="No upcoming appointments"
+              description="Book a visit when you are ready, or run a symptom check first."
+              action={
+                <Link href="/patient/appointments/new" className={buttonVariants({ size: "sm" })}>
+                  <CalendarPlus className="size-4" aria-hidden /> Book appointment
+                </Link>
+              }
+            />
           </CardContent>
         </Card>
+      )}
 
-        <Card>
-          <CardHeader className="flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-base">Recent screenings</CardTitle>
-            <Link
-              href="/patient/screenings"
-              className="text-sm text-teal-600 hover:underline dark:text-teal-400"
-            >
-              View all
-            </Link>
-          </CardHeader>
-          <CardContent>
-            {recentScreenings.length === 0 ? (
-              <EmptyState
-                icon={Stethoscope}
-                title="No screenings yet"
-                description="Run an AI symptom check to see your risk assessment."
-                action={
-                  <Link href="/patient/symptom-check" className={buttonVariants({ size: "sm" })}>
-                    <Activity className="size-4" /> Start now
-                  </Link>
-                }
-              />
-            ) : (
-              <ul className="divide-y">
-                {recentScreenings.map((p) => (
-                  <li key={p.id} className="flex items-center justify-between gap-3 py-3">
+      <dl className="grid grid-cols-3 divide-x overflow-hidden rounded-xl border bg-card text-center">
+        <div className="px-3 py-3.5 sm:px-4 sm:py-4">
+          <dt className="text-xs font-medium text-foreground/65 sm:text-sm">Upcoming</dt>
+          <dd className="mt-1 text-xl font-semibold tabular-nums sm:text-2xl">{stats.upcomingCount}</dd>
+        </div>
+        <div className="px-3 py-3.5 sm:px-4 sm:py-4">
+          <dt className="text-xs font-medium text-foreground/65 sm:text-sm">Total visits</dt>
+          <dd className="mt-1 text-xl font-semibold tabular-nums sm:text-2xl">{stats.totalAppointments}</dd>
+        </div>
+        <div className="px-3 py-3.5 sm:px-4 sm:py-4">
+          <dt className="text-xs font-medium text-foreground/65 sm:text-sm">Screenings</dt>
+          <dd className="mt-1 text-xl font-semibold tabular-nums sm:text-2xl">{stats.screeningCount}</dd>
+        </div>
+      </dl>
+
+      <Card>
+        <CardHeader className="flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-base">Recent screenings</CardTitle>
+          <Link
+            href="/patient/screenings"
+            className="text-sm font-medium text-teal-700 underline-offset-4 hover:underline dark:text-teal-400"
+          >
+            View all
+          </Link>
+        </CardHeader>
+        <CardContent>
+          {recentScreenings.length === 0 ? (
+            <EmptyState
+              icon={Stethoscope}
+              title="No screenings yet"
+              description="Run an AI symptom check to see your risk assessment."
+              action={
+                <Link href="/patient/symptom-check" className={buttonVariants({ size: "sm" })}>
+                  <Activity className="size-4" aria-hidden /> Start now
+                </Link>
+              }
+            />
+          ) : (
+            <ul className="divide-y">
+              {recentScreenings.map((p) => (
+                <li key={p.id}>
+                  <Link
+                    href="/patient/screenings"
+                    className="flex min-h-11 items-center justify-between gap-3 py-3 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
                     <div className="min-w-0">
                       <p className="truncate font-medium">
                         {p.recommended_specialty_label ?? "Screening"}
                       </p>
-                      <p className="truncate text-sm text-muted-foreground">{formatDate(p.created_at)}</p>
+                      <p className="truncate text-sm text-foreground/65">{formatDate(p.created_at)}</p>
                     </div>
-                    <RiskBadge level={p.risk_level as RiskLevel} />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card className="border-teal-100 bg-teal-50/40 dark:border-teal-900/50 dark:bg-teal-950/10">
-        <CardContent className="flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h3 className="font-medium">Not feeling well?</h3>
-            <p className="text-sm text-muted-foreground">
-              Run a quick AI symptom check and we&apos;ll suggest the right specialist.
-            </p>
-          </div>
-          <Link href="/patient/symptom-check" className={buttonVariants()}>
-            Start symptom check <ArrowRight className="size-4" />
-          </Link>
+                    <span className="flex shrink-0 items-center gap-2">
+                      <RiskBadge level={p.risk_level as RiskLevel} />
+                      <ArrowRight className="size-4 text-foreground/40" aria-hidden />
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </CardContent>
       </Card>
+
+      <div className="flex flex-wrap items-center gap-3 text-sm text-foreground/70">
+        <ClipboardList className="size-4 shrink-0 text-teal-700 dark:text-teal-400" aria-hidden />
+        <span>Need a specialist sooner?</span>
+        <Link
+          href="/patient/appointments/new"
+          className="font-medium text-teal-700 underline-offset-4 hover:underline dark:text-teal-400"
+        >
+          Book an appointment
+        </Link>
+      </div>
 
       <AiDisclaimer />
     </div>
