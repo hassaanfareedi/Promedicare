@@ -145,12 +145,6 @@
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  @view-transition {
-    navigation: auto;
-  }
-}
-
 @media print {
   body * {
     visibility: hidden !important;

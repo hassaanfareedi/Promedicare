@@ -44,14 +44,25 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  // Build a redirect that carries over any auth cookies Supabase refreshed onto
+  // `response`. Dropping them desyncs the browser/server session, which can
+  // silently break subsequent client-side (RSC) navigations until a full
+  // reload — exactly the "links only work after refresh" failure mode.
+  const redirectTo = (build: (url: URL) => void): NextResponse => {
+    const url = request.nextUrl.clone();
+    build(url);
+    const redirect = NextResponse.redirect(url);
+    response.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie));
+    return redirect;
+  };
+
   // Unauthenticated users may only access public routes.
   if (!user) {
     if (isPublicPath(pathname)) return response;
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    const redirectTo = `${pathname}${request.nextUrl.search}`;
-    url.searchParams.set("redirectTo", redirectTo);
-    return NextResponse.redirect(url);
+    return redirectTo((url) => {
+      url.pathname = "/login";
+      url.searchParams.set("redirectTo", `${pathname}${request.nextUrl.search}`);
+    });
   }
 
   // Authenticated: resolve role + onboarding state for gating.
@@ -61,15 +72,31 @@ export async function updateSession(request: NextRequest) {
     .eq("id", user.id)
     .single();
 
-  const role = (profile?.role ?? "patient") as UserRole;
-  const onboarded = profile?.onboarding_completed ?? false;
+  // If the profile lookup failed (transient error / RLS hiccup), do not issue
+  // role or onboarding redirects. Bouncing an authenticated RSC navigation on a
+  // null profile can abort client-side navigation. The server layout guards
+  // (`requireRole`) still enforce access on the actual render.
+  if (!profile) return response;
+
+  const role = profile.role as UserRole;
+  const onboarded = profile.onboarding_completed ?? false;
 
   // Keep signed-in users out of the auth pages.
   if (["/login", "/register", "/forgot-password"].some((p) => pathname.startsWith(p))) {
-    const url = request.nextUrl.clone();
-    url.pathname = ROLE_HOME[role];
-    return NextResponse.redirect(url);
+    return redirectTo((url) => {
+      url.pathname = ROLE_HOME[role];
+    });
   }
+
+  // Skip role/onboarding redirects for prefetch requests. A prefetched RSC
+  // payload that resolves to a redirect gets cached by the router and then
+  // deadens the corresponding <Link> click. The real (non-prefetch) navigation
+  // re-runs this middleware and gates correctly.
+  const isPrefetch =
+    request.headers.get("next-router-prefetch") === "1" ||
+    request.headers.get("purpose") === "prefetch" ||
+    (request.headers.get("sec-purpose")?.includes("prefetch") ?? false);
+  if (isPrefetch) return response;
 
   // Profile-completion gate (patients complete an onboarding profile).
   // Allow password recovery while onboarding is incomplete.
@@ -78,9 +105,9 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/reset-password") ||
     pathname.startsWith("/auth");
   if (!onboarded && role === "patient" && !onboardingExempt) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/onboarding";
-    return NextResponse.redirect(url);
+    return redirectTo((url) => {
+      url.pathname = "/onboarding";
+    });
   }
 
   // Role-prefix guard: a role may only enter its own portal area.
@@ -89,9 +116,9 @@ export async function updateSession(request: NextRequest) {
   if (inSomePortal) {
     const allowed = pathname.startsWith(ROLE_PREFIX[role]);
     if (!allowed) {
-      const url = request.nextUrl.clone();
-      url.pathname = ROLE_HOME[role];
-      return NextResponse.redirect(url);
+      return redirectTo((url) => {
+        url.pathname = ROLE_HOME[role];
+      });
     }
   }
 
