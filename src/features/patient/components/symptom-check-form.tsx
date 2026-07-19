@@ -210,7 +210,7 @@ export function SymptomCheckForm() {
                   aria-pressed={severity === s}
                   onClick={() => setSeverity(severity === s ? "" : s)}
                   className={cn(
-                    "flex-1 rounded-lg border px-3 py-2 text-sm capitalize transition-colors",
+                    "flex-1 rounded-lg border px-3 py-2 text-sm capitalize transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                     severity === s ? "border-teal-600 bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300" : "border-input hover:bg-accent",
                   )}
                 >
@@ -229,7 +229,7 @@ export function SymptomCheckForm() {
                   aria-pressed={sex === s}
                   onClick={() => setSex(sex === s ? "" : s)}
                   className={cn(
-                    "flex-1 rounded-lg border px-3 py-2 text-sm capitalize transition-colors",
+                    "flex-1 rounded-lg border px-3 py-2 text-sm capitalize transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                     sex === s ? "border-teal-600 bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300" : "border-input hover:bg-accent",
                   )}
                 >

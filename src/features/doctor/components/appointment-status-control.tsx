@@ -56,6 +56,22 @@ export function AppointmentStatusControl({
 
   const actions = (mode === "doctor" ? DOCTOR_ACTIONS : RECEPTION_ACTIONS)[status] ?? [];
 
+  if (mode === "doctor" && status === "confirmed" && !consultOpen && !feeOpen) {
+    return (
+      <p className="max-w-[12rem] text-xs text-muted-foreground">
+        Waiting for reception check-in
+      </p>
+    );
+  }
+
+  if (mode === "doctor" && status === "pending" && !consultOpen && !feeOpen) {
+    return (
+      <p className="max-w-[12rem] text-xs text-muted-foreground">
+        Awaiting clinic confirmation
+      </p>
+    );
+  }
+
   if (actions.length === 0 && !consultOpen && !feeOpen) return null;
 
   function run(to: AppointmentStatus) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { Bell } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
@@ -8,11 +9,47 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollableList } from "@/components/shared/scrollable-list";
-import type { Notification } from "@/types";
+import { ROLE_HOME } from "@/lib/constants";
+import type { Notification, UserRole } from "@/types";
 
-export function NotificationBell() {
+function notificationHref(role: UserRole, n: Notification): string {
+  const data =
+    n.data && typeof n.data === "object" && !Array.isArray(n.data)
+      ? (n.data as Record<string, unknown>)
+      : null;
+  const hasAppointment = typeof data?.appointmentId === "string";
+  const hasPrediction = typeof data?.predictionId === "string";
+
+  switch (role) {
+    case "doctor":
+      if (n.type === "appointment_booked" || n.type === "appointment_rescheduled" || hasAppointment) {
+        return "/doctor/schedule";
+      }
+      return "/doctor/reviews";
+    case "receptionist":
+      return "/reception/appointments";
+    case "hospital_admin":
+      return "/admin/appointments";
+    case "patient":
+      if (n.type === "prediction_reviewed" || hasPrediction) return "/patient/screenings";
+      if (
+        n.type === "appointment_confirmed" ||
+        n.type === "appointment_rescheduled" ||
+        n.type === "appointment_cancelled" ||
+        hasAppointment
+      ) {
+        return "/patient/appointments";
+      }
+      return "/patient";
+    default:
+      return ROLE_HOME[role];
+  }
+}
+
+export function NotificationBell({ role }: { role: UserRole }) {
   const [items, setItems] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [open, setOpen] = useState(false);
 
   const load = useCallback(async () => {
     const supabase = createClient();
@@ -31,7 +68,6 @@ export function NotificationBell() {
     const supabase = createClient();
     let channel: ReturnType<typeof supabase.channel> | null = null;
 
-    // Realtime push (when the notifications table is in the realtime publication).
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return;
       channel = supabase
@@ -48,7 +84,6 @@ export function NotificationBell() {
         .subscribe();
     });
 
-    // Polling fallback so notifications stay fresh even without realtime enabled.
     const interval = setInterval(() => void load(), 30_000);
 
     return () => {
@@ -67,8 +102,18 @@ export function NotificationBell() {
     setItems((prev) => prev.map((n) => (n.read_at ? n : { ...n, read_at: new Date().toISOString() })));
   }
 
+  async function openNotification(n: Notification) {
+    if (!n.read_at) {
+      const supabase = createClient();
+      const readAt = new Date().toISOString();
+      await supabase.from("notifications").update({ read_at: readAt }).eq("id", n.id);
+      setItems((prev) => prev.map((item) => (item.id === n.id ? { ...item, read_at: readAt } : item)));
+    }
+    setOpen(false);
+  }
+
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         render={
           <Button
@@ -107,16 +152,20 @@ export function NotificationBell() {
           emptyLabel="No notifications yet"
         >
           {items.map((n) => (
-            <div
+            <Link
               key={n.id}
-              className={`border-b px-4 py-3 last:border-0 ${n.read_at ? "" : "bg-teal-50/50 dark:bg-teal-950/20"}`}
+              href={notificationHref(role, n)}
+              onClick={() => void openNotification(n)}
+              className={`block border-b px-4 py-3 last:border-0 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                n.read_at ? "" : "bg-teal-50/50 dark:bg-teal-950/20"
+              }`}
             >
               <p className="text-sm font-medium">{n.title}</p>
               {n.body && <p className="mt-0.5 text-xs text-muted-foreground">{n.body}</p>}
               <p className="mt-1 text-[11px] text-muted-foreground">
                 {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
               </p>
-            </div>
+            </Link>
           ))}
         </ScrollableList>
       </PopoverContent>

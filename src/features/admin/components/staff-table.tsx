@@ -58,7 +58,7 @@ function StaffRow({ profile }: { profile: Profile }) {
             onValueChange={(v) => setRole(v ?? "")}
             items={ASSIGNABLE.map((r) => ({ value: r, label: ROLE_LABEL[r] }))}
           >
-            <SelectTrigger className="w-36">
+            <SelectTrigger className="w-36" aria-label="Role">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

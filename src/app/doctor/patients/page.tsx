@@ -22,10 +22,17 @@ export default async function DoctorPatientsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Patients" description="Patients under your hospital's care." />
+      <PageHeader
+        title="Patients"
+        description="All patients registered at your hospital. Open a row to view their medical file."
+      />
 
       {patients.length === 0 ? (
-        <EmptyState icon={Users} title="No patients yet" description="Patients you treat will appear here." />
+        <EmptyState
+          icon={Users}
+          title="No patients yet"
+          description="Hospital patients will appear here once they are registered."
+        />
       ) : (
         <Card>
           <CardContent className="p-0">

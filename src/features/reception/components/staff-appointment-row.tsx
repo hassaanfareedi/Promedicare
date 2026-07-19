@@ -2,6 +2,7 @@ import { Stethoscope } from "lucide-react";
 import type { StaffAppointment } from "@/features/reception/data";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { APPOINTMENT_STATUS_META } from "@/lib/constants";
 import { formatDateTime, formatDoctorName } from "@/lib/format";
 import { AppointmentStatusControl } from "@/features/doctor/components/appointment-status-control";
 import { RescheduleDialog } from "@/features/appointments/components/reschedule-dialog";
@@ -15,6 +16,8 @@ export function StaffAppointmentRow({
   a: StaffAppointment;
   allowReschedule?: boolean;
 }) {
+  const staffHint = APPOINTMENT_STATUS_META[a.status].staffHint;
+
   return (
     <Card>
       <CardContent className="flex flex-wrap items-center justify-between gap-4 p-4">
@@ -33,17 +36,20 @@ export function StaffAppointmentRow({
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <StatusBadge status={a.status} />
-          {allowReschedule && ACTIVE.has(a.status) && (
-            <RescheduleDialog appointmentId={a.id} doctorId={a.doctor_id} />
-          )}
-          <AppointmentStatusControl
-            mode="reception"
-            appointmentId={a.id}
-            status={a.status}
-            consultationFee={a.consultationFee}
-          />
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <StatusBadge status={a.status} />
+            {allowReschedule && ACTIVE.has(a.status) && (
+              <RescheduleDialog appointmentId={a.id} doctorId={a.doctor_id} />
+            )}
+            <AppointmentStatusControl
+              mode="reception"
+              appointmentId={a.id}
+              status={a.status}
+              consultationFee={a.consultationFee}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">{staffHint}</p>
         </div>
       </CardContent>
     </Card>

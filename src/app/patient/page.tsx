@@ -2,7 +2,6 @@ import Link from "next/link";
 import {
   Activity,
   CalendarDays,
-  ClipboardList,
   CalendarPlus,
   ArrowRight,
   Stethoscope,
@@ -69,12 +68,7 @@ export default async function PatientDashboard() {
             <EmptyState
               icon={CalendarDays}
               title="No upcoming appointments"
-              description="Book a visit when you are ready, or run a symptom check first."
-              action={
-                <Link href="/patient/appointments/new" className={buttonVariants({ size: "sm" })}>
-                  <CalendarPlus className="size-4" aria-hidden /> Book appointment
-                </Link>
-              }
+              description="Use Book a visit above when you are ready, or run a symptom check first."
             />
           </CardContent>
         </Card>
@@ -142,17 +136,6 @@ export default async function PatientDashboard() {
           )}
         </CardContent>
       </Card>
-
-      <div className="flex flex-wrap items-center gap-3 text-sm text-foreground/70">
-        <ClipboardList className="size-4 shrink-0 text-teal-700 dark:text-teal-400" aria-hidden />
-        <span>Need a specialist sooner?</span>
-        <Link
-          href="/patient/appointments/new"
-          className="font-medium text-teal-700 underline-offset-4 hover:underline dark:text-teal-400"
-        >
-          Book an appointment
-        </Link>
-      </div>
 
       <AiDisclaimer />
     </div>

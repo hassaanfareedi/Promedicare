@@ -65,14 +65,15 @@ export function AppShell({
         <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b bg-background/80 px-4 backdrop-blur-sm md:px-6">
           <MobileNav
             items={items}
+            role={role}
             initialBadges={navBadges}
             pendingAppointmentsHref={pendingAppointmentsHref}
           />
-          <div className="lg:hidden">
+          <Link href={ROLE_HOME[role]} className="lg:hidden" aria-label="Home">
             <Logo size="sm" iconOnly />
-          </div>
+          </Link>
           <div className="ml-auto flex items-center gap-1">
-            <NotificationBell />
+            <NotificationBell role={role} />
             <ThemeToggle />
             <UserMenu fullName={user.profile.full_name} email={user.email} role={role} />
           </div>

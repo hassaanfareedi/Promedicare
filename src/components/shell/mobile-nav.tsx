@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -8,13 +9,17 @@ import { Logo } from "@/components/brand/logo";
 import { SidebarNav } from "@/components/shell/sidebar-nav";
 import { SignOutButton } from "@/components/shell/sign-out-button";
 import type { NavItem } from "@/components/shell/nav-config";
+import { ROLE_HOME, ROLE_LABEL } from "@/lib/constants";
+import type { UserRole } from "@/types";
 
 export function MobileNav({
   items,
+  role,
   initialBadges,
   pendingAppointmentsHref,
 }: {
   items: NavItem[];
+  role: UserRole;
   initialBadges?: Record<string, number>;
   pendingAppointmentsHref?: string;
 }) {
@@ -31,10 +36,15 @@ export function MobileNav({
       <SheetContent side="left" className="flex w-72 flex-col p-0">
         <SheetHeader className="border-b">
           <SheetTitle className="flex items-center">
-            <Logo size="sm" />
+            <Link href={ROLE_HOME[role]} onClick={() => setOpen(false)} aria-label="Home">
+              <Logo size="sm" />
+            </Link>
           </SheetTitle>
         </SheetHeader>
         <div className="flex-1 overflow-y-auto py-4">
+          <p className="px-6 pb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            {ROLE_LABEL[role]}
+          </p>
           <SidebarNav
             items={items}
             onNavigate={() => setOpen(false)}

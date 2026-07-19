@@ -68,41 +68,48 @@ export const RISK_META: Record<
 
 export const APPOINTMENT_STATUS_META: Record<
   AppointmentStatus,
-  { label: string; tone: string; hint: string }
+  { label: string; tone: string; hint: string; staffHint: string }
 > = {
   pending: {
     label: "Pending",
     tone: "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300",
     hint: "Waiting for clinic confirmation",
+    staffHint: "Awaiting confirmation",
   },
   confirmed: {
     label: "Confirmed",
     tone: "bg-teal-100 text-teal-800 dark:bg-teal-950/50 dark:text-teal-300",
     hint: "Your visit is booked — arrive on time",
+    staffHint: "Ready for check-in",
   },
   checked_in: {
     label: "Checked in",
-    tone: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300",
+    tone: "bg-sky-100 text-sky-800 dark:bg-sky-950/50 dark:text-sky-300",
     hint: "You are checked in at the clinic",
+    staffHint: "Patient is waiting",
   },
   in_progress: {
     label: "In progress",
     tone: "bg-orange-100 text-orange-800 dark:bg-orange-950/50 dark:text-orange-300",
     hint: "Your consultation is underway",
+    staffHint: "Consultation underway",
   },
   completed: {
     label: "Completed",
     tone: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300",
     hint: "This visit is finished",
+    staffHint: "Visit finished",
   },
   cancelled: {
     label: "Cancelled",
     tone: "bg-red-100 text-red-800 dark:bg-red-950/50 dark:text-red-300",
     hint: "This appointment was cancelled",
+    staffHint: "Cancelled",
   },
   no_show: {
     label: "No show",
     tone: "bg-muted text-muted-foreground",
     hint: "Marked as missed",
+    staffHint: "Missed appointment",
   },
 };

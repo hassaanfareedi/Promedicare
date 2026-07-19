@@ -66,7 +66,7 @@ export function UserMenu({
         <DropdownMenuGroup>
           <DropdownMenuItem render={<Link href={ROLE_SETTINGS[role]} />}>
             <Settings className="size-4" />
-            Settings
+            {role === "patient" ? "Profile" : "Settings"}
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
