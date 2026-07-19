@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { motion, useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "framer-motion";
 import { Logo } from "@/components/brand/logo";
 import { SidebarNav } from "@/components/shell/sidebar-nav";
 import { MobileNav } from "@/components/shell/mobile-nav";
@@ -12,6 +11,7 @@ import { SignOutButton } from "@/components/shell/sign-out-button";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { NAV_BY_ROLE } from "@/components/shell/nav-config";
 import { ROLE_HOME, ROLE_LABEL } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 import type { SessionUser } from "@/lib/auth/session";
 
 export function AppShell({
@@ -27,7 +27,6 @@ export function AppShell({
 }) {
   const role = user.profile.role;
   const items = NAV_BY_ROLE[role];
-  const pathname = usePathname();
   const reduce = useReducedMotion();
 
   return (
@@ -79,19 +78,13 @@ export function AppShell({
           </div>
         </header>
         <main id="main-content" className="flex-1 px-4 py-6 md:px-6 lg:px-8">
-          <div className="mx-auto w-full max-w-6xl">
-            {reduce ? (
-              children
-            ) : (
-              <motion.div
-                key={pathname}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, ease: "easeOut" }}
-              >
-                {children}
-              </motion.div>
+          <div
+            className={cn(
+              "mx-auto w-full max-w-6xl",
+              !reduce && "animate-in fade-in-0 duration-300",
             )}
+          >
+            {children}
           </div>
         </main>
       </div>
