@@ -47,6 +47,7 @@ export function HospitalManager({
   const [pending, startTransition] = useTransition();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
+  const [slugDirty, setSlugDirty] = useState(false);
   const [city, setCity] = useState("");
 
   function add() {
@@ -59,6 +60,7 @@ export function HospitalManager({
       toast.success("Hospital created");
       setName("");
       setSlug("");
+      setSlugDirty(false);
       setCity("");
       router.refresh();
     });
@@ -84,14 +86,22 @@ export function HospitalManager({
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
-                setSlug(slugify(e.target.value));
+                if (!slugDirty) setSlug(slugify(e.target.value));
               }}
-              placeholder="City General Hospital"
+              placeholder="City General Hospital…"
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="h-slug">Slug</Label>
-            <Input id="h-slug" value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="city-general" />
+            <Input
+              id="h-slug"
+              value={slug}
+              onChange={(e) => {
+                setSlugDirty(true);
+                setSlug(e.target.value);
+              }}
+              placeholder="city-general…"
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="h-city">City (optional)</Label>

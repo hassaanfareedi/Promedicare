@@ -65,12 +65,12 @@ export function UserMenu({
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem render={<Link href={ROLE_SETTINGS[role]} />}>
-            <Settings className="size-4" />
+            <Settings className="size-4" aria-hidden />
             {role === "patient" ? "Profile" : "Settings"}
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <SignOutButton className="h-8 px-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive dark:hover:bg-destructive/20" />
+        <SignOutButton asMenuItem />
       </DropdownMenuContent>
     </DropdownMenu>
   );

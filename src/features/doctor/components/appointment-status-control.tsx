@@ -28,6 +28,10 @@ const RECEPTION_ACTIONS: Partial<
     { label: "Check in", to: "checked_in" },
     { label: "No show", to: "no_show" },
   ],
+  checked_in: [
+    { label: "Cancel", to: "cancelled" },
+    { label: "No show", to: "no_show" },
+  ],
 };
 
 export function AppointmentStatusControl({

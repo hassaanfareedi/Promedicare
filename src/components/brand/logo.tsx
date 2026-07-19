@@ -31,7 +31,7 @@ export function Logo({ className, iconOnly = false, size = "md" }: LogoProps) {
           ProMediCare<span className="text-teal-600 dark:text-teal-400"> AI</span>
         </span>
       )}
-      <span className="sr-only">{APP_NAME}</span>
+      {iconOnly && <span className="sr-only">{APP_NAME}</span>}
     </span>
   );
 }

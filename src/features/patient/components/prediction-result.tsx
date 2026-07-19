@@ -49,15 +49,22 @@ export function PredictionResult({ prediction, degraded, bookHref }: Props) {
               <TrendingUp className="size-4 text-teal-600" /> Possible considerations
             </p>
             <ul className="space-y-2.5">
-              {prediction.predicted_conditions.map((c, i) => (
-                <li key={i} className="space-y-1">
-                  <div className="flex items-center justify-between text-sm">
-                    <span>{c.condition}</span>
-                    <span className="tabular-nums text-muted-foreground">{Math.round(c.likelihood * 100)}%</span>
-                  </div>
-                  <Progress value={Math.round(c.likelihood * 100)} />
-                </li>
-              ))}
+              {prediction.predicted_conditions.map((c, i) => {
+                const pct = Math.round(c.likelihood * 100);
+                return (
+                  <li key={i} className="space-y-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <span id={`cond-${i}`}>{c.condition}</span>
+                      <span className="tabular-nums text-muted-foreground">{pct}%</span>
+                    </div>
+                    <Progress
+                      value={pct}
+                      aria-labelledby={`cond-${i}`}
+                      aria-valuetext={`${c.condition} ${pct} percent`}
+                    />
+                  </li>
+                );
+              })}
             </ul>
           </div>
 

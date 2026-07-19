@@ -58,7 +58,8 @@ export function SymptomCheckForm() {
     setNotes("");
   }
 
-  function onSubmit() {
+  function onSubmit(e?: React.FormEvent) {
+    e?.preventDefault();
     const payload = {
       symptoms,
       durationDays: durationDays ? Number(durationDays) : undefined,
@@ -99,8 +100,8 @@ export function SymptomCheckForm() {
           bookHref={`/patient/appointments/new?${params.toString()}`}
         />
         <div className="flex justify-center">
-          <Button variant="outline" onClick={reset}>
-            <RotateCcw className="size-4" /> Run another check
+          <Button type="button" variant="outline" onClick={reset}>
+            <RotateCcw className="size-4" aria-hidden /> Run another check
           </Button>
         </div>
       </div>
@@ -114,151 +115,163 @@ export function SymptomCheckForm() {
           <Activity className="size-5 text-teal-600" aria-hidden /> Describe your symptoms
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-3">
-          <Label>Common symptoms</Label>
-          <div className="flex flex-wrap gap-2">
-            {COMMON_SYMPTOMS.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => toggle(s)}
-                aria-pressed={symptoms.includes(s)}
-                className={cn(
-                  "min-h-10 rounded-full border px-3.5 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  symptoms.includes(s)
-                    ? "border-teal-600 bg-teal-600 text-white"
-                    : "border-input bg-background hover:bg-accent",
-                )}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="custom-symptom">Add another symptom</Label>
-          <div className="flex gap-2">
-            <Input
-              id="custom-symptom"
-              value={custom}
-              onChange={(e) => setCustom(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addCustom();
-                }
-              }}
-              placeholder="e.g. blurred vision"
-            />
-            <Button type="button" variant="outline" onClick={addCustom}>
-              <Plus className="size-4" /> Add
-            </Button>
-          </div>
-          {symptoms.length > 0 && (
-            <div className="flex flex-wrap gap-2 pt-1">
-              {symptoms.map((s) => (
-                <span
+      <CardContent>
+        <form onSubmit={onSubmit} className="space-y-6">
+          <fieldset className="space-y-3">
+            <legend className="text-sm font-medium">Common symptoms</legend>
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Common symptoms">
+              {COMMON_SYMPTOMS.map((s) => (
+                <button
                   key={s}
-                  className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2.5 py-1 text-sm text-teal-700 dark:bg-teal-950/50 dark:text-teal-300"
+                  type="button"
+                  onClick={() => toggle(s)}
+                  aria-pressed={symptoms.includes(s)}
+                  className={cn(
+                    "min-h-10 rounded-full border px-3.5 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    symptoms.includes(s)
+                      ? "border-teal-600 bg-teal-600 text-white"
+                      : "border-input bg-background hover:bg-accent",
+                  )}
                 >
                   {s}
-                  <button type="button" onClick={() => toggle(s)} aria-label={`Remove ${s}`}>
-                    <X className="size-3.5" aria-hidden />
+                </button>
+              ))}
+            </div>
+          </fieldset>
+
+          <div className="space-y-2">
+            <Label htmlFor="custom-symptom">Add another symptom</Label>
+            <div className="flex gap-2">
+              <Input
+                id="custom-symptom"
+                value={custom}
+                onChange={(e) => setCustom(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addCustom();
+                  }
+                }}
+                placeholder="e.g. blurred vision…"
+              />
+              <Button type="button" variant="outline" onClick={addCustom}>
+                <Plus className="size-4" aria-hidden /> Add
+              </Button>
+            </div>
+            {symptoms.length > 0 && (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {symptoms.map((s) => (
+                  <span
+                    key={s}
+                    className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2.5 py-1 text-sm text-teal-700 dark:bg-teal-950/50 dark:text-teal-300"
+                  >
+                    {s}
+                    <button type="button" onClick={() => toggle(s)} aria-label={`Remove ${s}`}>
+                      <X className="size-3.5" aria-hidden />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="duration">Duration (days)</Label>
+              <Input
+                id="duration"
+                type="number"
+                min={0}
+                value={durationDays}
+                onChange={(e) => setDurationDays(e.target.value)}
+                placeholder="e.g. 3…"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="age">Age</Label>
+              <Input
+                id="age"
+                type="number"
+                min={0}
+                max={120}
+                value={age}
+                onChange={(e) => setAge(e.target.value)}
+                placeholder="e.g. 34…"
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium">Severity</legend>
+              <div className="flex gap-2" role="group" aria-label="Severity">
+                {SEVERITIES.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    aria-pressed={severity === s}
+                    onClick={() => setSeverity(severity === s ? "" : s)}
+                    className={cn(
+                      "flex-1 rounded-lg border px-3 py-2 text-sm capitalize transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      severity === s
+                        ? "border-teal-600 bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300"
+                        : "border-input hover:bg-accent",
+                    )}
+                  >
+                    {s}
                   </button>
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            </fieldset>
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium">Sex</legend>
+              <div className="flex gap-2" role="group" aria-label="Sex">
+                {SEXES.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    aria-pressed={sex === s}
+                    onClick={() => setSex(sex === s ? "" : s)}
+                    className={cn(
+                      "flex-1 rounded-lg border px-3 py-2 text-sm capitalize transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      sex === s
+                        ? "border-teal-600 bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300"
+                        : "border-input hover:bg-accent",
+                    )}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="duration">Duration (days)</Label>
-            <Input
-              id="duration"
-              type="number"
-              min={0}
-              value={durationDays}
-              onChange={(e) => setDurationDays(e.target.value)}
-              placeholder="e.g. 3"
+            <Label htmlFor="notes">Anything else? (optional)</Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              placeholder="Describe how you're feeling, any relevant history, medications, etc.…"
+              maxLength={1000}
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="age">Age</Label>
-            <Input
-              id="age"
-              type="number"
-              min={0}
-              max={120}
-              value={age}
-              onChange={(e) => setAge(e.target.value)}
-              placeholder="e.g. 34"
-            />
-          </div>
-        </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label>Severity</Label>
-            <div className="flex gap-2">
-              {SEVERITIES.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  aria-pressed={severity === s}
-                  onClick={() => setSeverity(severity === s ? "" : s)}
-                  className={cn(
-                    "flex-1 rounded-lg border px-3 py-2 text-sm capitalize transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                    severity === s ? "border-teal-600 bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300" : "border-input hover:bg-accent",
-                  )}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label>Sex</Label>
-            <div className="flex gap-2">
-              {SEXES.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  aria-pressed={sex === s}
-                  onClick={() => setSex(sex === s ? "" : s)}
-                  className={cn(
-                    "flex-1 rounded-lg border px-3 py-2 text-sm capitalize transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                    sex === s ? "border-teal-600 bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300" : "border-input hover:bg-accent",
-                  )}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="notes">Anything else? (optional)</Label>
-          <Textarea
-            id="notes"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={3}
-            placeholder="Describe how you're feeling, any relevant history, medications, etc."
-            maxLength={1000}
-          />
-        </div>
-
-        <Button onClick={onSubmit} disabled={pending || symptoms.length === 0} className="w-full">
-          {pending ? <Loader2 className="animate-spin" /> : <Activity className="size-4" />}
-          {pending ? "Analysing…" : "Run AI screening"}
-        </Button>
-        <p className="text-center text-xs text-muted-foreground">
-          Your screening is saved to your record and shared with your care team for review.
-        </p>
+          <Button
+            type="submit"
+            disabled={pending || symptoms.length === 0}
+            title={symptoms.length === 0 ? "Select at least one symptom" : undefined}
+            className="w-full"
+            aria-busy={pending}
+          >
+            {pending ? <Loader2 className="animate-spin" aria-hidden /> : <Activity className="size-4" aria-hidden />}
+            {pending ? "Analysing…" : "Run AI screening"}
+          </Button>
+          <p className="text-center text-xs text-muted-foreground">
+            Your screening is saved to your record and shared with your care team for review.
+          </p>
+        </form>
       </CardContent>
     </Card>
   );

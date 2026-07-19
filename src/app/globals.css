@@ -153,11 +153,34 @@
 
 @media print {
   body * {
-    visibility: hidden;
+    visibility: hidden !important;
   }
   .rx-print,
   .rx-print * {
-    visibility: visible;
+    visibility: visible !important;
+  }
+  /* Hide dialog chrome so only the prescription body prints */
+  [data-slot="dialog-overlay"],
+  [data-slot="dialog-close"],
+  [data-slot="dialog-header"],
+  [data-slot="dialog-footer"],
+  [data-slot="dialog-title"],
+  [data-slot="dialog-description"] {
+    display: none !important;
+  }
+  [data-slot="dialog-content"],
+  [data-slot="dialog-popup"] {
+    position: static !important;
+    inset: auto !important;
+    transform: none !important;
+    max-height: none !important;
+    max-width: none !important;
+    width: 100% !important;
+    overflow: visible !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    background: transparent !important;
   }
   .rx-print {
     position: absolute;

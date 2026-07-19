@@ -5,6 +5,17 @@ import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Sign in" };
 
+function LoginFormFallback() {
+  return (
+    <div className="grid gap-4" role="status" aria-label="Loading sign-in form">
+      <div className="h-10 animate-pulse rounded-lg bg-muted" />
+      <div className="h-10 animate-pulse rounded-lg bg-muted" />
+      <div className="h-10 animate-pulse rounded-lg bg-muted" />
+      <div className="h-10 animate-pulse rounded-lg bg-muted" />
+    </div>
+  );
+}
+
 export default function LoginPage() {
   return (
     <div className="flex flex-col gap-6">
@@ -14,7 +25,7 @@ export default function LoginPage() {
           Sign in to your ProMediCare AI account
         </p>
       </div>
-      <Suspense>
+      <Suspense fallback={<LoginFormFallback />}>
         <LoginForm />
       </Suspense>
       <p className="text-center text-sm text-muted-foreground">

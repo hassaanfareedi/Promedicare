@@ -106,24 +106,36 @@ export async function getPatientMedicalFile(patientId: string): Promise<{
     attByAppt.set(att.appointment_id, list);
   }
 
-  const visits: MedicalVisit[] = (appointments ?? []).map((a) => {
-    const note = noteByAppt.get(a.id);
-    return {
-      appointmentId: a.id,
-      scheduledStart: a.scheduled_start,
-      status: a.status,
-      diagnosis: note?.diagnosis ?? null,
-      subjective: note?.subjective ?? null,
-      objective: note?.objective ?? null,
-      assessment: note?.assessment ?? null,
-      plan: note?.plan ?? null,
-      prescription: note?.prescription ?? null,
-      medications: parseMedications(note?.medications ?? null),
-      noteId: note?.id ?? null,
-      doctorName: a.doctor_id ? (doctorMap.get(a.doctor_id) ?? null) : null,
-      attachments: attByAppt.get(a.id) ?? [],
-    };
-  });
+  const visits: MedicalVisit[] = (appointments ?? [])
+    .map((a) => {
+      const note = noteByAppt.get(a.id);
+      const attachments = attByAppt.get(a.id) ?? [];
+      const medications = parseMedications(note?.medications ?? null);
+      return {
+        appointmentId: a.id,
+        scheduledStart: a.scheduled_start,
+        status: a.status,
+        diagnosis: note?.diagnosis ?? null,
+        subjective: note?.subjective ?? null,
+        objective: note?.objective ?? null,
+        assessment: note?.assessment ?? null,
+        plan: note?.plan ?? null,
+        prescription: note?.prescription ?? null,
+        medications,
+        noteId: note?.id ?? null,
+        doctorName: a.doctor_id ? (doctorMap.get(a.doctor_id) ?? null) : null,
+        attachments,
+      };
+    })
+    .filter((v) => {
+      // Only real clinical records — not empty upcoming bookings.
+      if (v.status === "completed") return true;
+      if (v.noteId) return true;
+      if (v.attachments.length > 0) return true;
+      if (v.prescription || v.medications.length > 0) return true;
+      if (v.diagnosis || v.subjective || v.assessment) return true;
+      return false;
+    });
 
   return { patient, visits };
 }

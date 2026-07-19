@@ -22,6 +22,7 @@ export function SpecialtyManager({ specialties }: { specialties: Specialty[] }) 
   const [pending, startTransition] = useTransition();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
+  const [slugDirty, setSlugDirty] = useState(false);
   const [description, setDescription] = useState("");
 
   function add() {
@@ -34,6 +35,7 @@ export function SpecialtyManager({ specialties }: { specialties: Specialty[] }) 
       toast.success("Specialty created");
       setName("");
       setSlug("");
+      setSlugDirty(false);
       setDescription("");
       router.refresh();
     });
@@ -51,14 +53,22 @@ export function SpecialtyManager({ specialties }: { specialties: Specialty[] }) 
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
-                setSlug(slugify(e.target.value));
+                if (!slugDirty) setSlug(slugify(e.target.value));
               }}
-              placeholder="Cardiology"
+              placeholder="Cardiology…"
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="s-slug">Slug</Label>
-            <Input id="s-slug" value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="cardiology" />
+            <Input
+              id="s-slug"
+              value={slug}
+              onChange={(e) => {
+                setSlugDirty(true);
+                setSlug(e.target.value);
+              }}
+              placeholder="cardiology…"
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="s-desc">Description (optional)</Label>

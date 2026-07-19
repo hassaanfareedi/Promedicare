@@ -61,7 +61,15 @@ export function PromoteStaffDialog({ candidates }: { candidates: Profile[] }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button size="sm" disabled={candidates.length === 0}>
+          <Button
+            size="sm"
+            disabled={candidates.length === 0}
+            title={
+              candidates.length === 0
+                ? "No patient accounts available to promote"
+                : "Promote a patient account to Doctor or Receptionist"
+            }
+          >
             <UserPlus className="size-4" aria-hidden /> Promote to staff
           </Button>
         }

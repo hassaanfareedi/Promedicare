@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -55,9 +56,14 @@ export function ReviewDialog({ predictionId, prediction, patientName, alreadyRev
           </Button>
         }
       />
-      <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="max-h-[88vh] overflow-y-auto overscroll-contain sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Screening — {patientName}</DialogTitle>
+          <DialogDescription>
+            {alreadyReviewed
+              ? "View this AI screening result."
+              : "Review the AI screening and record your clinical decision."}
+          </DialogDescription>
         </DialogHeader>
         <PredictionResult prediction={prediction} />
 

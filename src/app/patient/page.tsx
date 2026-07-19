@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import { getPatientOverview } from "@/features/patient/data";
 import { PatientAppointmentCard } from "@/features/patient/components/patient-appointment-card";
+import { CancelAppointmentButton } from "@/features/appointments/components/cancel-appointment-button";
+import { RescheduleDialog } from "@/features/appointments/components/reschedule-dialog";
 import { EmptyState } from "@/components/shared/empty-state";
 import { AiDisclaimer } from "@/components/shared/ai-disclaimer";
 import { RiskBadge } from "@/components/shared/risk-badge";
@@ -17,6 +19,8 @@ import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { RiskLevel } from "@/types";
 
+const CANCELLABLE = new Set(["pending", "confirmed"]);
+
 export default async function PatientDashboard() {
   const { displayName, upcoming, recentScreenings, stats } = await getPatientOverview();
   const firstName = displayName?.split(" ")[0] ?? "there";
@@ -24,6 +28,7 @@ export default async function PatientDashboard() {
   const primaryHref = nextVisit ? "/patient/symptom-check" : "/patient/appointments/new";
   const primaryLabel = nextVisit ? "Check symptoms" : "Book a visit";
   const PrimaryIcon = nextVisit ? Activity : CalendarPlus;
+  const canManageNext = nextVisit && CANCELLABLE.has(nextVisit.status);
 
   return (
     <div className="space-y-8">
@@ -60,7 +65,18 @@ export default async function PatientDashboard() {
               View all appointments
             </Link>
           </div>
-          <PatientAppointmentCard appointment={nextVisit} featured />
+          <PatientAppointmentCard
+            appointment={nextVisit}
+            featured
+            actions={
+              canManageNext ? (
+                <>
+                  <RescheduleDialog appointmentId={nextVisit.id} doctorId={nextVisit.doctor_id} />
+                  <CancelAppointmentButton appointmentId={nextVisit.id} />
+                </>
+              ) : undefined
+            }
+          />
         </section>
       ) : (
         <Card className="border-dashed">

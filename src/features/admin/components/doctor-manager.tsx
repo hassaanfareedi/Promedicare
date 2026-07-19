@@ -132,6 +132,9 @@ function AddDoctorDialog({
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Add doctor</DialogTitle>
+          <DialogDescription>
+            Link a staff member with the Doctor role to a clinical profile and optional specialty.
+          </DialogDescription>
         </DialogHeader>
         {candidates.length === 0 ? (
           <div className="space-y-4 py-2">
@@ -181,14 +184,15 @@ function AddDoctorDialog({
                   value={specialtyId || null}
                   onValueChange={(v) => setSpecialtyId(v ?? "")}
                   items={[
-                    { value: null, label: "Optional" },
+                    { value: null, label: "None" },
                     ...specialties.map((s) => ({ value: s.id, label: s.name })),
                   ]}
                 >
-                  <SelectTrigger>
-                    <SelectValue />
+                  <SelectTrigger aria-label="Specialty">
+                    <SelectValue placeholder="Optional…" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value={null}>None</SelectItem>
                     {specialties.map((s) => (
                       <SelectItem key={s.id} value={s.id}>
                         {s.name}
@@ -203,14 +207,15 @@ function AddDoctorDialog({
                   value={departmentId || null}
                   onValueChange={(v) => setDepartmentId(v ?? "")}
                   items={[
-                    { value: null, label: "Optional" },
+                    { value: null, label: "None" },
                     ...departments.map((dep) => ({ value: dep.id, label: dep.name })),
                   ]}
                 >
-                  <SelectTrigger>
-                    <SelectValue />
+                  <SelectTrigger aria-label="Department">
+                    <SelectValue placeholder="Optional…" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value={null}>None</SelectItem>
                     {departments.map((dep) => (
                       <SelectItem key={dep.id} value={dep.id}>
                         {dep.name}
@@ -374,6 +379,9 @@ function EditDoctorDialog({
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Edit doctor</DialogTitle>
+          <DialogDescription>
+            Update this doctor&apos;s profile, specialty, department, and consultation fee.
+          </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4">
           <div className="space-y-2">
@@ -392,14 +400,15 @@ function EditDoctorDialog({
                 value={specialtyId || null}
                 onValueChange={(v) => setSpecialtyId(v ?? "")}
                 items={[
-                  { value: null, label: "Optional" },
+                  { value: null, label: "None" },
                   ...specialties.map((s) => ({ value: s.id, label: s.name })),
                 ]}
               >
-                <SelectTrigger>
-                  <SelectValue />
+                <SelectTrigger aria-label="Specialty">
+                  <SelectValue placeholder="Optional…" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value={null}>None</SelectItem>
                   {specialties.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
                       {s.name}
@@ -414,14 +423,15 @@ function EditDoctorDialog({
                 value={departmentId || null}
                 onValueChange={(v) => setDepartmentId(v ?? "")}
                 items={[
-                  { value: null, label: "Optional" },
+                  { value: null, label: "None" },
                   ...departments.map((dep) => ({ value: dep.id, label: dep.name })),
                 ]}
               >
-                <SelectTrigger>
-                  <SelectValue />
+                <SelectTrigger aria-label="Department">
+                  <SelectValue placeholder="Optional…" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value={null}>None</SelectItem>
                   {departments.map((dep) => (
                     <SelectItem key={dep.id} value={dep.id}>
                       {dep.name}
