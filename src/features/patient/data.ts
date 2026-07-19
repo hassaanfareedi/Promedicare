@@ -111,29 +111,34 @@ export async function getPatientOverview(): Promise<PatientOverview> {
   const user = await getCurrentUser();
   const nowIso = new Date().toISOString();
 
-  const [{ data: appts }, { data: screenings }, { count: apptCount }, { count: screenCount }] =
-    await Promise.all([
-      supabase
-        .from("appointments")
-        .select(OVERVIEW_APPT_COLUMNS)
-        .is("deleted_at", null)
-        .gte("scheduled_start", nowIso)
-        .in("status", ["pending", "confirmed", "checked_in", "in_progress"])
-        .order("scheduled_start", { ascending: true })
-        .limit(5),
-      supabase
-        .from("predictions")
-        .select("id, recommended_specialty_label, risk_level, created_at")
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false })
-        .limit(3),
-      supabase.from("appointments").select("id", { count: "exact", head: true }).is("deleted_at", null),
-      supabase.from("predictions").select("id", { count: "exact", head: true }).is("deleted_at", null),
-    ]);
+  const [apptsRes, screeningsRes, apptCountRes, screenCountRes] = await Promise.all([
+    supabase
+      .from("appointments")
+      .select(OVERVIEW_APPT_COLUMNS)
+      .is("deleted_at", null)
+      .gte("scheduled_start", nowIso)
+      .in("status", ["pending", "confirmed", "checked_in", "in_progress"])
+      .order("scheduled_start", { ascending: true })
+      .limit(5),
+    supabase
+      .from("predictions")
+      .select("id, recommended_specialty_label, risk_level, created_at")
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(3),
+    supabase.from("appointments").select("id", { count: "exact", head: true }).is("deleted_at", null),
+    supabase.from("predictions").select("id", { count: "exact", head: true }).is("deleted_at", null),
+  ]);
+
+  const appts = apptsRes.data;
+  const screenings = screeningsRes.data;
+  const apptCount = apptCountRes.count;
+  const screenCount = screenCountRes.count;
 
   const upcoming = await enrichAppointments((appts ?? []) as Appointment[], {
     includeHospitalDept: false,
   });
+
   return {
     displayName: user?.profile.full_name ?? null,
     upcoming,
