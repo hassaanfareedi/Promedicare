@@ -42,6 +42,30 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
   const [slot, setSlot] = useState<string | null>(null);
   const [reason, setReason] = useState("");
 
+  const recommendedSpecialtyName = useMemo(() => {
+    if (!recommendedSpecialtyId) return null;
+    return (
+      doctors.find((d) => d.specialty_id === recommendedSpecialtyId)?.specialty_name ?? null
+    );
+  }, [doctors, recommendedSpecialtyId]);
+
+  const sortedHospitals = useMemo(() => {
+    if (!recommendedSpecialtyId) return hospitals;
+    return [...hospitals].sort((a, b) => {
+      const aHas = doctors.some(
+        (d) => d.hospital_id === a.id && d.specialty_id === recommendedSpecialtyId,
+      )
+        ? 0
+        : 1;
+      const bHas = doctors.some(
+        (d) => d.hospital_id === b.id && d.specialty_id === recommendedSpecialtyId,
+      )
+        ? 0
+        : 1;
+      return aHas - bHas;
+    });
+  }, [hospitals, doctors, recommendedSpecialtyId]);
+
   const hospitalDoctors = useMemo(() => {
     const list = doctors.filter((d) => d.hospital_id === hospitalId);
     if (!recommendedSpecialtyId) return list;
@@ -51,6 +75,10 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
       return aMatch - bMatch;
     });
   }, [doctors, hospitalId, recommendedSpecialtyId]);
+
+  const hasRecommendedAtHospital =
+    Boolean(recommendedSpecialtyId) &&
+    hospitalDoctors.some((d) => d.specialty_id === recommendedSpecialtyId);
 
   async function selectDoctor(d: DoctorDirectory) {
     setDoctor(d);
@@ -101,32 +129,53 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
     <div className="space-y-6">
       <Stepper steps={STEPS} current={step} />
 
+      {recommendedSpecialtyId && (
+        <div className="rounded-lg border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-900 dark:border-teal-900 dark:bg-teal-950/40 dark:text-teal-100">
+          From your symptom check — recommended:{" "}
+          <span className="font-medium">{recommendedSpecialtyName ?? "matching specialty"}</span>
+        </div>
+      )}
+
       {step === 0 && (
         <div className="grid gap-3 sm:grid-cols-2">
-          {hospitals.map((h) => (
-            <button
-              key={h.id}
-              type="button"
-              onClick={() => {
-                setHospitalId(h.id);
-                setDoctor(null);
-                setStep(1);
-              }}
-              className={cn(
-                "flex items-start gap-3 rounded-xl border p-4 text-left transition-colors hover:border-teal-500 hover:bg-accent",
-                hospitalId === h.id && "border-teal-600 bg-teal-50 dark:bg-teal-950/30",
-              )}
-            >
-              <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-teal-50 text-teal-600 dark:bg-teal-950/50">
-                <Building2 className="size-5" />
-              </span>
-              <span>
-                <span className="block font-medium">{h.name}</span>
-                {h.city && <span className="block text-sm text-muted-foreground">{h.city}</span>}
-              </span>
-            </button>
-          ))}
-          {hospitals.length === 0 && (
+          {sortedHospitals.map((h) => {
+            const hasRecommended =
+              Boolean(recommendedSpecialtyId) &&
+              doctors.some(
+                (d) => d.hospital_id === h.id && d.specialty_id === recommendedSpecialtyId,
+              );
+            return (
+              <button
+                key={h.id}
+                type="button"
+                onClick={() => {
+                  setHospitalId(h.id);
+                  setDoctor(null);
+                  setStep(1);
+                }}
+                className={cn(
+                  "flex items-start gap-3 rounded-xl border p-4 text-left transition-colors hover:border-teal-500 hover:bg-accent",
+                  hospitalId === h.id && "border-teal-600 bg-teal-50 dark:bg-teal-950/30",
+                )}
+              >
+                <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-teal-50 text-teal-600 dark:bg-teal-950/50">
+                  <Building2 className="size-5" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium">{h.name}</span>
+                    {hasRecommended && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-2 py-0.5 text-[11px] font-medium text-white">
+                        <Star className="size-3" /> Has recommended specialty
+                      </span>
+                    )}
+                  </span>
+                  {h.city && <span className="mt-0.5 block text-sm text-muted-foreground">{h.city}</span>}
+                </span>
+              </button>
+            );
+          })}
+          {sortedHospitals.length === 0 && (
             <p className="text-sm text-muted-foreground">No hospitals are available right now.</p>
           )}
         </div>
@@ -137,6 +186,12 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
           <Button variant="ghost" size="sm" onClick={() => setStep(0)}>
             <ArrowLeft className="size-4" /> Change hospital
           </Button>
+          {recommendedSpecialtyId && !hasRecommendedAtHospital && hospitalDoctors.length > 0 && (
+            <p className="rounded-lg border border-dashed px-3 py-2 text-sm text-muted-foreground">
+              No {recommendedSpecialtyName ?? "recommended"} doctor at this hospital — pick another
+              hospital or choose a different specialty.
+            </p>
+          )}
           <div className="grid gap-3">
             {hospitalDoctors.map((d) => {
               const recommended = recommendedSpecialtyId && d.specialty_id === recommendedSpecialtyId;

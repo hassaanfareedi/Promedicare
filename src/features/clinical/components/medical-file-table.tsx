@@ -60,10 +60,10 @@ export function MedicalFileTable({
                   )}
                 </div>
               </TableCell>
-              <TableCell className="max-w-[12rem] text-sm">
+              <TableCell className="max-w-[12rem] whitespace-normal text-sm">
                 {v.diagnosis ?? "—"}
               </TableCell>
-              <TableCell className="hidden max-w-xs text-sm text-muted-foreground md:table-cell">
+              <TableCell className="hidden max-w-xs whitespace-normal text-sm text-muted-foreground md:table-cell">
                 {v.assessment || v.subjective
                   ? (v.assessment ?? v.subjective)?.slice(0, 120)
                   : "—"}
