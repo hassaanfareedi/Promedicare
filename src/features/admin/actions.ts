@@ -77,7 +77,12 @@ export async function createDepartment(input: DepartmentInput): Promise<Mutation
     .insert({ hospital_id: hid, name: parsed.data.name, description: parsed.data.description || null })
     .select("id")
     .single();
-  if (error) return { ok: false, error: error.message };
+  if (error) {
+    if (error.code === "23505") {
+      return { ok: false, error: "A department with this name already exists." };
+    }
+    return { ok: false, error: error.message };
+  }
   await logAudit({ action: "department.created", entityType: "department", entityId: data.id });
   revalidatePath("/admin/departments");
   return { ok: true };

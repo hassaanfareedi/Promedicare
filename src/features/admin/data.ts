@@ -40,10 +40,14 @@ export type AdminDoctor = {
 };
 
 export async function getDepartments(): Promise<Department[]> {
+  const user = await getCurrentUser();
+  const hid = user?.profile.hospital_id;
+  if (!hid) return [];
   const supabase = await createClient();
   const { data } = await supabase
     .from("departments")
     .select("*")
+    .eq("hospital_id", hid)
     .is("deleted_at", null)
     .order("name");
   return data ?? [];
@@ -129,7 +133,11 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       .select("id", { count: "exact", head: true })
       .in("role", [...STAFF_ROLES])
       .is("deleted_at", null),
-    supabase.from("departments").select("id", { count: "exact", head: true }).is("deleted_at", null),
+    supabase
+      .from("departments")
+      .select("id", { count: "exact", head: true })
+      .eq("hospital_id", hospital?.id ?? "")
+      .is("deleted_at", null),
     supabase.from("patients").select("id", { count: "exact", head: true }).is("deleted_at", null),
     supabase
       .from("appointments")
