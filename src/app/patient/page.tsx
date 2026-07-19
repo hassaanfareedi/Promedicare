@@ -31,17 +31,23 @@ export default async function PatientDashboard() {
   const canManageNext = nextVisit && CANCELLABLE.has(nextVisit.status);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-1.5">
-          <h1 className="font-heading text-3xl font-semibold tracking-tight text-balance">
-            Welcome back, {firstName}
-          </h1>
-          <p className="max-w-xl text-pretty text-sm text-foreground/70 sm:text-base">
-            {nextVisit
-              ? "Your next visit is below. Check symptoms anytime if you need guidance before you go."
-              : "Start with a symptom check or book a visit with a specialist."}
-          </p>
+        <div className="flex items-stretch gap-3">
+          <span
+            aria-hidden
+            className="mt-1 w-1 shrink-0 rounded-full bg-gradient-to-b from-teal-500 to-emerald-600"
+          />
+          <div className="space-y-1.5">
+            <h1 className="font-heading text-3xl font-semibold tracking-tight text-balance">
+              Welcome back, {firstName}
+            </h1>
+            <p className="max-w-xl text-pretty text-sm text-foreground/70 sm:text-base">
+              {nextVisit
+                ? "Your next visit is below. Check symptoms anytime if you need guidance before you go."
+                : "Start with a symptom check or book a visit with a specialist."}
+            </p>
+          </div>
         </div>
         <Link
           href={primaryHref}

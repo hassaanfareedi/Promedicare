@@ -33,7 +33,7 @@ export function UserMenu({
   role: UserRole;
 }) {
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger
         render={
           <Button

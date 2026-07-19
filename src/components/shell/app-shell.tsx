@@ -7,6 +7,7 @@ import { SidebarNav } from "@/components/shell/sidebar-nav";
 import { MobileNav } from "@/components/shell/mobile-nav";
 import { UserMenu } from "@/components/shell/user-menu";
 import { NotificationBell } from "@/components/shell/notification-bell";
+import { PointerEventsGuard } from "@/components/shell/pointer-events-guard";
 import { SignOutButton } from "@/components/shell/sign-out-button";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { NAV_BY_ROLE } from "@/components/shell/nav-config";
@@ -31,6 +32,7 @@ export function AppShell({
 
   return (
     <div className="flex min-h-svh">
+      <PointerEventsGuard />
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-svh w-64 shrink-0 flex-col border-r bg-card lg:flex">
         <div className="flex h-16 items-center border-b px-5">

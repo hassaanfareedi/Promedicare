@@ -72,5 +72,25 @@ for (const role of Object.keys(NAV) as Role[]) {
         await expect(nav.locator(`a[href="${href}"]`).first()).toBeVisible();
       }
     });
+
+    // Regression guard: clicking sidebar links must navigate client-side, even
+    // after opening/closing the header account menu (a modal overlay that could
+    // otherwise leave `pointer-events: none` on the body and deaden all clicks).
+    test(`${role} sidebar links navigate on click`, async ({ page }) => {
+      await page.goto(NAV[role].home);
+      const nav = page.locator("nav").first();
+
+      // Open then dismiss the account menu to exercise the overlay/pointer-events path.
+      await page.getByRole("button", { name: /account menu/i }).click();
+      await page.keyboard.press("Escape");
+
+      // Every non-home link must be reachable by an actual click (not page.goto).
+      for (const href of NAV[role].links.filter((h) => h !== NAV[role].home)) {
+        await nav.locator(`a[href="${href}"]`).first().click();
+        await expect(page).toHaveURL(new RegExp(`${href.replace(/\//g, "\\/")}$`));
+        await expect(page.getByRole("main")).toBeVisible();
+        await expect(page.getByText(/something went wrong/i)).toHaveCount(0);
+      }
+    });
   });
 }

@@ -155,7 +155,7 @@ export default async function AdminDashboard() {
             <Link
               key={l.href}
               href={l.href}
-              className="flex items-center gap-3 rounded-xl border p-4 transition-colors hover:border-teal-500 hover:bg-accent"
+              className="flex items-center gap-3 rounded-xl border p-4 transition-colors hover:border-teal-500 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
             >
               <span className="grid size-10 place-items-center rounded-lg bg-teal-50 text-teal-600 dark:bg-teal-950/50">
                 <l.icon className="size-5" />
