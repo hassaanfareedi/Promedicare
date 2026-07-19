@@ -17,6 +17,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 export function DepartmentManager({ departments }: { departments: Department[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [togglingId, setTogglingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
 
@@ -34,12 +35,13 @@ export function DepartmentManager({ departments }: { departments: Department[] }
     });
   }
 
-  function toggle(id: string, active: boolean) {
-    startTransition(async () => {
-      const res = await setDepartmentActive(id, active);
-      if (!res.ok) toast.error(res.error);
-      else router.refresh();
-    });
+  async function toggle(id: string, active: boolean) {
+    // Per-row pending so toggling one department doesn't disable the whole panel.
+    setTogglingId(id);
+    const res = await setDepartmentActive(id, active);
+    if (!res.ok) toast.error(res.error);
+    else router.refresh();
+    setTogglingId(null);
   }
 
   return (
@@ -75,7 +77,11 @@ export function DepartmentManager({ departments }: { departments: Department[] }
                 </div>
                 <label className="flex items-center gap-2 text-sm text-muted-foreground">
                   {d.is_active ? "Active" : "Inactive"}
-                  <Switch checked={d.is_active} onCheckedChange={(c) => toggle(d.id, c)} disabled={pending} />
+                  <Switch
+                    checked={d.is_active}
+                    onCheckedChange={(c) => toggle(d.id, c)}
+                    disabled={togglingId === d.id}
+                  />
                 </label>
               </CardContent>
             </Card>

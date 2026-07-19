@@ -152,7 +152,7 @@ export function SymptomCheckForm() {
                     addCustom();
                   }
                 }}
-                placeholder="e.g. blurred vision…"
+                placeholder="e.g. blurred vision"
               />
               <Button type="button" variant="outline" onClick={addCustom}>
                 <Plus className="size-4" aria-hidden /> Add
@@ -184,7 +184,7 @@ export function SymptomCheckForm() {
                 min={0}
                 value={durationDays}
                 onChange={(e) => setDurationDays(e.target.value)}
-                placeholder="e.g. 3…"
+                placeholder="e.g. 3"
               />
             </div>
             <div className="space-y-2">
@@ -196,7 +196,7 @@ export function SymptomCheckForm() {
                 max={120}
                 value={age}
                 onChange={(e) => setAge(e.target.value)}
-                placeholder="e.g. 34…"
+                placeholder="e.g. 34"
               />
             </div>
           </div>
@@ -253,7 +253,7 @@ export function SymptomCheckForm() {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              placeholder="Describe how you're feeling, any relevant history, medications, etc.…"
+              placeholder="Describe how you're feeling, any relevant history, medications, etc."
               maxLength={1000}
             />
           </div>
@@ -265,7 +265,7 @@ export function SymptomCheckForm() {
             className="w-full"
             aria-busy={pending}
           >
-            {pending ? <Loader2 className="animate-spin" aria-hidden /> : <Activity className="size-4" aria-hidden />}
+            {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Activity className="size-4" aria-hidden />}
             {pending ? "Analysing…" : "Run AI screening"}
           </Button>
           <p className="text-center text-xs text-muted-foreground">

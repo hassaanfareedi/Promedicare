@@ -55,7 +55,7 @@ export function SpecialtyManager({ specialties }: { specialties: Specialty[] }) 
                 setName(e.target.value);
                 if (!slugDirty) setSlug(slugify(e.target.value));
               }}
-              placeholder="Cardiology…"
+              placeholder="Cardiology"
             />
           </div>
           <div className="space-y-2">
@@ -67,7 +67,7 @@ export function SpecialtyManager({ specialties }: { specialties: Specialty[] }) 
                 setSlugDirty(true);
                 setSlug(e.target.value);
               }}
-              placeholder="cardiology…"
+              placeholder="cardiology"
             />
           </div>
           <div className="space-y-2">
@@ -75,7 +75,11 @@ export function SpecialtyManager({ specialties }: { specialties: Specialty[] }) 
             <Textarea id="s-desc" value={description} onChange={(e) => setDescription(e.target.value)} rows={2} />
           </div>
           <Button onClick={add} disabled={pending || name.trim().length < 2}>
-            {pending ? <Loader2 className="animate-spin" /> : <Plus className="size-4" />}
+            {pending ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+            ) : (
+              <Plus className="size-4" aria-hidden />
+            )}
             Add specialty
           </Button>
         </CardContent>
@@ -87,9 +91,11 @@ export function SpecialtyManager({ specialties }: { specialties: Specialty[] }) 
         ) : (
           specialties.map((s) => (
             <Card key={s.id}>
-              <CardContent className="p-4">
-                <p className="font-medium">{s.name}</p>
-                {s.description && <p className="text-sm text-muted-foreground">{s.description}</p>}
+              <CardContent className="min-w-0 p-4">
+                <p className="truncate font-medium">{s.name}</p>
+                {s.description && (
+                  <p className="line-clamp-2 text-sm text-muted-foreground">{s.description}</p>
+                )}
               </CardContent>
             </Card>
           ))

@@ -179,7 +179,7 @@ export function NotificationBell({ role }: { role: UserRole }) {
               type="button"
               disabled={marking}
               onClick={() => void markAllRead()}
-              className="rounded-sm text-xs text-teal-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 disabled:opacity-50 dark:text-teal-400"
+              className="rounded-sm text-xs text-teal-600 hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:text-teal-400"
             >
               Mark all read
             </button>
@@ -196,7 +196,7 @@ export function NotificationBell({ role }: { role: UserRole }) {
               href={notificationHref(role, n)}
               onClick={() => void openNotification(n)}
               aria-label={n.read_at ? n.title : `Unread: ${n.title}`}
-              className={`block border-b px-4 py-3 last:border-0 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              className={`block border-b px-4 py-3 last:border-0 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 ${
                 n.read_at ? "" : "bg-teal-50/50 dark:bg-teal-950/20"
               }`}
             >

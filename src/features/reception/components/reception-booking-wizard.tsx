@@ -200,7 +200,7 @@ export function ReceptionBookingWizard({ patients, doctors, initialPatientId }: 
                 <Input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search by name, patient ID, or phone…"
+                  placeholder="Search by name, patient ID, or phone"
                   className="pl-9"
                   aria-label="Search patients"
                 />
@@ -246,7 +246,7 @@ export function ReceptionBookingWizard({ patients, doctors, initialPatientId }: 
                   onChange={(e) =>
                     setNewPatient((s) => ({ ...s, fullName: e.target.value }))
                   }
-                  placeholder="Jane Doe…"
+                  placeholder="Jane Doe"
                 />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -296,7 +296,7 @@ export function ReceptionBookingWizard({ patients, doctors, initialPatientId }: 
                     onChange={(e) =>
                       setNewPatient((s) => ({ ...s, phone: e.target.value }))
                     }
-                    placeholder="+92 300 1234567…"
+                    placeholder="+92 300 1234567"
                   />
                 </div>
                 <div className="space-y-2">
@@ -308,7 +308,7 @@ export function ReceptionBookingWizard({ patients, doctors, initialPatientId }: 
                     onChange={(e) =>
                       setNewPatient((s) => ({ ...s, email: e.target.value }))
                     }
-                    placeholder="jane@example.com…"
+                    placeholder="jane@example.com"
                   />
                 </div>
               </div>
@@ -321,7 +321,7 @@ export function ReceptionBookingWizard({ patients, doctors, initialPatientId }: 
                   onChange={(e) =>
                     setNewPatient((s) => ({ ...s, address: e.target.value }))
                   }
-                  placeholder="Street, city…"
+                  placeholder="Street, city"
                 />
               </div>
             </TabsContent>
@@ -444,7 +444,7 @@ export function ReceptionBookingWizard({ patients, doctors, initialPatientId }: 
             <div className="flex justify-end gap-2">
               <Button onClick={confirm} disabled={pending}>
                 {pending ? (
-                  <Loader2 className="animate-spin" />
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
                 ) : (
                   <CheckCircle2 className="size-4" />
                 )}

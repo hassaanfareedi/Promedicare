@@ -45,6 +45,7 @@ export function HospitalManager({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [togglingId, setTogglingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [slugDirty, setSlugDirty] = useState(false);
@@ -66,12 +67,13 @@ export function HospitalManager({
     });
   }
 
-  function toggle(id: string, active: boolean) {
-    startTransition(async () => {
-      const res = await setHospitalActive(id, active);
-      if (!res.ok) toast.error(res.error);
-      else router.refresh();
-    });
+  async function toggle(id: string, active: boolean) {
+    // Per-row pending so toggling one hospital doesn't disable the whole panel.
+    setTogglingId(id);
+    const res = await setHospitalActive(id, active);
+    if (!res.ok) toast.error(res.error);
+    else router.refresh();
+    setTogglingId(null);
   }
 
   return (
@@ -88,7 +90,7 @@ export function HospitalManager({
                 setName(e.target.value);
                 if (!slugDirty) setSlug(slugify(e.target.value));
               }}
-              placeholder="City General Hospital…"
+              placeholder="City General Hospital"
             />
           </div>
           <div className="space-y-2">
@@ -100,7 +102,7 @@ export function HospitalManager({
                 setSlugDirty(true);
                 setSlug(e.target.value);
               }}
-              placeholder="city-general…"
+              placeholder="city-general"
             />
           </div>
           <div className="space-y-2">
@@ -132,7 +134,11 @@ export function HospitalManager({
                   <AssignAdminDialog hospital={h} profiles={profiles} />
                   <label className="flex items-center gap-2 text-sm text-muted-foreground">
                     {h.is_active ? "Active" : "Inactive"}
-                    <Switch checked={h.is_active} onCheckedChange={(c) => toggle(h.id, c)} disabled={pending} />
+                    <Switch
+                      checked={h.is_active}
+                      onCheckedChange={(c) => toggle(h.id, c)}
+                      disabled={togglingId === h.id}
+                    />
                   </label>
                 </div>
               </CardContent>
@@ -216,7 +222,7 @@ function AssignAdminDialog({ hospital, profiles }: { hospital: Hospital; profile
               ]}
             >
               <SelectTrigger id={`assign-admin-${hospital.id}`} aria-label="User">
-                <SelectValue placeholder="Select a user…" />
+                <SelectValue placeholder="Select a user" />
               </SelectTrigger>
               <SelectContent>
                 {eligible.map((p) => (

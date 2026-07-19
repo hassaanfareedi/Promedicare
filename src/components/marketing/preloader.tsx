@@ -31,7 +31,7 @@ export function Preloader() {
     <AnimatePresence>
       {visible && (
         <motion.div
-          className="fixed inset-0 z-[100] grid place-items-center bg-gradient-to-br from-teal-600 via-emerald-600 to-teal-800"
+          className="pointer-events-none fixed inset-0 z-[100] grid place-items-center bg-gradient-to-br from-teal-600 via-emerald-600 to-teal-800"
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.6, ease: "easeInOut" }}

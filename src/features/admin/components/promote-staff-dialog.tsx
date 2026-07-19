@@ -91,7 +91,7 @@ export function PromoteStaffDialog({ candidates }: { candidates: Profile[] }) {
               items={[{ value: null, label: "Select a user…" }, ...items]}
             >
               <SelectTrigger id="promote-user" aria-label="User">
-                <SelectValue placeholder="Select a user…" />
+                <SelectValue placeholder="Select a user" />
               </SelectTrigger>
               <SelectContent>
                 {candidates.map((p) => (

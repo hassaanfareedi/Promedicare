@@ -10,12 +10,24 @@ function weekdayLabel(iso: string): string {
   return d.toLocaleDateString(undefined, { weekday: "short" });
 }
 
+/** Popover-token tooltip so charts read correctly in dark mode. */
+const CHART_TOOLTIP = {
+  borderRadius: 8,
+  border: "1px solid var(--color-border)",
+  fontSize: 12,
+  backgroundColor: "var(--color-popover)",
+  color: "var(--color-popover-foreground)",
+} as const;
+const CHART_TOOLTIP_TEXT = { color: "var(--color-popover-foreground)" } as const;
+
 export function AnalyticsCharts({ analytics }: { analytics: AdminAnalytics }) {
   const trend = analytics.weeklyTrend.map((t) => ({ label: weekdayLabel(t.date), count: t.count }));
   const income = analytics.incomeTrend.map((t) => ({
     label: weekdayLabel(t.date),
     amount: t.amount,
   }));
+  const hasTrend = trend.some((t) => t.count > 0);
+  const hasIncome = income.some((t) => t.amount > 0);
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
@@ -24,20 +36,26 @@ export function AnalyticsCharts({ analytics }: { analytics: AdminAnalytics }) {
           <CardTitle className="text-base">Appointments — next 7 days</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={trend} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
-                <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={12} />
-                <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={12} />
-                <Tooltip
-                  cursor={{ fill: "var(--color-muted)", opacity: 0.3 }}
-                  contentStyle={{ borderRadius: 8, border: "1px solid var(--color-border)", fontSize: 12 }}
-                />
-                <Bar dataKey="count" fill="var(--color-chart-1)" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          {hasTrend ? (
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={trend} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
+                  <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={12} />
+                  <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={12} />
+                  <Tooltip
+                    cursor={{ fill: "var(--color-muted)", opacity: 0.3 }}
+                    contentStyle={CHART_TOOLTIP}
+                    itemStyle={CHART_TOOLTIP_TEXT}
+                    labelStyle={CHART_TOOLTIP_TEXT}
+                  />
+                  <Bar dataKey="count" fill="var(--color-chart-1)" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <p className="py-10 text-center text-sm text-muted-foreground">No appointments in the next 7 days.</p>
+          )}
         </CardContent>
       </Card>
 
@@ -46,21 +64,27 @@ export function AnalyticsCharts({ analytics }: { analytics: AdminAnalytics }) {
           <CardTitle className="text-base">Fee income — last 7 days (PKR)</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={income} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
-                <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={12} />
-                <YAxis tickLine={false} axisLine={false} fontSize={12} />
-                <Tooltip
-                  cursor={{ fill: "var(--color-muted)", opacity: 0.3 }}
-                  contentStyle={{ borderRadius: 8, border: "1px solid var(--color-border)", fontSize: 12 }}
-                  formatter={(value) => [`${Number(value).toLocaleString()} PKR`, "Income"]}
-                />
-                <Bar dataKey="amount" fill="var(--color-chart-2)" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          {hasIncome ? (
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={income} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
+                  <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={12} />
+                  <YAxis tickLine={false} axisLine={false} fontSize={12} />
+                  <Tooltip
+                    cursor={{ fill: "var(--color-muted)", opacity: 0.3 }}
+                    contentStyle={CHART_TOOLTIP}
+                    itemStyle={CHART_TOOLTIP_TEXT}
+                    labelStyle={CHART_TOOLTIP_TEXT}
+                    formatter={(value) => [`${Number(value).toLocaleString()} PKR`, "Income"]}
+                  />
+                  <Bar dataKey="amount" fill="var(--color-chart-2)" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <p className="py-10 text-center text-sm text-muted-foreground">No fee income in the last 7 days.</p>
+          )}
         </CardContent>
       </Card>
 

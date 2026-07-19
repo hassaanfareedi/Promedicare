@@ -22,7 +22,19 @@ export function AttachmentLink({
         toast.error(res.ok ? "Download unavailable" : res.error);
         return;
       }
-      window.open(res.data.url, "_blank", "noopener,noreferrer");
+      const url = res.data.url;
+      // Opening after an await can trip popup blockers (no longer a direct
+      // user gesture). Offer a tap-to-open fallback when the window is blocked.
+      const win = window.open(url, "_blank", "noopener,noreferrer");
+      if (!win) {
+        toast("Your browser blocked the file from opening.", {
+          description: "Tap Open to view it in a new tab.",
+          action: {
+            label: "Open",
+            onClick: () => window.open(url, "_blank", "noopener,noreferrer"),
+          },
+        });
+      }
     });
   }
 

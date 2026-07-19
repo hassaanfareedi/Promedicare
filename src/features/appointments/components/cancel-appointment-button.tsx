@@ -69,7 +69,7 @@ export function CancelAppointmentButton({ appointmentId }: { appointmentId: stri
             Keep it
           </Button>
           <Button variant="destructive" onClick={onCancel} disabled={pending}>
-            {pending ? <Loader2 className="animate-spin" /> : null}
+            {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
             Cancel appointment
           </Button>
         </DialogFooter>

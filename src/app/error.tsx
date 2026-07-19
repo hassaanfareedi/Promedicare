@@ -12,7 +12,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
   return (
     <div className="grid min-h-svh place-items-center px-4">
       <div className="flex max-w-md flex-col items-center text-center">
-        <div className="mb-4 grid size-12 place-items-center rounded-full bg-red-50 text-red-600 dark:bg-red-950/50">
+        <div className="mb-4 grid size-12 place-items-center rounded-full bg-red-50 text-red-600 dark:bg-red-950/50 dark:text-red-400">
           <AlertTriangle className="size-6" aria-hidden />
         </div>
         <h1 className="text-xl font-semibold">Something went wrong</h1>

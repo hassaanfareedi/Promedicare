@@ -76,7 +76,7 @@ export function SidebarNav({
             aria-current={active ? "page" : undefined}
             aria-label={label}
             className={cn(
-              "group relative flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500",
+              "group relative flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
               active
                 ? "bg-teal-50 text-teal-700 dark:bg-teal-950/50 dark:text-teal-300"
                 : "text-muted-foreground hover:translate-x-0.5 hover:bg-muted hover:text-foreground",

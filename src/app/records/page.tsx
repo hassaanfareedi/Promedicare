@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { VisitorLookup } from "@/features/visitor/components/visitor-lookup";
 import { AiDisclaimer } from "@/components/shared/ai-disclaimer";
+import { PageHeader } from "@/components/shared/page-header";
 
 export const metadata: Metadata = {
   title: "Look up your record",
@@ -24,12 +25,12 @@ export default function RecordsPage() {
         </div>
       </header>
       <main className="mx-auto max-w-xl px-4 py-10">
-        <div className="mb-6 space-y-2 text-center">
-          <h1 className="text-3xl font-semibold tracking-tight">Patient record lookup</h1>
-          <p className="text-sm text-muted-foreground">
-            Check your appointment status and recent visit history without signing in.
-          </p>
-        </div>
+        <PageHeader
+          hero
+          className="mb-6"
+          title="Patient record lookup"
+          description="Check your appointment status and recent visit history without signing in."
+        />
         <VisitorLookup />
         <AiDisclaimer className="mt-6" compact />
       </main>

@@ -56,7 +56,7 @@ export function RegisterForm() {
             id="fullName"
             name="fullName"
             autoComplete="name"
-            placeholder="Jane Doe…"
+            placeholder="Jane Doe"
             required
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? "register-error" : undefined}
@@ -69,7 +69,7 @@ export function RegisterForm() {
             name="email"
             type="email"
             autoComplete="email"
-            placeholder="you@example.com…"
+            placeholder="you@example.com"
             required
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? "register-error" : undefined}

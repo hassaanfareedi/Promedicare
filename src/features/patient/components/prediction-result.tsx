@@ -44,29 +44,31 @@ export function PredictionResult({ prediction, degraded, bookHref }: Props) {
             <p className="text-sm leading-relaxed">{prediction.explanation}</p>
           </div>
 
-          <div className="space-y-3">
-            <p className="flex items-center gap-2 text-sm font-medium">
-              <TrendingUp className="size-4 text-teal-600" /> Possible considerations
-            </p>
-            <ul className="space-y-2.5">
-              {prediction.predicted_conditions.map((c, i) => {
-                const pct = Math.round(c.likelihood * 100);
-                return (
-                  <li key={i} className="space-y-1">
-                    <div className="flex items-center justify-between text-sm">
-                      <span id={`cond-${i}`}>{c.condition}</span>
-                      <span className="tabular-nums text-muted-foreground">{pct}%</span>
-                    </div>
-                    <Progress
-                      value={pct}
-                      aria-labelledby={`cond-${i}`}
-                      aria-valuetext={`${c.condition} ${pct} percent`}
-                    />
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+          {prediction.predicted_conditions.length > 0 && (
+            <div className="space-y-3">
+              <p className="flex items-center gap-2 text-sm font-medium">
+                <TrendingUp className="size-4 text-teal-600" /> Possible considerations
+              </p>
+              <ul className="space-y-2.5">
+                {prediction.predicted_conditions.map((c, i) => {
+                  const pct = Math.round(c.likelihood * 100);
+                  return (
+                    <li key={i} className="space-y-1">
+                      <div className="flex items-center justify-between text-sm">
+                        <span id={`cond-${i}`}>{c.condition}</span>
+                        <span className="tabular-nums text-muted-foreground">{pct}%</span>
+                      </div>
+                      <Progress
+                        value={pct}
+                        aria-labelledby={`cond-${i}`}
+                        aria-valuetext={`${c.condition} ${pct} percent`}
+                      />
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
 
           {prediction.red_flags && prediction.red_flags.length > 0 && (
             <div className="rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-900/60 dark:bg-red-950/30">

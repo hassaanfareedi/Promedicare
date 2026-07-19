@@ -189,7 +189,7 @@ function AddDoctorDialog({
                   ]}
                 >
                   <SelectTrigger aria-label="Specialty">
-                    <SelectValue placeholder="Optional…" />
+                    <SelectValue placeholder="Optional" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={null}>None</SelectItem>
@@ -212,7 +212,7 @@ function AddDoctorDialog({
                   ]}
                 >
                   <SelectTrigger aria-label="Department">
-                    <SelectValue placeholder="Optional…" />
+                    <SelectValue placeholder="Optional" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={null}>None</SelectItem>
@@ -240,7 +240,11 @@ function AddDoctorDialog({
               </div>
             </div>
             <Button onClick={submit} disabled={pending || !profileId} className="justify-self-end">
-              {pending ? <Loader2 className="animate-spin" /> : null}
+              {pending ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <Plus className="size-4" aria-hidden />
+              )}
               Add doctor
             </Button>
           </div>
@@ -283,11 +287,11 @@ function DoctorCard({
     <Card>
       <CardContent className="space-y-4 p-5">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="font-medium">
+          <div className="min-w-0">
+            <p className="truncate font-medium">
               {formatDoctorName(doctor.profile?.full_name ?? "Unnamed")}
             </p>
-            <p className="text-sm text-muted-foreground">{doctorSubtitle(doctor)}</p>
+            <p className="truncate text-sm text-muted-foreground">{doctorSubtitle(doctor)}</p>
           </div>
           <div className="flex items-center gap-3">
             <EditDoctorDialog
@@ -405,7 +409,7 @@ function EditDoctorDialog({
                 ]}
               >
                 <SelectTrigger aria-label="Specialty">
-                  <SelectValue placeholder="Optional…" />
+                  <SelectValue placeholder="Optional" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={null}>None</SelectItem>
@@ -428,7 +432,7 @@ function EditDoctorDialog({
                 ]}
               >
                 <SelectTrigger aria-label="Department">
-                  <SelectValue placeholder="Optional…" />
+                  <SelectValue placeholder="Optional" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={null}>None</SelectItem>

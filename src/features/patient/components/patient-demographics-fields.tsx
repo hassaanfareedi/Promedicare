@@ -44,7 +44,7 @@ export function PatientDemographicsFields({
             <FormItem>
               <FormLabel>Full name</FormLabel>
               <FormControl>
-                <Input placeholder="Jane Doe…" autoComplete="name" {...field} />
+                <Input placeholder="Jane Doe" autoComplete="name" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -102,7 +102,7 @@ export function PatientDemographicsFields({
             <FormItem>
               <FormLabel>Phone</FormLabel>
               <FormControl>
-                <Input type="tel" autoComplete="tel" placeholder="+92 300 1234567…" {...field} />
+                <Input type="tel" autoComplete="tel" placeholder="+92 300 1234567" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -148,7 +148,7 @@ export function PatientDemographicsFields({
           <FormItem>
             <FormLabel>Address (optional)</FormLabel>
             <FormControl>
-              <Textarea rows={2} placeholder="Street, city…" autoComplete="street-address" {...field} />
+              <Textarea rows={2} placeholder="Street, city" autoComplete="street-address" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -163,7 +163,7 @@ export function PatientDemographicsFields({
             <FormItem>
               <FormLabel>Emergency contact (optional)</FormLabel>
               <FormControl>
-                <Input placeholder="Contact name…" {...field} />
+                <Input placeholder="Contact name" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -176,7 +176,7 @@ export function PatientDemographicsFields({
             <FormItem>
               <FormLabel>Emergency contact phone (optional)</FormLabel>
               <FormControl>
-                <Input type="tel" placeholder="+92 300 1234567…" {...field} />
+                <Input type="tel" placeholder="+92 300 1234567" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

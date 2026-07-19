@@ -8,6 +8,26 @@ import { Button } from "@/components/ui/button";
 import { RISK_META, ROLE_LABEL } from "@/lib/constants";
 import { downloadCsv } from "@/lib/csv";
 
+/** Popover-token tooltip so charts read correctly in dark mode. */
+const CHART_TOOLTIP = {
+  borderRadius: 8,
+  border: "1px solid var(--color-border)",
+  fontSize: 12,
+  backgroundColor: "var(--color-popover)",
+  color: "var(--color-popover-foreground)",
+} as const;
+const CHART_TOOLTIP_TEXT = { color: "var(--color-popover-foreground)" } as const;
+const HOSPITAL_XAXIS = {
+  dataKey: "hospital",
+  tickLine: false,
+  axisLine: false,
+  fontSize: 12,
+  interval: 0,
+  angle: -30,
+  textAnchor: "end" as const,
+  height: 60,
+};
+
 export function PlatformAnalyticsView({ analytics }: { analytics: PlatformAnalytics }) {
   function exportCsv() {
     const rows = [
@@ -40,15 +60,17 @@ export function PlatformAnalyticsView({ analytics }: { analytics: PlatformAnalyt
           {analytics.incomeByHospital.length === 0 ? (
             <p className="text-sm text-muted-foreground">No fees collected yet.</p>
           ) : (
-            <div className="h-64 w-full">
+            <div className="h-72 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={analytics.incomeByHospital} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
-                  <XAxis dataKey="hospital" tickLine={false} axisLine={false} fontSize={12} />
+                  <XAxis {...HOSPITAL_XAXIS} />
                   <YAxis tickLine={false} axisLine={false} fontSize={12} />
                   <Tooltip
                     cursor={{ fill: "var(--color-muted)", opacity: 0.3 }}
-                    contentStyle={{ borderRadius: 8, border: "1px solid var(--color-border)", fontSize: 12 }}
+                    contentStyle={CHART_TOOLTIP}
+                    itemStyle={CHART_TOOLTIP_TEXT}
+                    labelStyle={CHART_TOOLTIP_TEXT}
                     formatter={(value) => [`${Number(value).toLocaleString()} PKR`, "Income"]}
                   />
                   <Bar dataKey="amount" fill="var(--color-chart-2)" radius={[6, 6, 0, 0]} />
@@ -71,11 +93,13 @@ export function PlatformAnalyticsView({ analytics }: { analytics: PlatformAnalyt
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={analytics.perHospital} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
-                  <XAxis dataKey="hospital" tickLine={false} axisLine={false} fontSize={12} />
+                  <XAxis {...HOSPITAL_XAXIS} />
                   <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={12} />
                   <Tooltip
                     cursor={{ fill: "var(--color-muted)", opacity: 0.3 }}
-                    contentStyle={{ borderRadius: 8, border: "1px solid var(--color-border)", fontSize: 12 }}
+                    contentStyle={CHART_TOOLTIP}
+                    itemStyle={CHART_TOOLTIP_TEXT}
+                    labelStyle={CHART_TOOLTIP_TEXT}
                   />
                   <Bar dataKey="count" fill="var(--color-chart-1)" radius={[6, 6, 0, 0]} />
                 </BarChart>

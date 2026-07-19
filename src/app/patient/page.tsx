@@ -11,6 +11,8 @@ import { PatientAppointmentCard } from "@/features/patient/components/patient-ap
 import { CancelAppointmentButton } from "@/features/appointments/components/cancel-appointment-button";
 import { RescheduleDialog } from "@/features/appointments/components/reschedule-dialog";
 import { EmptyState } from "@/components/shared/empty-state";
+import { PageHeader } from "@/components/shared/page-header";
+import { StatCard } from "@/components/shared/stat-card";
 import { AiDisclaimer } from "@/components/shared/ai-disclaimer";
 import { RiskBadge } from "@/components/shared/risk-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,31 +34,21 @@ export default async function PatientDashboard() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="flex items-stretch gap-3">
-          <span
-            aria-hidden
-            className="mt-1 w-1 shrink-0 rounded-full bg-gradient-to-b from-teal-500 to-emerald-600"
-          />
-          <div className="space-y-1.5">
-            <h1 className="font-heading text-3xl font-semibold tracking-tight text-balance">
-              Welcome back, {firstName}
-            </h1>
-            <p className="max-w-xl text-pretty text-sm text-foreground/70 sm:text-base">
-              {nextVisit
-                ? "Your next visit is below. Check symptoms anytime if you need guidance before you go."
-                : "Start with a symptom check or book a visit with a specialist."}
-            </p>
-          </div>
-        </div>
-        <Link
-          href={primaryHref}
-          className={cn(buttonVariants({ size: "default" }), "shrink-0 gap-2 self-start sm:self-auto")}
-        >
-          <PrimaryIcon className="size-4" aria-hidden />
-          {primaryLabel}
-        </Link>
-      </header>
+      <PageHeader
+        hero
+        title={`Welcome back, ${firstName}`}
+        description={
+          nextVisit
+            ? "Your next visit is below. Check symptoms anytime if you need guidance before you go."
+            : "Start with a symptom check or book a visit with a specialist."
+        }
+        actions={
+          <Link href={primaryHref} className={cn(buttonVariants({ size: "default" }), "gap-2")}>
+            <PrimaryIcon className="size-4" aria-hidden />
+            {primaryLabel}
+          </Link>
+        }
+      />
 
       {nextVisit ? (
         <section aria-labelledby="next-visit-heading" className="space-y-3">
@@ -85,31 +77,18 @@ export default async function PatientDashboard() {
           />
         </section>
       ) : (
-        <Card className="border-dashed">
-          <CardContent className="p-2">
-            <EmptyState
-              icon={CalendarDays}
-              title="No upcoming appointments"
-              description="Use Book a visit above when you are ready, or run a symptom check first."
-            />
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={CalendarDays}
+          title="No upcoming appointments"
+          description="Use Book a visit above when you are ready, or run a symptom check first."
+        />
       )}
 
-      <dl className="grid grid-cols-3 divide-x overflow-hidden rounded-xl border bg-card text-center">
-        <div className="px-3 py-3.5 sm:px-4 sm:py-4">
-          <dt className="text-xs font-medium text-foreground/65 sm:text-sm">Upcoming</dt>
-          <dd className="mt-1 text-xl font-semibold tabular-nums sm:text-2xl">{stats.upcomingCount}</dd>
-        </div>
-        <div className="px-3 py-3.5 sm:px-4 sm:py-4">
-          <dt className="text-xs font-medium text-foreground/65 sm:text-sm">Total visits</dt>
-          <dd className="mt-1 text-xl font-semibold tabular-nums sm:text-2xl">{stats.totalAppointments}</dd>
-        </div>
-        <div className="px-3 py-3.5 sm:px-4 sm:py-4">
-          <dt className="text-xs font-medium text-foreground/65 sm:text-sm">Screenings</dt>
-          <dd className="mt-1 text-xl font-semibold tabular-nums sm:text-2xl">{stats.screeningCount}</dd>
-        </div>
-      </dl>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard label="Upcoming" value={stats.upcomingCount} icon={CalendarDays} />
+        <StatCard label="Total visits" value={stats.totalAppointments} icon={Stethoscope} />
+        <StatCard label="Screenings" value={stats.screeningCount} icon={Activity} />
+      </div>
 
       <Card>
         <CardHeader className="flex-row items-center justify-between space-y-0">

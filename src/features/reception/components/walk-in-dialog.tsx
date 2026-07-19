@@ -127,7 +127,7 @@ export function WalkInDialog({ doctors }: { doctors: WalkInDoctorOption[] }) {
                 <FormItem>
                   <FormLabel>Full name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Jane Doe…" {...field} />
+                    <Input placeholder="Jane Doe" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -188,7 +188,7 @@ export function WalkInDialog({ doctors }: { doctors: WalkInDoctorOption[] }) {
                   <FormItem>
                     <FormLabel>Phone</FormLabel>
                     <FormControl>
-                      <Input type="tel" autoComplete="tel" placeholder="+92 300 1234567…" {...field} />
+                      <Input type="tel" autoComplete="tel" placeholder="+92 300 1234567" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -201,7 +201,7 @@ export function WalkInDialog({ doctors }: { doctors: WalkInDoctorOption[] }) {
                   <FormItem>
                     <FormLabel>Email (optional)</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="jane@example.com…" {...field} />
+                      <Input type="email" placeholder="jane@example.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -215,7 +215,7 @@ export function WalkInDialog({ doctors }: { doctors: WalkInDoctorOption[] }) {
                 <FormItem>
                   <FormLabel>Address (optional)</FormLabel>
                   <FormControl>
-                    <Textarea rows={2} placeholder="Street, city…" {...field} />
+                    <Textarea rows={2} placeholder="Street, city" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -234,7 +234,7 @@ export function WalkInDialog({ doctors }: { doctors: WalkInDoctorOption[] }) {
                   >
                     <FormControl>
                       <SelectTrigger aria-label="Doctor">
-                        <SelectValue placeholder="Select doctor…" />
+                        <SelectValue placeholder="Select doctor" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -270,7 +270,7 @@ export function WalkInDialog({ doctors }: { doctors: WalkInDoctorOption[] }) {
                 <FormItem>
                   <FormLabel>Reason (optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Walk-in complaint…" {...field} />
+                    <Input placeholder="Walk-in complaint" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

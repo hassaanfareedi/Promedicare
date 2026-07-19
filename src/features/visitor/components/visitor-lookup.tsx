@@ -201,7 +201,7 @@ export function VisitorLookup() {
             {error && <p className="text-sm text-destructive">{error}</p>}
 
             <Button type="submit" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? <Loader2 className="animate-spin" /> : <Search className="size-4" />}
+              {form.formState.isSubmitting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Search className="size-4" />}
               Find my record
             </Button>
             <p className="text-center text-xs text-muted-foreground">

@@ -81,7 +81,7 @@ export function AccountDetailsForm({
             <FormItem>
               <FormLabel>Full name</FormLabel>
               <FormControl>
-                <Input placeholder="Your name…" autoComplete="name" {...field} />
+                <Input placeholder="Your name" autoComplete="name" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -94,7 +94,7 @@ export function AccountDetailsForm({
             <FormItem>
               <FormLabel>Phone</FormLabel>
               <FormControl>
-                <Input type="tel" autoComplete="tel" placeholder="+92 300 1234567…" {...field} />
+                <Input type="tel" autoComplete="tel" placeholder="+92 300 1234567" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

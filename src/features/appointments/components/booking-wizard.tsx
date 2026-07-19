@@ -40,6 +40,7 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
   const [slots, setSlots] = useState<SlotGroup[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [slot, setSlot] = useState<string | null>(null);
+  const [slotTaken, setSlotTaken] = useState(false);
   const [reason, setReason] = useState("");
 
   const recommendedSpecialtyName = useMemo(() => {
@@ -96,6 +97,7 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
 
   function confirm() {
     if (!hospitalId || !doctor?.id || !slot) return;
+    setSlotTaken(false);
     startTransition(async () => {
       const res = await bookAppointment({
         hospitalId,
@@ -106,19 +108,15 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
         predictionId: predictionId ?? undefined,
       });
       if (!res.ok) {
-        toast.error(res.error);
-        // A taken slot means our candidate list is stale — refresh it.
+        // A taken slot means our candidate list is stale. Keep the user on Confirm
+        // with an inline notice and quietly refresh candidates so "Change time" is fresh.
+        setSlotTaken(true);
         if (doctor.id) {
-          setLoadingSlots(true);
           try {
             const groups = await getDoctorSlots(doctor.id);
             setSlots(groups);
-            setStep(2);
-            setSlot(null);
           } catch {
-            toast.error("Could not refresh available times.");
-          } finally {
-            setLoadingSlots(false);
+            /* keep the current candidates if the refresh fails */
           }
         }
         return;
@@ -187,7 +185,7 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
 
       {step === 1 && (
         <div className="space-y-3">
-          <Button variant="ghost" size="sm" onClick={() => setStep(0)}>
+          <Button variant="ghost" size="sm" onClick={() => setStep(0)} className="-ml-2">
             <ArrowLeft className="size-4" /> Change hospital
           </Button>
           {recommendedSpecialtyId && !hasRecommendedAtHospital && hospitalDoctors.length > 0 && (
@@ -235,7 +233,7 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
 
       {step === 2 && (
         <div className="space-y-4">
-          <Button variant="ghost" size="sm" onClick={() => setStep(1)}>
+          <Button variant="ghost" size="sm" onClick={() => setStep(1)} className="-ml-2">
             <ArrowLeft className="size-4" /> Change doctor
           </Button>
           {loadingSlots ? (
@@ -260,6 +258,7 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
                         type="button"
                         onClick={() => {
                           setSlot(s.iso);
+                          setSlotTaken(false);
                           setStep(3);
                         }}
                         className={cn(
@@ -281,9 +280,23 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
       {step === 3 && doctor && slot && (
         <Card>
           <CardContent className="space-y-5 p-6">
-            <Button variant="ghost" size="sm" onClick={() => setStep(2)} className="-ml-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSlotTaken(false);
+                setStep(2);
+              }}
+              className="-ml-2"
+            >
               <ArrowLeft className="size-4" /> Change time
             </Button>
+            {slotTaken && (
+              <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+                That time was just taken. Tap <span className="font-medium">Change time</span> to
+                pick from the updated slots.
+              </p>
+            )}
             <div className="grid gap-3 rounded-lg bg-muted/50 p-4 text-sm">
               <Row label="Hospital" value={hospitals.find((h) => h.id === hospitalId)?.name ?? "—"} />
               <Row label="Doctor" value={formatDoctorName(doctor.full_name)} />
@@ -303,7 +316,11 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
             </div>
             <div className="flex justify-end gap-2">
               <Button onClick={confirm} disabled={pending}>
-                {pending ? <Loader2 className="animate-spin" /> : <CheckCircle2 className="size-4" />}
+                {pending ? (
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                ) : (
+                  <CheckCircle2 className="size-4" />
+                )}
                 Confirm booking <ArrowRight className="size-4" />
               </Button>
             </div>
