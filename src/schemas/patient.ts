@@ -34,6 +34,12 @@ export const walkInPatientSchema = z.object({
   phone: phoneSchema,
   email: z.string().trim().toLowerCase().email().optional().or(z.literal("")),
   address: z.string().trim().max(300).optional().or(z.literal("")),
+  doctorId: z.string().uuid("Select a doctor"),
+  scheduledStart: z
+    .string()
+    .min(1, "Choose a visit time")
+    .refine((v) => !Number.isNaN(Date.parse(v)), "Enter a valid visit time"),
+  reason: z.string().trim().max(500).optional().or(z.literal("")),
 });
 
 export type WalkInPatientInput = z.infer<typeof walkInPatientSchema>;

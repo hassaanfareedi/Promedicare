@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Bell } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -22,20 +22,32 @@ function notificationHref(role: UserRole, n: Notification): string {
 
   switch (role) {
     case "doctor":
-      if (n.type === "appointment_booked" || n.type === "appointment_rescheduled" || hasAppointment) {
+      if (
+        n.type === "appointment_booked" ||
+        n.type === "appointment_rescheduled" ||
+        n.type === "appointment_confirmed" ||
+        n.type === "appointment_cancelled" ||
+        n.type === "appointment_reminder" ||
+        hasAppointment
+      ) {
         return "/doctor/schedule";
       }
-      return "/doctor/reviews";
+      if (n.type === "prediction_reviewed" || hasPrediction) return "/doctor/reviews";
+      return "/doctor";
     case "receptionist":
-      return "/reception/appointments";
+      if (hasAppointment || n.type.startsWith("appointment_")) return "/reception/appointments";
+      return "/reception";
     case "hospital_admin":
-      return "/admin/appointments";
+      if (hasAppointment || n.type.startsWith("appointment_")) return "/admin/appointments";
+      return "/admin";
     case "patient":
       if (n.type === "prediction_reviewed" || hasPrediction) return "/patient/screenings";
       if (
         n.type === "appointment_confirmed" ||
         n.type === "appointment_rescheduled" ||
         n.type === "appointment_cancelled" ||
+        n.type === "appointment_reminder" ||
+        n.type === "appointment_booked" ||
         hasAppointment
       ) {
         return "/patient/appointments";
@@ -50,14 +62,20 @@ export function NotificationBell({ role }: { role: UserRole }) {
   const [items, setItems] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [marking, setMarking] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   const load = useCallback(async () => {
     const supabase = createClient();
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("notifications")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(15);
+    if (error) {
+      setLoading(false);
+      return;
+    }
     setItems(data ?? []);
     setLoading(false);
   }, []);
@@ -67,9 +85,10 @@ export function NotificationBell({ role }: { role: UserRole }) {
 
     const supabase = createClient();
     let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
 
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return;
+    void supabase.auth.getUser().then(({ data: { user } }) => {
+      if (cancelled || !user) return;
       channel = supabase
         .channel(`notifications:${user.id}`)
         .on(
@@ -84,9 +103,13 @@ export function NotificationBell({ role }: { role: UserRole }) {
         .subscribe();
     });
 
-    const interval = setInterval(() => void load(), 30_000);
+    const interval = setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      void load();
+    }, 30_000);
 
     return () => {
+      cancelled = true;
       clearInterval(interval);
       if (channel) void supabase.removeChannel(channel);
     };
@@ -95,21 +118,34 @@ export function NotificationBell({ role }: { role: UserRole }) {
   const unread = items.filter((n) => !n.read_at).length;
 
   async function markAllRead() {
-    const supabase = createClient();
     const unreadIds = items.filter((n) => !n.read_at).map((n) => n.id);
-    if (unreadIds.length === 0) return;
-    await supabase.from("notifications").update({ read_at: new Date().toISOString() }).in("id", unreadIds);
-    setItems((prev) => prev.map((n) => (n.read_at ? n : { ...n, read_at: new Date().toISOString() })));
+    if (unreadIds.length === 0 || marking) return;
+    setMarking(true);
+    const supabase = createClient();
+    const readAt = new Date().toISOString();
+    const { error } = await supabase
+      .from("notifications")
+      .update({ read_at: readAt })
+      .in("id", unreadIds);
+    setMarking(false);
+    if (error) {
+      toast.error("Could not mark notifications as read.");
+      return;
+    }
+    setItems((prev) => prev.map((n) => (n.read_at ? n : { ...n, read_at: readAt })));
   }
 
   async function openNotification(n: Notification) {
     if (!n.read_at) {
       const supabase = createClient();
       const readAt = new Date().toISOString();
-      await supabase.from("notifications").update({ read_at: readAt }).eq("id", n.id);
-      setItems((prev) => prev.map((item) => (item.id === n.id ? { ...item, read_at: readAt } : item)));
+      const { error } = await supabase.from("notifications").update({ read_at: readAt }).eq("id", n.id);
+      if (!error) {
+        setItems((prev) => prev.map((item) => (item.id === n.id ? { ...item, read_at: readAt } : item)));
+      }
     }
     setOpen(false);
+    requestAnimationFrame(() => triggerRef.current?.focus());
   }
 
   return (
@@ -117,6 +153,7 @@ export function NotificationBell({ role }: { role: UserRole }) {
       <PopoverTrigger
         render={
           <Button
+            ref={triggerRef}
             variant="ghost"
             size="icon"
             aria-label={unread > 0 ? `Notifications, ${unread} unread` : "Notifications"}
@@ -139,8 +176,10 @@ export function NotificationBell({ role }: { role: UserRole }) {
           <span className="text-sm font-medium">Notifications</span>
           {unread > 0 && (
             <button
-              onClick={markAllRead}
-              className="rounded-sm text-xs text-teal-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 dark:text-teal-400"
+              type="button"
+              disabled={marking}
+              onClick={() => void markAllRead()}
+              className="rounded-sm text-xs text-teal-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 disabled:opacity-50 dark:text-teal-400"
             >
               Mark all read
             </button>
@@ -156,6 +195,7 @@ export function NotificationBell({ role }: { role: UserRole }) {
               key={n.id}
               href={notificationHref(role, n)}
               onClick={() => void openNotification(n)}
+              aria-label={n.read_at ? n.title : `Unread: ${n.title}`}
               className={`block border-b px-4 py-3 last:border-0 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                 n.read_at ? "" : "bg-teal-50/50 dark:bg-teal-950/20"
               }`}

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -45,7 +46,7 @@ export function MedicalFileTable({
             <TableHead>Diagnosis</TableHead>
             <TableHead className="hidden md:table-cell">Summary</TableHead>
             <TableHead>Rx</TableHead>
-            <TableHead className="hidden sm:table-cell">Files</TableHead>
+            <TableHead>Files</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -71,13 +72,13 @@ export function MedicalFileTable({
               <TableCell>
                 {v.prescription || v.medications.length > 0 ? (
                   <Button type="button" size="sm" variant="outline" onClick={() => setRx(v)}>
-                    <FileText className="size-3.5" /> View
+                    <FileText className="size-3.5" aria-hidden /> View
                   </Button>
                 ) : (
                   <span className="text-sm text-muted-foreground">—</span>
                 )}
               </TableCell>
-              <TableCell className="hidden sm:table-cell">
+              <TableCell>
                 {v.attachments.length === 0 ? (
                   <span className="text-sm text-muted-foreground">—</span>
                 ) : (
@@ -96,9 +97,10 @@ export function MedicalFileTable({
       </Table>
 
       <Dialog open={Boolean(rx)} onOpenChange={(o) => !o && setRx(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+        <DialogContent className="max-h-[90vh] overflow-y-auto overscroll-contain sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Prescription</DialogTitle>
+            <DialogDescription>View or print this visit&apos;s prescription.</DialogDescription>
           </DialogHeader>
           {rx && (
             <PrescriptionPrintView

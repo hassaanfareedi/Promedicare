@@ -1,9 +1,21 @@
 import type { Metadata } from "next";
+import dynamic from "next/dynamic";
 import { CalendarDays, Users, BriefcaseMedical, Wallet } from "lucide-react";
 import { getAdminAnalytics, getAdminOverview } from "@/features/admin/data";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
-import { AnalyticsCharts } from "@/features/admin/components/analytics-charts";
+
+const AnalyticsCharts = dynamic(
+  () =>
+    import("@/features/admin/components/analytics-charts").then((m) => m.AnalyticsCharts),
+  {
+    loading: () => (
+      <div className="rounded-xl border p-8 text-center text-sm text-muted-foreground" role="status">
+        Loading charts…
+      </div>
+    ),
+  },
+);
 
 export const metadata: Metadata = { title: "Analytics" };
 

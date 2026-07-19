@@ -110,12 +110,16 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
         // A taken slot means our candidate list is stale — refresh it.
         if (doctor.id) {
           setLoadingSlots(true);
-          getDoctorSlots(doctor.id).then((g) => {
-            setSlots(g);
-            setLoadingSlots(false);
+          try {
+            const groups = await getDoctorSlots(doctor.id);
+            setSlots(groups);
             setStep(2);
             setSlot(null);
-          });
+          } catch {
+            toast.error("Could not refresh available times.");
+          } finally {
+            setLoadingSlots(false);
+          }
         }
         return;
       }
@@ -259,7 +263,7 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
                           setStep(3);
                         }}
                         className={cn(
-                          "rounded-lg border px-3 py-1.5 text-sm transition-colors hover:border-teal-500 hover:bg-accent",
+                          "min-h-10 min-w-10 rounded-lg border px-3 py-2 text-sm transition-colors hover:border-teal-500 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                           slot === s.iso && "border-teal-600 bg-teal-600 text-white",
                         )}
                       >

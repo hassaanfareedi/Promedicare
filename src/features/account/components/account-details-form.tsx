@@ -23,10 +23,13 @@ export function AccountDetailsForm({
   fullName,
   phone,
   email,
+  /** Patient profile keeps name/phone on the Health form to avoid duplicates. */
+  contactFields = "editable",
 }: {
   fullName: string | null;
   phone: string | null;
   email: string | null;
+  contactFields?: "editable" | "hidden";
 }) {
   const router = useRouter();
   const form = useForm<UpdateAccountInput>({
@@ -47,12 +50,28 @@ export function AccountDetailsForm({
     router.refresh();
   }
 
+  if (contactFields === "hidden") {
+    return (
+      <div className="space-y-2">
+        <label className="text-sm font-medium" htmlFor="account-email">
+          Email
+        </label>
+        <Input id="account-email" value={email ?? ""} disabled readOnly autoComplete="email" />
+        <p className="text-sm text-muted-foreground">
+          Email cannot be changed here. Update your name and phone in Health profile below.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
         <div className="space-y-2">
-          <FormLabel>Email</FormLabel>
-          <Input value={email ?? ""} disabled readOnly />
+          <label className="text-sm font-medium" htmlFor="account-email">
+            Email
+          </label>
+          <Input id="account-email" value={email ?? ""} disabled readOnly autoComplete="email" />
           <FormDescription>Email cannot be changed here.</FormDescription>
         </div>
         <FormField
@@ -62,7 +81,7 @@ export function AccountDetailsForm({
             <FormItem>
               <FormLabel>Full name</FormLabel>
               <FormControl>
-                <Input placeholder="Your name" {...field} />
+                <Input placeholder="Your name…" autoComplete="name" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -75,14 +94,14 @@ export function AccountDetailsForm({
             <FormItem>
               <FormLabel>Phone</FormLabel>
               <FormControl>
-                <Input type="tel" placeholder="+92 300 1234567" {...field} />
+                <Input type="tel" autoComplete="tel" placeholder="+92 300 1234567…" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
         <Button type="submit" disabled={form.formState.isSubmitting} className="justify-self-start">
-          {form.formState.isSubmitting && <Loader2 className="size-4 animate-spin" />}
+          {form.formState.isSubmitting && <Loader2 className="size-4 animate-spin" aria-hidden />}
           Save account
         </Button>
       </form>

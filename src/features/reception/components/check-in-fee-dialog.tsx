@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -38,6 +39,13 @@ export function CheckInFeeDialog({ open, onOpenChange, appointmentId, defaultFee
   const [method, setMethod] = useState<"cash" | "card" | "other">("cash");
   const [notes, setNotes] = useState("");
 
+  useEffect(() => {
+    if (!open) return;
+    setAmount(String(defaultFee ?? 0));
+    setMethod("cash");
+    setNotes("");
+  }, [open, appointmentId, defaultFee]);
+
   function submit() {
     startTransition(async () => {
       const res = await checkInWithFee({
@@ -62,6 +70,7 @@ export function CheckInFeeDialog({ open, onOpenChange, appointmentId, defaultFee
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Check in — collect fee</DialogTitle>
+          <DialogDescription>Record the consultation fee before marking the patient as checked in.</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
@@ -76,7 +85,7 @@ export function CheckInFeeDialog({ open, onOpenChange, appointmentId, defaultFee
             />
           </div>
           <div className="space-y-2">
-            <Label>Payment method</Label>
+            <Label htmlFor="fee-method">Payment method</Label>
             <Select
               value={method}
               onValueChange={(v) => {
@@ -88,7 +97,7 @@ export function CheckInFeeDialog({ open, onOpenChange, appointmentId, defaultFee
                 { value: "other", label: "Other" },
               ]}
             >
-              <SelectTrigger>
+              <SelectTrigger id="fee-method" aria-label="Payment method">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -113,7 +122,7 @@ export function CheckInFeeDialog({ open, onOpenChange, appointmentId, defaultFee
             Cancel
           </Button>
           <Button type="button" disabled={pending} onClick={submit}>
-            {pending && <Loader2 className="size-4 animate-spin" />}
+            {pending && <Loader2 className="size-4 animate-spin" aria-hidden />}
             Check in
           </Button>
         </DialogFooter>

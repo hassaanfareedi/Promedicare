@@ -4,7 +4,11 @@ import { ChangePasswordForm } from "@/features/account/components/change-passwor
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 /** Shared account + password cards for every role settings page. */
-export async function AccountSettingsSections() {
+export async function AccountSettingsSections({
+  contactFields = "editable",
+}: {
+  contactFields?: "editable" | "hidden";
+} = {}) {
   const user = await getCurrentUser();
   if (!user) return null;
 
@@ -19,6 +23,7 @@ export async function AccountSettingsSections() {
             fullName={user.profile.full_name}
             phone={user.profile.phone}
             email={user.email}
+            contactFields={contactFields}
           />
         </CardContent>
       </Card>

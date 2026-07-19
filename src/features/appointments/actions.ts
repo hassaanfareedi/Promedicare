@@ -106,7 +106,7 @@ export async function rescheduleAppointment(
 
   const { data: appt } = await supabase
     .from("appointments")
-    .select("id, scheduled_start, scheduled_end, doctor_id, created_by")
+    .select("id, scheduled_start, scheduled_end, doctor_id, created_by, status")
     .eq("id", parsed.data.appointmentId)
     .maybeSingle();
   if (!appt) return { ok: false, error: "Appointment not found or not accessible." };
@@ -121,7 +121,8 @@ export async function rescheduleAppointment(
     .update({
       scheduled_start: newStart.toISOString(),
       scheduled_end: newEnd.toISOString(),
-      status: "confirmed",
+      // Preserve workflow status (do not auto-confirm a pending request).
+      status: appt.status,
     })
     .eq("id", appt.id);
 

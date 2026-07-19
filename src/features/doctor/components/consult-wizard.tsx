@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useId, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2, Printer } from "lucide-react";
@@ -15,6 +15,7 @@ import { Stepper } from "@/components/ui/stepper";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -160,15 +161,18 @@ export function ConsultWizard({
     <Dialog
       open={open}
       onOpenChange={(v) => {
-        if (!v && !pending) {
+        if (!v && !pending && !uploading) {
           onOpenChange(false);
           if (completed) reset();
         }
       }}
     >
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent className="max-h-[90vh] overflow-y-auto overscroll-contain sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Complete consultation — {patientName}</DialogTitle>
+          <DialogDescription>
+            Document the visit, prescribe medications, and attach files before completing.
+          </DialogDescription>
         </DialogHeader>
 
         <Stepper steps={STEPS} current={step} className="mb-4" />
@@ -282,9 +286,10 @@ export function ConsultWizard({
                         type="button"
                         size="icon"
                         variant="ghost"
+                        aria-label="Remove medication"
                         onClick={() => setMedications((rows) => rows.filter((_, idx) => idx !== i))}
                       >
-                        <Trash2 className="size-4" />
+                        <Trash2 className="size-4" aria-hidden />
                       </Button>
                     )}
                   </div>
@@ -366,11 +371,22 @@ function Field({
   value: string;
   onChange: (v: string) => void;
 }) {
+  const id = useId();
   return (
     <div className="space-y-2">
-      <Label>{label}</Label>
-      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
-      <Textarea rows={5} value={value} onChange={(e) => onChange(e.target.value)} />
+      <Label htmlFor={id}>{label}</Label>
+      {hint && (
+        <p id={`${id}-hint`} className="text-xs text-muted-foreground">
+          {hint}
+        </p>
+      )}
+      <Textarea
+        id={id}
+        rows={5}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-describedby={hint ? `${id}-hint` : undefined}
+      />
     </div>
   );
 }

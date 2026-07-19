@@ -22,7 +22,9 @@ function groupByDay(rows: DoctorAppointment[]): [string, DoctorAppointment[]][] 
 
 export default async function DoctorSchedulePage() {
   const [doctor, user] = await Promise.all([getMyDoctor(), getCurrentUser()]);
-  const appointments = doctor ? await getDoctorAppointments(doctor.id, "upcoming") : [];
+  const appointments = doctor
+    ? await getDoctorAppointments(doctor.id, "upcoming", doctor.hospital_id)
+    : [];
   const groups = groupByDay(appointments);
   const doctorName = user?.profile.full_name ?? "Doctor";
 

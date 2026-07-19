@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Users } from "lucide-react";
-import { getHospitalPatients } from "@/features/reception/data";
+import { getHospitalPatients, getWalkInDoctors } from "@/features/reception/data";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,14 +18,14 @@ import { WalkInDialog } from "@/features/reception/components/walk-in-dialog";
 export const metadata: Metadata = { title: "Patients" };
 
 export default async function ReceptionPatientsPage() {
-  const patients = await getHospitalPatients();
+  const [patients, doctors] = await Promise.all([getHospitalPatients(), getWalkInDoctors()]);
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Patients"
         description="Registered patients at your hospital."
-        actions={<WalkInDialog />}
+        actions={<WalkInDialog doctors={doctors} />}
       />
       {patients.length === 0 ? (
         <EmptyState icon={Users} title="No patients yet" description="Register a walk-in to get started." />

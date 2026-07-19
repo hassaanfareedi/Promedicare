@@ -1,7 +1,19 @@
 import type { Metadata } from "next";
+import dynamic from "next/dynamic";
 import { getPlatformAnalytics } from "@/features/platform/data";
 import { PageHeader } from "@/components/shared/page-header";
-import { PlatformAnalyticsView } from "@/features/platform/components/platform-analytics";
+
+const PlatformAnalyticsView = dynamic(
+  () =>
+    import("@/features/platform/components/platform-analytics").then((m) => m.PlatformAnalyticsView),
+  {
+    loading: () => (
+      <div className="rounded-xl border p-8 text-center text-sm text-muted-foreground" role="status">
+        Loading analytics…
+      </div>
+    ),
+  },
+);
 
 export const metadata: Metadata = { title: "Platform analytics" };
 

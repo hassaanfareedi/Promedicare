@@ -50,6 +50,7 @@ export function MobileNav({
             onNavigate={() => setOpen(false)}
             initialBadges={initialBadges}
             pendingAppointmentsHref={pendingAppointmentsHref}
+            pollBadges={false}
           />
         </div>
         <div className="border-t p-3">

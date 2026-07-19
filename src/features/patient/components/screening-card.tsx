@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -19,18 +20,31 @@ import type { RiskLevel } from "@/types";
 
 type Props = {
   prediction: AiPrediction;
+  predictionId: string;
+  specialtyId?: string | null;
   createdAt: string;
   reviewed: boolean;
 };
 
-export function ScreeningCard({ prediction, createdAt, reviewed }: Props) {
+export function ScreeningCard({
+  prediction,
+  predictionId,
+  specialtyId,
+  createdAt,
+  reviewed,
+}: Props) {
   const [open, setOpen] = useState(false);
+  const params = new URLSearchParams();
+  if (specialtyId) params.set("specialty", specialtyId);
+  params.set("prediction", predictionId);
+  const bookHref = `/patient/appointments/new?${params.toString()}`;
+
   return (
     <Card>
       <CardContent className="flex flex-wrap items-center justify-between gap-4 p-4">
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="font-medium">{prediction.recommended_specialty}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="truncate font-medium">{prediction.recommended_specialty}</p>
             <RiskBadge level={prediction.risk_level as RiskLevel} />
             {reviewed && (
               <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
@@ -44,15 +58,16 @@ export function ScreeningCard({ prediction, createdAt, reviewed }: Props) {
           <DialogTrigger
             render={
               <Button variant="outline" size="sm">
-                <Eye className="size-4" /> View
+                <Eye className="size-4" aria-hidden /> View
               </Button>
             }
           />
-          <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+          <DialogContent className="max-h-[85vh] overflow-y-auto overscroll-contain sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>Screening details</DialogTitle>
+              <DialogDescription>AI screening result from {formatDateTime(createdAt)}.</DialogDescription>
             </DialogHeader>
-            <PredictionResult prediction={prediction} />
+            <PredictionResult prediction={prediction} bookHref={bookHref} />
           </DialogContent>
         </Dialog>
       </CardContent>

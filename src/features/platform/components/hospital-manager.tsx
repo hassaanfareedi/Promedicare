@@ -15,6 +15,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -138,62 +139,93 @@ function AssignAdminDialog({ hospital, profiles }: { hospital: Hospital; profile
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [profileId, setProfileId] = useState("");
+  const [confirming, setConfirming] = useState(false);
+
+  const eligible = profiles.filter(
+    (p) => p.role !== "super_admin" && p.role !== "patient",
+  );
+  const selected = eligible.find((p) => p.id === profileId);
 
   function submit() {
+    if (!confirming) {
+      setConfirming(true);
+      return;
+    }
     startTransition(async () => {
       const res = await assignHospitalAdmin({ profileId, hospitalId: hospital.id });
       if (!res.ok) {
         toast.error(res.error);
+        setConfirming(false);
         return;
       }
       toast.success("Hospital admin assigned");
       setOpen(false);
+      setConfirming(false);
+      setProfileId("");
       router.refresh();
     });
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) setConfirming(false);
+      }}
+    >
       <DialogTrigger
         render={
           <Button variant="outline" size="sm">
-            <UserCog className="size-4" /> Assign admin
+            <UserCog className="size-4" aria-hidden /> Assign admin
           </Button>
         }
       />
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Assign admin — {hospital.name}</DialogTitle>
+          <DialogDescription>
+            Only staff accounts are listed. This changes their role to Hospital Admin for this hospital.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>User</Label>
+            <Label htmlFor={`assign-admin-${hospital.id}`}>User</Label>
             <Select
               value={profileId || null}
-              onValueChange={(v) => setProfileId(v ?? "")}
+              onValueChange={(v) => {
+                setProfileId(v ?? "");
+                setConfirming(false);
+              }}
               items={[
-                { value: null, label: "Select a user" },
-                ...profiles.map((p) => ({
+                { value: null, label: "Select a user…" },
+                ...eligible.map((p) => ({
                   value: p.id,
-                  label: p.full_name ?? p.email ?? p.id,
+                  label: `${p.full_name ?? p.email ?? p.id} (${p.role})`,
                 })),
               ]}
             >
-              <SelectTrigger>
-                <SelectValue />
+              <SelectTrigger id={`assign-admin-${hospital.id}`} aria-label="User">
+                <SelectValue placeholder="Select a user…" />
               </SelectTrigger>
               <SelectContent>
-                {profiles.map((p) => (
+                {eligible.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
-                    {p.full_name ?? p.email ?? p.id}
+                    {p.full_name ?? p.email ?? p.id} ({p.role})
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
+          {confirming && selected && (
+            <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+              Confirm: make {selected.full_name ?? selected.email} hospital admin? Their current role is{" "}
+              {selected.role}.
+            </p>
+          )}
           <Button onClick={submit} disabled={pending || !profileId} className="w-full">
-            {pending ? <Loader2 className="animate-spin" /> : null}
-            Make hospital admin
+            {pending ? <Loader2 className="animate-spin" aria-hidden /> : null}
+            {confirming ? "Confirm assign admin" : "Make hospital admin"}
           </Button>
         </div>
       </DialogContent>

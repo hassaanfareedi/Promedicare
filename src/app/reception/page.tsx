@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CalendarDays, Users, UserCheck, Clock } from "lucide-react";
-import { getReceptionOverview } from "@/features/reception/data";
+import { getReceptionOverview, getWalkInDoctors } from "@/features/reception/data";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -9,14 +9,17 @@ import { StaffAppointmentRow } from "@/features/reception/components/staff-appoi
 import { WalkInDialog } from "@/features/reception/components/walk-in-dialog";
 
 export default async function ReceptionDashboard() {
-  const { today, waiting, patientCount } = await getReceptionOverview();
+  const [{ today, waiting, patientCount }, doctors] = await Promise.all([
+    getReceptionOverview(),
+    getWalkInDoctors(),
+  ]);
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Front desk"
         description="Manage today's queue and patient registrations."
-        actions={<WalkInDialog />}
+        actions={<WalkInDialog doctors={doctors} />}
       />
 
       <div className="grid gap-4 sm:grid-cols-3">

@@ -49,3 +49,10 @@ export const roleAssignSchema = z.object({
   role: z.enum(["doctor", "receptionist"]),
 });
 export type RoleAssignInput = z.infer<typeof roleAssignSchema>;
+
+/** Promote a hospital patient account into staff (doctor or receptionist). */
+export const promoteStaffSchema = z.object({
+  profileId: z.string().uuid(),
+  role: z.enum(["doctor", "receptionist"]),
+});
+export type PromoteStaffInput = z.infer<typeof promoteStaffSchema>;

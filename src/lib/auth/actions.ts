@@ -60,7 +60,8 @@ export async function login(_prev: ActionResult | null, formData: FormData): Pro
   const requested = (formData.get("redirectTo") as string) || "";
   const allowedPrefix = ROLE_PREFIX[user.profile.role];
   const redirectTo =
-    requested.startsWith(allowedPrefix) && !requested.startsWith("//")
+    !requested.startsWith("//") &&
+    (requested === allowedPrefix || requested.startsWith(`${allowedPrefix}/`))
       ? requested
       : ROLE_HOME[user.profile.role];
   redirect(redirectTo);

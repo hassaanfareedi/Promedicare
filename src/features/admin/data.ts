@@ -69,6 +69,19 @@ export async function getStaff(): Promise<Profile[]> {
   return data ?? [];
 }
 
+/** Patient accounts that can be promoted into hospital staff. */
+export async function getPromotableProfiles(): Promise<Profile[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("role", "patient")
+    .is("deleted_at", null)
+    .order("full_name")
+    .limit(100);
+  return data ?? [];
+}
+
 export async function getDoctorsAdmin(): Promise<AdminDoctor[]> {
   const supabase = await createClient();
   const { data } = await supabase

@@ -27,16 +27,19 @@ export default async function ScreeningsPage() {
       />
 
       {screenings.length === 0 ? (
-        <EmptyState
-          icon={ClipboardList}
-          title="No screenings yet"
-          description="Run your first AI symptom check to get a risk assessment and specialist recommendation."
-          action={
-            <Link href="/patient/symptom-check" className={buttonVariants({ size: "sm" })}>
-              <Activity className="size-4" /> Start symptom check
-            </Link>
-          }
-        />
+        <>
+          <EmptyState
+            icon={ClipboardList}
+            title="No screenings yet"
+            description="Run your first AI symptom check to get a risk assessment and specialist recommendation."
+            action={
+              <Link href="/patient/symptom-check" className={buttonVariants({ size: "sm" })}>
+                <Activity className="size-4" aria-hidden /> Start symptom check
+              </Link>
+            }
+          />
+          <AiDisclaimer />
+        </>
       ) : (
         <>
           <div className="space-y-3">
@@ -44,6 +47,8 @@ export default async function ScreeningsPage() {
               <ScreeningCard
                 key={p.id}
                 prediction={toAiPrediction(p)}
+                predictionId={p.id}
+                specialtyId={p.recommended_specialty_id}
                 createdAt={p.created_at}
                 reviewed={p.status === "reviewed"}
               />

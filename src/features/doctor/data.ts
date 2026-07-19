@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/session";
+import { dayBoundsInTimeZone } from "@/lib/datetime";
 import type { Appointment, Doctor, Patient, Prediction } from "@/types";
 
 export type DoctorAppointment = Appointment & {
@@ -25,22 +26,18 @@ export async function getMyDoctor(): Promise<Doctor | null> {
   return data;
 }
 
-function startOfToday(): string {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
-}
-
-function endOfToday(): string {
-  const d = new Date();
-  d.setHours(23, 59, 59, 999);
-  return d.toISOString();
+async function doctorHospitalDayBounds(hospitalId: string): Promise<{ startIso: string; endIso: string }> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("hospitals").select("timezone").eq("id", hospitalId).maybeSingle();
+  const timeZone = data?.timezone?.trim() || "Asia/Karachi";
+  return dayBoundsInTimeZone(timeZone);
 }
 
 /** Appointments assigned to a doctor within a time window. */
 export async function getDoctorAppointments(
   doctorId: string,
   range: "today" | "upcoming" | "all" = "all",
+  hospitalId?: string | null,
 ): Promise<DoctorAppointment[]> {
   const supabase = await createClient();
   let query = supabase
@@ -52,9 +49,27 @@ export async function getDoctorAppointments(
     .is("deleted_at", null);
 
   if (range === "today") {
-    query = query.gte("scheduled_start", startOfToday()).lte("scheduled_start", endOfToday());
+    const hid =
+      hospitalId ??
+      (await supabase.from("doctors").select("hospital_id").eq("id", doctorId).maybeSingle()).data
+        ?.hospital_id;
+    const { startIso, endIso } = hid
+      ? await doctorHospitalDayBounds(hid)
+      : dayBoundsInTimeZone("Asia/Karachi");
+    query = query.gte("scheduled_start", startIso).lte("scheduled_start", endIso);
   } else if (range === "upcoming") {
-    query = query.gte("scheduled_start", new Date().toISOString());
+    const nowIso = new Date().toISOString();
+    const hid =
+      hospitalId ??
+      (await supabase.from("doctors").select("hospital_id").eq("id", doctorId).maybeSingle()).data
+        ?.hospital_id;
+    const { startIso } = hid
+      ? await doctorHospitalDayBounds(hid)
+      : dayBoundsInTimeZone("Asia/Karachi");
+    // Future slots, plus today's active visits even if the slot time has passed.
+    query = query.or(
+      `scheduled_start.gte.${nowIso},and(status.in.(checked_in,in_progress),scheduled_start.gte.${startIso})`,
+    );
   }
 
   const { data } = await query.order("scheduled_start", { ascending: range !== "all" });
@@ -109,7 +124,7 @@ export async function getDoctorOverview(): Promise<DoctorOverview> {
   }
 
   const [today, { count: pending }, { count: patients }] = await Promise.all([
-    getDoctorAppointments(doctor.id, "today"),
+    getDoctorAppointments(doctor.id, "today", doctor.hospital_id),
     supabase
       .from("predictions")
       .select("id", { count: "exact", head: true })

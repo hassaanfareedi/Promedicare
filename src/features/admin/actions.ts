@@ -10,11 +10,13 @@ import {
   updateDoctorSchema,
   availabilitySchema,
   roleAssignSchema,
+  promoteStaffSchema,
   type DepartmentInput,
   type DoctorInput,
   type UpdateDoctorInput,
   type AvailabilityInput,
   type RoleAssignInput,
+  type PromoteStaffInput,
 } from "@/schemas/admin";
 import {
   updateHospitalSchema,
@@ -108,7 +110,7 @@ export async function assignRole(input: RoleAssignInput): Promise<MutationResult
   if (profile.role !== "doctor" && profile.role !== "receptionist") {
     return {
       ok: false,
-      error: "Only Doctor or Receptionist roles can be changed here. Patients are not managed on Staff.",
+      error: "Only Doctor or Receptionist roles can be changed here. Use Promote to staff for patients.",
     };
   }
 
@@ -122,6 +124,47 @@ export async function assignRole(input: RoleAssignInput): Promise<MutationResult
     entityType: "profile",
     entityId: parsed.data.profileId,
     metadata: { role: parsed.data.role },
+  });
+  revalidatePath("/admin/staff");
+  revalidatePath("/admin/doctors");
+  return { ok: true };
+}
+
+/** Promote a patient (or unassigned hospital user) to doctor/receptionist. */
+export async function promoteToStaff(input: PromoteStaffInput): Promise<MutationResult> {
+  const hid = await hospitalId();
+  if (!hid) return { ok: false, error: "Your account is not linked to a hospital." };
+  const parsed = promoteStaffSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid" };
+  const supabase = await createClient();
+
+  const { data: profile, error: profileErr } = await supabase
+    .from("profiles")
+    .select("id, role, hospital_id")
+    .eq("id", parsed.data.profileId)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (profileErr) return { ok: false, error: profileErr.message };
+  if (!profile) return { ok: false, error: "User not found." };
+  if (profile.role === "super_admin" || profile.role === "hospital_admin") {
+    return { ok: false, error: "Cannot change this account from Staff." };
+  }
+  if (profile.hospital_id && profile.hospital_id !== hid) {
+    return { ok: false, error: "User belongs to another hospital." };
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ role: parsed.data.role, hospital_id: hid })
+    .eq("id", parsed.data.profileId);
+  if (error) return { ok: false, error: error.message };
+
+  await logAudit({
+    action: "staff.promoted",
+    entityType: "profile",
+    entityId: parsed.data.profileId,
+    metadata: { role: parsed.data.role, from: profile.role },
   });
   revalidatePath("/admin/staff");
   revalidatePath("/admin/doctors");

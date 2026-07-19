@@ -72,7 +72,12 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Profile-completion gate (patients complete an onboarding profile).
-  if (!onboarded && role === "patient" && !pathname.startsWith("/onboarding")) {
+  // Allow password recovery while onboarding is incomplete.
+  const onboardingExempt =
+    pathname.startsWith("/onboarding") ||
+    pathname.startsWith("/reset-password") ||
+    pathname.startsWith("/auth");
+  if (!onboarded && role === "patient" && !onboardingExempt) {
     const url = request.nextUrl.clone();
     url.pathname = "/onboarding";
     return NextResponse.redirect(url);

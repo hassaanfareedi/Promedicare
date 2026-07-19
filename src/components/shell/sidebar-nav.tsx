@@ -14,6 +14,8 @@ type Props = {
   initialBadges?: Record<string, number>;
   /** When set, poll pending appointment count into this href every 30s. */
   pendingAppointmentsHref?: string;
+  /** Disable polling (e.g. mobile nav shares desktop poller). */
+  pollBadges?: boolean;
 };
 
 export function SidebarNav({
@@ -21,6 +23,7 @@ export function SidebarNav({
   onNavigate,
   initialBadges = {},
   pendingAppointmentsHref,
+  pollBadges = true,
 }: Props) {
   const pathname = usePathname();
   const [badges, setBadges] = useState<Record<string, number>>(initialBadges);
@@ -40,20 +43,31 @@ export function SidebarNav({
   }, [pendingAppointmentsHref]);
 
   useEffect(() => {
-    if (!pendingAppointmentsHref) return;
-    const interval = setInterval(() => void refreshPending(), 30_000);
+    if (!pendingAppointmentsHref || !pollBadges) return;
+    const tick = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      void refreshPending();
+    };
+    const interval = setInterval(tick, 30_000);
     return () => clearInterval(interval);
-  }, [pendingAppointmentsHref, refreshPending]);
+  }, [pendingAppointmentsHref, pollBadges, refreshPending]);
 
   return (
     <nav className="grid gap-1 px-3">
       {items.map((item) => {
+        // Exact match when this href is a parent of other nav items (e.g. /patient).
+        const hasNestedNavChildren = items.some(
+          (other) => other.href !== item.href && other.href.startsWith(`${item.href}/`),
+        );
         const active =
-          pathname === item.href || (item.href !== "/" && pathname.startsWith(`${item.href}/`));
+          pathname === item.href ||
+          (item.href !== "/" &&
+            !hasNestedNavChildren &&
+            pathname.startsWith(`${item.href}/`));
         const Icon = item.icon;
         const badge = badges[item.href] ?? 0;
         const label =
-          badge > 0 ? `${item.label}, ${badge} pending request${badge === 1 ? "" : "s"}` : item.label;
+          badge > 0 ? `${item.label}, ${badge} pending request${badge === 1 ? "" : "s"}` : undefined;
         return (
           <Link
             key={item.href}

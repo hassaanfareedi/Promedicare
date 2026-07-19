@@ -34,7 +34,7 @@ export default async function ProfilePage() {
         </CardContent>
       </Card>
 
-      <AccountSettingsSections />
+      <AccountSettingsSections contactFields="hidden" />
 
       <Card>
         <CardHeader>

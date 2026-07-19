@@ -1,5 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth/session";
+import { dayBoundsInTimeZone } from "@/lib/datetime";
 import type { Appointment, Patient } from "@/types";
 
 export type StaffAppointment = Appointment & {
@@ -10,15 +12,16 @@ export type StaffAppointment = Appointment & {
   consultationFee: number | null;
 };
 
-function startOfToday(): string {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
-}
-function endOfToday(): string {
-  const d = new Date();
-  d.setHours(23, 59, 59, 999);
-  return d.toISOString();
+async function hospitalDayBounds(): Promise<{ startIso: string; endIso: string }> {
+  const user = await getCurrentUser();
+  const hospitalId = user?.profile.hospital_id;
+  const supabase = await createClient();
+  let timeZone = "Asia/Karachi";
+  if (hospitalId) {
+    const { data } = await supabase.from("hospitals").select("timezone").eq("id", hospitalId).maybeSingle();
+    if (data?.timezone?.trim()) timeZone = data.timezone.trim();
+  }
+  return dayBoundsInTimeZone(timeZone);
 }
 
 async function enrich(rows: Appointment[]): Promise<StaffAppointment[]> {
@@ -68,14 +71,33 @@ const STAFF_APPT_COLUMNS =
 /** Today's appointments across the receptionist's hospital (RLS-scoped). */
 export async function getTodayAppointments(): Promise<StaffAppointment[]> {
   const supabase = await createClient();
+  const { startIso, endIso } = await hospitalDayBounds();
   const { data } = await supabase
     .from("appointments")
     .select(STAFF_APPT_COLUMNS)
     .is("deleted_at", null)
-    .gte("scheduled_start", startOfToday())
-    .lte("scheduled_start", endOfToday())
+    .gte("scheduled_start", startIso)
+    .lte("scheduled_start", endIso)
     .order("scheduled_start", { ascending: true });
   return enrich((data ?? []) as Appointment[]);
+}
+
+export type WalkInDoctor = {
+  id: string;
+  full_name: string | null;
+  specialty_name: string | null;
+};
+
+/** Active doctors in the staff member's hospital for walk-in booking. */
+export async function getWalkInDoctors(): Promise<WalkInDoctor[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("doctor_directory")
+    .select("id, full_name, specialty_name")
+    .order("full_name");
+  return (data ?? []).flatMap((d) =>
+    d.id ? [{ id: d.id, full_name: d.full_name, specialty_name: d.specialty_name }] : [],
+  );
 }
 
 /** All hospital appointments (RLS-scoped), most recent first. */
