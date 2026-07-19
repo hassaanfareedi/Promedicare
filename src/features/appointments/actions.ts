@@ -69,6 +69,14 @@ export async function bookAppointment(
     });
   }
 
+  // Notify hospital admin + reception via SECURITY DEFINER RPC (RLS blocks profile listing).
+  await supabase.rpc("notify_hospital_booking_staff", {
+    p_hospital: v.hospitalId,
+    p_appointment: appointmentId,
+    p_title: "New appointment request",
+    p_body: "A patient has requested an appointment. Confirm or cancel it from Appointments.",
+  });
+
   await logAudit({
     action: "appointment.booked",
     entityType: "appointment",
@@ -78,6 +86,10 @@ export async function bookAppointment(
 
   revalidatePath("/patient/appointments");
   revalidatePath("/patient");
+  revalidatePath("/admin");
+  revalidatePath("/admin/appointments");
+  revalidatePath("/reception");
+  revalidatePath("/reception/appointments");
   return { ok: true, data: { appointmentId } };
 }
 

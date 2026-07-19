@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { CalendarDays } from "lucide-react";
-import { getHospitalAppointments } from "@/features/reception/data";
+import {
+  getHospitalAppointments,
+  sortAppointmentsPendingFirst,
+} from "@/features/reception/data";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { StaffAppointmentRow } from "@/features/reception/components/staff-appointment-row";
@@ -8,7 +11,7 @@ import { StaffAppointmentRow } from "@/features/reception/components/staff-appoi
 export const metadata: Metadata = { title: "Appointments" };
 
 export default async function AdminAppointmentsPage() {
-  const appointments = await getHospitalAppointments();
+  const appointments = sortAppointmentsPendingFirst(await getHospitalAppointments());
 
   return (
     <div className="space-y-6">

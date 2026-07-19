@@ -90,6 +90,40 @@ export async function getHospitalAppointments(): Promise<StaffAppointment[]> {
   return enrich((data ?? []) as Appointment[]);
 }
 
+/** Pending booking requests (hospital-scoped), soonest first. */
+export async function getPendingHospitalAppointments(limit = 5): Promise<StaffAppointment[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("appointments")
+    .select(STAFF_APPT_COLUMNS)
+    .eq("status", "pending")
+    .is("deleted_at", null)
+    .order("scheduled_start", { ascending: true })
+    .limit(limit);
+  return enrich((data ?? []) as Appointment[]);
+}
+
+/** Count of pending appointment requests (hospital-scoped via RLS). */
+export async function getPendingAppointmentRequestCount(): Promise<number> {
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("appointments")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "pending")
+    .is("deleted_at", null);
+  return count ?? 0;
+}
+
+/** Pending-first sort for staff appointment lists. */
+export function sortAppointmentsPendingFirst(rows: StaffAppointment[]): StaffAppointment[] {
+  return [...rows].sort((a, b) => {
+    const aPending = a.status === "pending" ? 0 : 1;
+    const bPending = b.status === "pending" ? 0 : 1;
+    if (aPending !== bPending) return aPending - bPending;
+    return new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime();
+  });
+}
+
 /** Patients in the receptionist's hospital (RLS-scoped). */
 export async function getHospitalPatients(): Promise<Patient[]> {
   const supabase = await createClient();

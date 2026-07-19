@@ -980,6 +980,15 @@ export type Database = {
         }
         Returns: string
       }
+      notify_hospital_booking_staff: {
+        Args: {
+          p_appointment: string
+          p_body?: string
+          p_hospital: string
+          p_title?: string
+        }
+        Returns: undefined
+      }
       current_doctor_id: { Args: never; Returns: string }
       current_hospital_id: { Args: never; Returns: string }
       current_patient_id: { Args: never; Returns: string }

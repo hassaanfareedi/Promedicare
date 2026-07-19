@@ -106,11 +106,28 @@ export async function updateAppointmentStatus(
     .from("appointments")
     .update(patch)
     .eq("id", v.appointmentId)
-    .select("id")
+    .select("id, patient_id")
     .maybeSingle();
 
   if (error) return { ok: false, error: error.message };
   if (!updated) return { ok: false, error: "Appointment not found or not accessible." };
+
+  if (v.status === "confirmed") {
+    const { data: patient } = await supabase
+      .from("patients")
+      .select("profile_id")
+      .eq("id", updated.patient_id)
+      .maybeSingle();
+    if (patient?.profile_id) {
+      await notify({
+        recipientId: patient.profile_id,
+        type: "appointment_confirmed",
+        title: "Appointment confirmed",
+        body: "Your appointment request has been confirmed.",
+        data: { appointmentId: updated.id },
+      });
+    }
+  }
 
   await logAudit({
     action: "appointment.status_changed",
@@ -123,6 +140,11 @@ export async function updateAppointmentStatus(
   revalidatePath("/doctor");
   revalidatePath("/reception/queue");
   revalidatePath("/reception/appointments");
+  revalidatePath("/reception");
+  revalidatePath("/admin");
+  revalidatePath("/admin/appointments");
+  revalidatePath("/patient/appointments");
+  revalidatePath("/patient");
   return { ok: true };
 }
 

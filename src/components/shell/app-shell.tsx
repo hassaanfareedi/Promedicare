@@ -14,7 +14,17 @@ import { NAV_BY_ROLE } from "@/components/shell/nav-config";
 import { ROLE_HOME, ROLE_LABEL } from "@/lib/constants";
 import type { SessionUser } from "@/lib/auth/session";
 
-export function AppShell({ user, children }: { user: SessionUser; children: React.ReactNode }) {
+export function AppShell({
+  user,
+  children,
+  navBadges,
+  pendingAppointmentsHref,
+}: {
+  user: SessionUser;
+  children: React.ReactNode;
+  navBadges?: Record<string, number>;
+  pendingAppointmentsHref?: string;
+}) {
   const role = user.profile.role;
   const items = NAV_BY_ROLE[role];
   const pathname = usePathname();
@@ -33,7 +43,11 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
           <p className="px-6 pb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
             {ROLE_LABEL[role]}
           </p>
-          <SidebarNav items={items} />
+          <SidebarNav
+            items={items}
+            initialBadges={navBadges}
+            pendingAppointmentsHref={pendingAppointmentsHref}
+          />
         </div>
         <div className="border-t p-3">
           <div className="mb-2 px-2">
@@ -50,7 +64,11 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b bg-background/80 px-4 backdrop-blur-sm md:px-6">
-          <MobileNav items={items} />
+          <MobileNav
+            items={items}
+            initialBadges={navBadges}
+            pendingAppointmentsHref={pendingAppointmentsHref}
+          />
           <div className="lg:hidden">
             <Logo size="sm" iconOnly />
           </div>

@@ -77,12 +77,24 @@ export async function getDoctorsAdmin(): Promise<AdminDoctor[]> {
   return (data ?? []) as AdminDoctor[];
 }
 
+const APPOINTMENT_STATUSES: AppointmentStatus[] = [
+  "pending",
+  "confirmed",
+  "checked_in",
+  "in_progress",
+  "completed",
+  "cancelled",
+  "no_show",
+];
+
 export type AdminOverview = {
   doctors: number;
   staff: number;
   departments: number;
   patients: number;
   appointmentsToday: number;
+  todayByStatus: { status: AppointmentStatus; count: number }[];
+  pendingRequests: number;
 };
 
 export async function getAdminOverview(): Promise<AdminOverview> {
@@ -92,25 +104,42 @@ export async function getAdminOverview(): Promise<AdminOverview> {
   const end = new Date();
   end.setHours(23, 59, 59, 999);
 
-  const [doctors, staff, departments, patients, appts] = await Promise.all([
+  const [doctors, staff, departments, patients, todayRows, pending] = await Promise.all([
     supabase.from("doctors").select("id", { count: "exact", head: true }).is("deleted_at", null),
     supabase.from("profiles").select("id", { count: "exact", head: true }).is("deleted_at", null),
     supabase.from("departments").select("id", { count: "exact", head: true }).is("deleted_at", null),
     supabase.from("patients").select("id", { count: "exact", head: true }).is("deleted_at", null),
     supabase
       .from("appointments")
-      .select("id", { count: "exact", head: true })
+      .select("status")
       .is("deleted_at", null)
       .gte("scheduled_start", start.toISOString())
       .lte("scheduled_start", end.toISOString()),
+    supabase
+      .from("appointments")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending")
+      .is("deleted_at", null),
   ]);
+
+  const statusMap = new Map<AppointmentStatus, number>();
+  for (const row of todayRows.data ?? []) {
+    statusMap.set(row.status, (statusMap.get(row.status) ?? 0) + 1);
+  }
+  const todayByStatus = APPOINTMENT_STATUSES.map((status) => ({
+    status,
+    count: statusMap.get(status) ?? 0,
+  }));
+  const appointmentsToday = todayByStatus.reduce((sum, s) => sum + s.count, 0);
 
   return {
     doctors: doctors.count ?? 0,
     staff: staff.count ?? 0,
     departments: departments.count ?? 0,
     patients: patients.count ?? 0,
-    appointmentsToday: appts.count ?? 0,
+    appointmentsToday,
+    todayByStatus,
+    pendingRequests: pending.count ?? 0,
   };
 }
 
