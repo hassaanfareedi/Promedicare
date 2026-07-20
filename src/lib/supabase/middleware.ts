@@ -81,22 +81,29 @@ export async function updateSession(request: NextRequest) {
   const role = profile.role as UserRole;
   const onboarded = profile.onboarding_completed ?? false;
 
-  // Keep signed-in users out of the auth pages.
-  if (["/login", "/register", "/forgot-password"].some((p) => pathname.startsWith(p))) {
+  // Soft-nav / prefetch / RSC flights: a redirect response here gets cached by
+  // the App Router and then deadens the corresponding <Link> click until a
+  // hard reload. Skip role/onboarding/portal-prefix redirects for these; layout
+  // `requireRole` still enforces access on the real document render.
+  // Unauthenticated → login (above) is intentionally still applied.
+  const isSoftNav =
+    request.headers.get("rsc") === "1" ||
+    request.headers.get("next-router-prefetch") === "1" ||
+    request.headers.has("next-router-segment-prefetch") ||
+    request.headers.get("purpose") === "prefetch" ||
+    (request.headers.get("sec-purpose")?.includes("prefetch") ?? false);
+
+  // Keep signed-in users out of the auth pages (document navigations only).
+  if (
+    !isSoftNav &&
+    ["/login", "/register", "/forgot-password"].some((p) => pathname.startsWith(p))
+  ) {
     return redirectTo((url) => {
       url.pathname = ROLE_HOME[role];
     });
   }
 
-  // Skip role/onboarding redirects for prefetch requests. A prefetched RSC
-  // payload that resolves to a redirect gets cached by the router and then
-  // deadens the corresponding <Link> click. The real (non-prefetch) navigation
-  // re-runs this middleware and gates correctly.
-  const isPrefetch =
-    request.headers.get("next-router-prefetch") === "1" ||
-    request.headers.get("purpose") === "prefetch" ||
-    (request.headers.get("sec-purpose")?.includes("prefetch") ?? false);
-  if (isPrefetch) return response;
+  if (isSoftNav) return response;
 
   // Profile-completion gate (patients complete an onboarding profile).
   // Allow password recovery while onboarding is incomplete.
