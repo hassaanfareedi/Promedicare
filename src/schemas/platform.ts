@@ -42,3 +42,9 @@ export const assignHospitalAdminSchema = z.object({
   hospitalId: z.string().uuid(),
 });
 export type AssignHospitalAdminInput = z.infer<typeof assignHospitalAdminSchema>;
+
+export const transferDoctorSchema = z.object({
+  doctorId: z.string().uuid(),
+  toHospitalId: z.string().uuid(),
+});
+export type TransferDoctorInput = z.infer<typeof transferDoctorSchema>;

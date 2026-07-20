@@ -33,6 +33,45 @@ export async function getAllProfiles(): Promise<Profile[]> {
   return data ?? [];
 }
 
+export type PlatformDoctor = {
+  id: string;
+  is_active: boolean;
+  hospital_id: string;
+  hospital_name: string | null;
+  specialty_name: string | null;
+  profile: Pick<Profile, "id" | "full_name" | "email"> | null;
+};
+
+export async function getPlatformDoctors(): Promise<PlatformDoctor[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("doctors")
+    .select(
+      "id, is_active, hospital_id, profile:profiles(id, full_name, email), specialty:specialties(name), hospital:hospitals(name)",
+    )
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false });
+
+  return (data ?? []).map((row) => {
+    const r = row as {
+      id: string;
+      is_active: boolean;
+      hospital_id: string;
+      profile: PlatformDoctor["profile"];
+      specialty: { name: string } | null;
+      hospital: { name: string } | null;
+    };
+    return {
+      id: r.id,
+      is_active: r.is_active,
+      hospital_id: r.hospital_id,
+      hospital_name: r.hospital?.name ?? null,
+      specialty_name: r.specialty?.name ?? null,
+      profile: r.profile,
+    };
+  });
+}
+
 export async function getAuditLogs(limit = 100): Promise<AuditEntry[]> {
   const supabase = await createClient();
   const { data } = await supabase

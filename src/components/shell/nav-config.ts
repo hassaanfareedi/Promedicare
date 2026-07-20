@@ -58,6 +58,7 @@ export const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
   super_admin: [
     { label: "Dashboard", href: "/platform", icon: LayoutDashboard },
     { label: "Hospitals", href: "/platform/hospitals", icon: Building2 },
+    { label: "Doctors", href: "/platform/doctors", icon: BriefcaseMedical },
     { label: "Specialties", href: "/platform/specialties", icon: Stethoscope },
     { label: "Analytics", href: "/platform/analytics", icon: BarChart3 },
     { label: "Audit Logs", href: "/platform/audit", icon: ScrollText },
