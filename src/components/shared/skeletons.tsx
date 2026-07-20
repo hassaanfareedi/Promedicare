@@ -1,9 +1,12 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
-export function PageSkeleton({ stats = 3 }: { stats?: number }) {
+export function PageSkeleton({
+  stats = 3,
+  ...rest
+}: { stats?: number } & React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div role="status" aria-busy="true" aria-label="Loading" className="space-y-6">
+    <div role="status" aria-busy="true" aria-label="Loading" className="space-y-6" {...rest}>
       <span className="sr-only">Loading</span>
       <div className="space-y-2">
         <Skeleton className="h-8 w-56" />

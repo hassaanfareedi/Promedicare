@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { NavItem } from "@/components/shell/nav-config";
 import { fetchPendingAppointmentNavBadge } from "@/features/appointments/nav-badges";
+import { scheduleStalledNavGuard } from "@/lib/nav/nav-fallback";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -28,6 +29,7 @@ export function SidebarNav({
   const pathname = usePathname();
   const router = useRouter();
   const pathnameRef = useRef(pathname);
+  const latestHrefRef = useRef<string | null>(null);
   const [badges, setBadges] = useState<Record<string, number>>(initialBadges);
 
   useEffect(() => {
@@ -62,15 +64,17 @@ export function SidebarNav({
     onNavigate?.();
     if (pathnameRef.current === href) return;
 
+    latestHrefRef.current = href;
     router.push(href);
 
     // Soft App Router navigations can silently no-op after a poisoned RSC
-    // flight. If the path never updates to the target, fall back to a full load.
-    window.setTimeout(() => {
-      if (pathnameRef.current !== href) {
-        window.location.assign(href);
-      }
-    }, 400);
+    // flight (and a loading.tsx boundary can hide that stall behind a skeleton
+    // that never resolves). Force a full load if either failure mode persists.
+    scheduleStalledNavGuard(
+      href,
+      () => pathnameRef.current === href,
+      () => latestHrefRef.current === href,
+    );
   }
 
   return (

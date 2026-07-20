@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { ComponentProps, MouseEvent } from "react";
+import { useRef, type ComponentProps, type MouseEvent } from "react";
+import { scheduleStalledNavGuard } from "@/lib/nav/nav-fallback";
 
 type Props = Omit<ComponentProps<typeof Link>, "prefetch" | "onClick"> & {
   onClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
@@ -23,6 +24,7 @@ function targetMatches(href: string): boolean {
  */
 export function ReliableNavLink({ href, onClick, children, ...props }: Props) {
   const router = useRouter();
+  const latestHrefRef = useRef<string | null>(null);
   const hrefString = typeof href === "string" ? href : href.pathname ?? String(href);
 
   function handleClick(event: MouseEvent<HTMLAnchorElement>) {
@@ -34,13 +36,14 @@ export function ReliableNavLink({ href, onClick, children, ...props }: Props) {
     event.preventDefault();
     if (targetMatches(hrefString)) return;
 
+    latestHrefRef.current = hrefString;
     router.push(hrefString);
 
-    window.setTimeout(() => {
-      if (!targetMatches(hrefString)) {
-        window.location.assign(hrefString);
-      }
-    }, 400);
+    scheduleStalledNavGuard(
+      hrefString,
+      () => targetMatches(hrefString),
+      () => latestHrefRef.current === hrefString,
+    );
   }
 
   return (
