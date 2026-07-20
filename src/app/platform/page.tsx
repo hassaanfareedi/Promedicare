@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   Building2,
@@ -13,6 +14,8 @@ import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
 import { QuickLink } from "@/components/shared/quick-link";
 import { buttonVariants } from "@/components/ui/button";
+
+export const metadata: Metadata = { title: "Platform" };
 
 export default async function PlatformDashboard() {
   const o = await getPlatformOverview();

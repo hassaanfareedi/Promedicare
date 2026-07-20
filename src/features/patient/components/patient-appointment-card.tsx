@@ -2,7 +2,7 @@ import { CalendarDays, MapPin, Stethoscope } from "lucide-react";
 import type { AppointmentView } from "@/features/patient/data";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { APPOINTMENT_STATUS_META } from "@/lib/constants";
+import { getAppointmentStatusMeta } from "@/lib/constants";
 import { formatDateTime, formatDoctorName } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +20,7 @@ export function PatientAppointmentCard({
   actions,
   className,
 }: Props) {
-  const hint = APPOINTMENT_STATUS_META[a.status].hint;
+  const hint = getAppointmentStatusMeta(a.status).hint;
 
   return (
     <Card

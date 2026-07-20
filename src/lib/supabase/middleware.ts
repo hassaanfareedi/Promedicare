@@ -3,6 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 import type { Database } from "@/types/database";
 import type { UserRole } from "@/types";
 import { ROLE_HOME, ROLE_PREFIX } from "@/lib/constants";
+import { getSupabaseBrowserEnv } from "@/lib/supabase/env";
 
 const PUBLIC_PREFIXES = ["/", "/login", "/register", "/forgot-password", "/reset-password", "/auth", "/records"];
 
@@ -35,9 +36,10 @@ export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
   const softNav = isSoftNavigation(request);
 
+  const { url, anonKey } = getSupabaseBrowserEnv();
   const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    url,
+    anonKey,
     {
       cookies: {
         getAll() {

@@ -3,7 +3,7 @@
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit } from "@/lib/rate-limit";
-import { visitorLookupSchema, type VisitorLookupInput } from "@/schemas/visitor";
+import { visitorLookupSchema, visitorRecordSchema, type VisitorLookupInput } from "@/schemas/visitor";
 import type { VisitorRecord } from "@/types";
 
 export type LookupResult =
@@ -41,6 +41,10 @@ export async function lookupRecord(input: VisitorLookupInput): Promise<LookupRes
     return { ok: false, error: GENERIC_ERROR };
   }
 
-  // The RPC returns a minimal, safe JSON object matching VisitorRecord.
-  return { ok: true, record: data as unknown as VisitorRecord };
+  // The RPC returns untyped JSON; validate it before trusting the shape.
+  const record = visitorRecordSchema.safeParse(data);
+  if (!record.success) {
+    return { ok: false, error: GENERIC_ERROR };
+  }
+  return { ok: true, record: record.data satisfies VisitorRecord };
 }

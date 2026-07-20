@@ -1,9 +1,9 @@
 import { cn } from "@/lib/utils";
-import { RISK_META } from "@/lib/constants";
+import { getRiskMeta } from "@/lib/constants";
 import type { RiskLevel } from "@/types";
 
 export function RiskBadge({ level, className }: { level: RiskLevel; className?: string }) {
-  const meta = RISK_META[level];
+  const meta = getRiskMeta(level);
   return (
     <span
       className={cn(

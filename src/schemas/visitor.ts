@@ -23,3 +23,38 @@ export const visitorLookupSchema = z
   });
 
 export type VisitorLookupInput = z.infer<typeof visitorLookupSchema>;
+
+const appointmentStatusSchema = z.enum([
+  "pending",
+  "confirmed",
+  "checked_in",
+  "in_progress",
+  "completed",
+  "cancelled",
+  "no_show",
+]);
+
+/**
+ * Shape of the `visitor_lookup` RPC payload. It comes back as untyped JSON, so
+ * we validate it before trusting it as a VisitorRecord.
+ */
+export const visitorRecordSchema = z.object({
+  patientCode: z.string(),
+  fullName: z.string(),
+  registeredHospital: z.string().nullable(),
+  nextAppointment: z
+    .object({
+      date: z.string(),
+      status: appointmentStatusSchema,
+      doctor: z.string().nullable(),
+      department: z.string().nullable(),
+    })
+    .nullable(),
+  recentHistory: z.array(
+    z.object({
+      date: z.string(),
+      status: appointmentStatusSchema,
+      doctor: z.string().nullable(),
+    }),
+  ),
+});

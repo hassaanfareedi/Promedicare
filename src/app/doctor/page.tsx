@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { CalendarDays, Stethoscope, Users, Clock, ClipboardList } from "lucide-react";
 import { getDoctorOverview } from "@/features/doctor/data";
@@ -11,6 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { formatTime } from "@/lib/format";
 import { AppointmentStatusControl } from "@/features/doctor/components/appointment-status-control";
+
+export const metadata: Metadata = { title: "Doctor dashboard" };
 
 export default async function DoctorDashboard() {
   const { today, pendingReviews, patientCount, displayName } = await getDoctorOverview();

@@ -2,7 +2,7 @@ import { Stethoscope } from "lucide-react";
 import type { StaffAppointment } from "@/features/reception/data";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { APPOINTMENT_STATUS_META } from "@/lib/constants";
+import { getAppointmentStatusMeta } from "@/lib/constants";
 import { formatDateTime, formatDoctorName } from "@/lib/format";
 import { AppointmentStatusControl } from "@/features/doctor/components/appointment-status-control";
 import { RescheduleDialog } from "@/features/appointments/components/reschedule-dialog";
@@ -16,7 +16,7 @@ export function StaffAppointmentRow({
   a: StaffAppointment;
   allowReschedule?: boolean;
 }) {
-  const staffHint = APPOINTMENT_STATUS_META[a.status].staffHint;
+  const staffHint = getAppointmentStatusMeta(a.status).staffHint;
 
   return (
     <Card>

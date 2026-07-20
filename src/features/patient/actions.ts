@@ -18,7 +18,7 @@ import {
 } from "@/features/patient/intake-parser";
 
 export type MutationResult<T = undefined> =
-  | { ok: true; data?: T }
+  | (T extends undefined ? { ok: true; data?: undefined } : { ok: true; data: T })
   | { ok: false; error: string };
 
 export type ScreeningResult = {

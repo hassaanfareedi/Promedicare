@@ -1,6 +1,6 @@
 import { CalendarPlus, Stethoscope, AlertTriangle, TrendingUp, Phone } from "lucide-react";
 import type { AiPrediction } from "@/schemas/prediction";
-import { RISK_META } from "@/lib/constants";
+import { getRiskMeta } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -15,7 +15,7 @@ type Props = {
 };
 
 export function PredictionResult({ prediction, degraded, bookHref }: Props) {
-  const risk = RISK_META[prediction.risk_level];
+  const risk = getRiskMeta(prediction.risk_level);
   const confidencePct = Math.round((prediction.confidence ?? 0) * 100);
   const showUrgent =
     prediction.risk_level === "urgent" ||

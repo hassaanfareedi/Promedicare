@@ -38,7 +38,10 @@ type Props = {
   doctorName: string;
 };
 
-const emptyMed = (): MedicationLine => ({
+type MedRow = MedicationLine & { _key: string };
+
+const emptyMed = (): MedRow => ({
+  _key: crypto.randomUUID(),
   name: "",
   dose: "",
   frequency: "",
@@ -64,7 +67,7 @@ export function ConsultWizard({
   const [diagnosis, setDiagnosis] = useState("");
   const [plan, setPlan] = useState("");
   const [prescription, setPrescription] = useState("");
-  const [medications, setMedications] = useState<MedicationLine[]>([emptyMed()]);
+  const [medications, setMedications] = useState<MedRow[]>([emptyMed()]);
   const [uploading, setUploading] = useState(false);
   const [completed, setCompleted] = useState(false);
 
@@ -243,9 +246,10 @@ export function ConsultWizard({
                   </Button>
                 </div>
                 {medications.map((med, i) => (
-                  <div key={i} className="grid gap-2 rounded-xl border p-3 sm:grid-cols-2">
+                  <div key={med._key} className="grid gap-2 rounded-xl border p-3 sm:grid-cols-2">
                     <Input
                       placeholder="Medication"
+                      aria-label={`Medication ${i + 1} name`}
                       value={med.name}
                       onChange={(e) =>
                         setMedications((rows) =>
@@ -255,6 +259,7 @@ export function ConsultWizard({
                     />
                     <Input
                       placeholder="Dose"
+                      aria-label={`Medication ${i + 1} dose`}
                       value={med.dose ?? ""}
                       onChange={(e) =>
                         setMedications((rows) =>
@@ -264,6 +269,7 @@ export function ConsultWizard({
                     />
                     <Input
                       placeholder="Frequency"
+                      aria-label={`Medication ${i + 1} frequency`}
                       value={med.frequency ?? ""}
                       onChange={(e) =>
                         setMedications((rows) =>
@@ -276,6 +282,7 @@ export function ConsultWizard({
                     <div className="flex gap-2">
                       <Input
                         placeholder="Duration"
+                        aria-label={`Medication ${i + 1} duration`}
                         value={med.duration ?? ""}
                         onChange={(e) =>
                           setMedications((rows) =>

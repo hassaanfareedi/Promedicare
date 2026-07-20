@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   BriefcaseMedical,
@@ -24,6 +25,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { StaffAppointmentRow } from "@/features/reception/components/staff-appointment-row";
 import { APPOINTMENT_STATUS_META } from "@/lib/constants";
+
+export const metadata: Metadata = { title: "Admin dashboard" };
 
 export default async function AdminDashboard() {
   const [o, pendingList, confirmedList] = await Promise.all([

@@ -75,7 +75,8 @@ export async function getMyAppointments(): Promise<AppointmentView[]> {
     .from("appointments")
     .select("*")
     .is("deleted_at", null)
-    .order("scheduled_start", { ascending: false });
+    .order("scheduled_start", { ascending: false })
+    .limit(200);
   return enrichAppointments(data ?? []);
 }
 
@@ -86,7 +87,8 @@ export async function getMyScreenings(): Promise<Prediction[]> {
     .from("predictions")
     .select("*")
     .is("deleted_at", null)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(200);
   return data ?? [];
 }
 

@@ -5,7 +5,7 @@ import { Download } from "lucide-react";
 import type { PlatformAnalytics } from "@/features/platform/data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { RISK_META, ROLE_LABEL } from "@/lib/constants";
+import { getRiskMeta, ROLE_LABEL } from "@/lib/constants";
 import { downloadCsv } from "@/lib/csv";
 
 /** Popover-token tooltip so charts read correctly in dark mode. */
@@ -61,8 +61,14 @@ export function PlatformAnalyticsView({ analytics }: { analytics: PlatformAnalyt
             <p className="text-sm text-muted-foreground">No fees collected yet.</p>
           ) : (
             <div className="h-72 w-full">
+              <p className="sr-only">
+                Fee income by hospital (PKR):{" "}
+                {analytics.incomeByHospital
+                  .map((h) => `${h.hospital}: ${Math.round(h.amount).toLocaleString()}`)
+                  .join(", ")}.
+              </p>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={analytics.incomeByHospital} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
+                <BarChart accessibilityLayer data={analytics.incomeByHospital} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
                   <XAxis {...HOSPITAL_XAXIS} />
                   <YAxis tickLine={false} axisLine={false} fontSize={12} />
@@ -90,8 +96,12 @@ export function PlatformAnalyticsView({ analytics }: { analytics: PlatformAnalyt
             <p className="text-sm text-muted-foreground">No appointments yet.</p>
           ) : (
             <div className="h-72 w-full">
+              <p className="sr-only">
+                Appointments by hospital:{" "}
+                {analytics.perHospital.map((h) => `${h.hospital}: ${h.count}`).join(", ")}.
+              </p>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={analytics.perHospital} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
+                <BarChart accessibilityLayer data={analytics.perHospital} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
                   <XAxis {...HOSPITAL_XAXIS} />
                   <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={12} />
@@ -136,9 +146,9 @@ export function PlatformAnalyticsView({ analytics }: { analytics: PlatformAnalyt
               {analytics.riskCounts.map((r) => (
                 <li key={r.level} className="flex items-center justify-between">
                   <span
-                    className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${RISK_META[r.level].tone}`}
+                    className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${getRiskMeta(r.level).tone}`}
                   >
-                    {RISK_META[r.level].label}
+                    {getRiskMeta(r.level).label}
                   </span>
                   <span className="tabular-nums text-sm text-muted-foreground">{r.count}</span>
                 </li>

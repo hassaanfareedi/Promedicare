@@ -86,7 +86,7 @@ export function WalkInDialog({ doctors }: { doctors: WalkInDoctorOption[] }) {
       toast.error(res.error);
       return;
     }
-    toast.success(`Walk-in booked — ID ${res.data!.patientCode}`);
+    toast.success(`Walk-in booked — ID ${res.data.patientCode}`);
     form.reset({
       fullName: "",
       dob: "",

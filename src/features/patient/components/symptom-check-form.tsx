@@ -91,8 +91,8 @@ export function SymptomCheckForm({ prefill }: Props) {
         toast.error(res.error);
         return;
       }
-      setResult(res.data!);
-      if (res.data!.degraded) {
+      setResult(res.data);
+      if (res.data.degraded) {
         toast.warning("AI screening is temporarily unavailable — showing a safe placeholder.");
       } else {
         toast.success("Screening complete");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, Building2, Stethoscope, Clock, CheckCircle2, ArrowLeft, ArrowRight, Star } from "lucide-react";
@@ -42,6 +42,8 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
   const [slot, setSlot] = useState<string | null>(null);
   const [slotTaken, setSlotTaken] = useState(false);
   const [reason, setReason] = useState("");
+  // Guards against out-of-order slot responses when switching doctors quickly.
+  const slotRequestId = useRef(0);
 
   const recommendedSpecialtyName = useMemo(() => {
     if (!recommendedSpecialtyId) return null;
@@ -86,12 +88,19 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
     setSlot(null);
     setStep(2);
     if (!d.id) return;
+    const reqId = ++slotRequestId.current;
     setLoadingSlots(true);
+    setSlots([]);
     try {
       const groups = await getDoctorSlots(d.id);
+      if (reqId !== slotRequestId.current) return; // a newer request superseded this one
       setSlots(groups);
+    } catch {
+      if (reqId === slotRequestId.current) {
+        toast.error("Couldn't load available times. Please try again.");
+      }
     } finally {
-      setLoadingSlots(false);
+      if (reqId === slotRequestId.current) setLoadingSlots(false);
     }
   }
 
@@ -108,16 +117,23 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
         predictionId: predictionId ?? undefined,
       });
       if (!res.ok) {
-        // A taken slot means our candidate list is stale. Keep the user on Confirm
-        // with an inline notice and quietly refresh candidates so "Change time" is fresh.
-        setSlotTaken(true);
-        if (doctor.id) {
-          try {
-            const groups = await getDoctorSlots(doctor.id);
-            setSlots(groups);
-          } catch {
-            /* keep the current candidates if the refresh fails */
+        const slotConflict = /taken|unavailable|slot/i.test(res.error);
+        if (slotConflict) {
+          // Our candidate list is stale. Keep the user on Confirm with an inline
+          // notice and quietly refresh candidates so "Change time" is fresh.
+          setSlotTaken(true);
+          if (doctor.id) {
+            try {
+              const groups = await getDoctorSlots(doctor.id);
+              setSlots(groups);
+            } catch {
+              /* keep the current candidates if the refresh fails */
+            }
           }
+        } else {
+          // Surface the real reason (auth, validation, network) instead of
+          // implying the slot was taken.
+          toast.error(res.error);
         }
         return;
       }

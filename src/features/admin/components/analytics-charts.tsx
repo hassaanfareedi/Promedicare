@@ -3,7 +3,7 @@
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { AdminAnalytics } from "@/features/admin/data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { APPOINTMENT_STATUS_META, RISK_META } from "@/lib/constants";
+import { getAppointmentStatusMeta, getRiskMeta } from "@/lib/constants";
 
 function weekdayLabel(iso: string): string {
   const d = new Date(iso);
@@ -38,8 +38,12 @@ export function AnalyticsCharts({ analytics }: { analytics: AdminAnalytics }) {
         <CardContent>
           {hasTrend ? (
             <div className="h-64 w-full">
+              <p className="sr-only">
+                Appointments per day for the next 7 days:{" "}
+                {trend.map((t) => `${t.label}: ${t.count}`).join(", ")}.
+              </p>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={trend} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
+                <BarChart accessibilityLayer data={trend} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
                   <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={12} />
                   <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={12} />
@@ -66,8 +70,12 @@ export function AnalyticsCharts({ analytics }: { analytics: AdminAnalytics }) {
         <CardContent>
           {hasIncome ? (
             <div className="h-64 w-full">
+              <p className="sr-only">
+                Fee income per day for the last 7 days (PKR):{" "}
+                {income.map((t) => `${t.label}: ${t.amount.toLocaleString()}`).join(", ")}.
+              </p>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={income} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
+                <BarChart accessibilityLayer data={income} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
                   <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={12} />
                   <YAxis tickLine={false} axisLine={false} fontSize={12} />
@@ -99,13 +107,21 @@ export function AnalyticsCharts({ analytics }: { analytics: AdminAnalytics }) {
             <ul className="space-y-3">
               {analytics.statusCounts.map((s) => {
                 const pct = Math.round((s.count / Math.max(analytics.totalAppointments, 1)) * 100);
+                const label = getAppointmentStatusMeta(s.status).label;
                 return (
                   <li key={s.status} className="space-y-1">
                     <div className="flex justify-between text-sm">
-                      <span>{APPOINTMENT_STATUS_META[s.status].label}</span>
+                      <span>{label}</span>
                       <span className="tabular-nums text-muted-foreground">{s.count}</span>
                     </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-2 overflow-hidden rounded-full bg-muted"
+                      role="progressbar"
+                      aria-label={`${label}: ${s.count} appointments (${pct}%)`}
+                      aria-valuenow={pct}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                    >
                       <div className="h-full rounded-full bg-teal-600" style={{ width: `${pct}%` }} />
                     </div>
                   </li>
@@ -128,9 +144,9 @@ export function AnalyticsCharts({ analytics }: { analytics: AdminAnalytics }) {
               {analytics.riskCounts.map((r) => (
                 <li key={r.level} className="flex items-center justify-between">
                   <span
-                    className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${RISK_META[r.level].tone}`}
+                    className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${getRiskMeta(r.level).tone}`}
                   >
-                    {RISK_META[r.level].label}
+                    {getRiskMeta(r.level).label}
                   </span>
                   <span className="tabular-nums text-sm text-muted-foreground">{r.count}</span>
                 </li>

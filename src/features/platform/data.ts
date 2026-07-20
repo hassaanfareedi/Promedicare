@@ -29,7 +29,8 @@ export async function getAllProfiles(): Promise<Profile[]> {
     .from("profiles")
     .select("*")
     .is("deleted_at", null)
-    .order("full_name");
+    .order("full_name")
+    .limit(500);
   return data ?? [];
 }
 
@@ -122,34 +123,35 @@ export type PlatformAnalytics = {
 
 export async function getPlatformAnalytics(): Promise<PlatformAnalytics> {
   const supabase = await createClient();
-  const [{ data: hospitals }, { data: appts }, { data: preds }, { data: profiles }, { data: payments }] =
+  // Grouping happens in Postgres (see 0022); we only fetch the small result sets.
+  const [{ data: hospitals }, { data: apptRows }, { data: riskRows }, { data: roleRows }, { data: incomeRows }] =
     await Promise.all([
       supabase.from("hospitals").select("id, name"),
-      supabase.from("appointments").select("hospital_id").is("deleted_at", null),
-      supabase.from("predictions").select("risk_level").is("deleted_at", null),
-      supabase.from("profiles").select("role").is("deleted_at", null),
-      supabase.from("appointment_payments").select("hospital_id, amount"),
+      supabase.rpc("appointments_count_by_hospital"),
+      supabase.rpc("prediction_risk_counts"),
+      supabase.rpc("profile_role_counts"),
+      supabase.rpc("payment_income_by_hospital"),
     ]);
 
   const nameMap = new Map((hospitals ?? []).map((h) => [h.id, h.name]));
   const perHospitalMap = new Map<string, number>();
-  for (const a of appts ?? []) {
+  for (const a of apptRows ?? []) {
     const name = nameMap.get(a.hospital_id) ?? "Unknown";
-    perHospitalMap.set(name, (perHospitalMap.get(name) ?? 0) + 1);
+    perHospitalMap.set(name, (perHospitalMap.get(name) ?? 0) + a.count);
   }
 
   const riskMap = new Map<RiskLevel, number>();
-  for (const p of preds ?? []) riskMap.set(p.risk_level, (riskMap.get(p.risk_level) ?? 0) + 1);
+  for (const r of riskRows ?? []) riskMap.set(r.risk_level, r.count);
 
   const roleMap = new Map<UserRole, number>();
-  for (const p of profiles ?? []) roleMap.set(p.role, (roleMap.get(p.role) ?? 0) + 1);
+  for (const r of roleRows ?? []) roleMap.set(r.role, r.count);
 
   const incomeMap = new Map<string, number>();
   let totalIncome = 0;
-  for (const p of payments ?? []) {
-    const amount = Number(p.amount) || 0;
+  for (const r of incomeRows ?? []) {
+    const amount = Number(r.amount) || 0;
     totalIncome += amount;
-    const name = nameMap.get(p.hospital_id) ?? "Unknown";
+    const name = nameMap.get(r.hospital_id) ?? "Unknown";
     incomeMap.set(name, (incomeMap.get(name) ?? 0) + amount);
   }
 

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { CalendarDays, Users, UserCheck, Clock, CalendarPlus } from "lucide-react";
 import { getReceptionOverview, getWalkInDoctors } from "@/features/reception/data";
@@ -10,6 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { StaffAppointmentRow } from "@/features/reception/components/staff-appointment-row";
 import { WalkInDialog } from "@/features/reception/components/walk-in-dialog";
+
+export const metadata: Metadata = { title: "Reception" };
 
 export default async function ReceptionDashboard() {
   const [{ today, waiting, patientCount }, doctors] = await Promise.all([

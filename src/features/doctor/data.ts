@@ -72,7 +72,9 @@ export async function getDoctorAppointments(
     );
   }
 
-  const { data } = await query.order("scheduled_start", { ascending: range !== "all" });
+  const { data } = await query
+    .order("scheduled_start", { ascending: range !== "all" })
+    .limit(500);
   return (data ?? []) as DoctorAppointment[];
 }
 
@@ -83,7 +85,8 @@ export async function getDoctorPatients(): Promise<Patient[]> {
     .from("patients")
     .select("*")
     .is("deleted_at", null)
-    .order("full_name");
+    .order("full_name")
+    .limit(500);
   return data ?? [];
 }
 

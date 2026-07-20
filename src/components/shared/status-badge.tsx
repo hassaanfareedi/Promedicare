@@ -1,9 +1,9 @@
 import { cn } from "@/lib/utils";
-import { APPOINTMENT_STATUS_META } from "@/lib/constants";
+import { getAppointmentStatusMeta } from "@/lib/constants";
 import type { AppointmentStatus } from "@/types";
 
 export function StatusBadge({ status, className }: { status: AppointmentStatus; className?: string }) {
-  const meta = APPOINTMENT_STATUS_META[status];
+  const meta = getAppointmentStatusMeta(status);
   return (
     <span
       className={cn(

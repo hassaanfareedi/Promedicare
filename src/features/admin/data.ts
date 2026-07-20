@@ -78,7 +78,8 @@ export async function getStaff(): Promise<AdminStaffMember[]> {
     .select("*")
     .in("role", [...STAFF_ROLES])
     .is("deleted_at", null)
-    .order("full_name");
+    .order("full_name")
+    .limit(500);
 
   if (user?.profile.role !== "super_admin") {
     if (!hid) return [];
@@ -266,32 +267,46 @@ export type AdminAnalytics = {
 /** Aggregated analytics for the admin's hospital (RLS-scoped). */
 export async function getAdminAnalytics(): Promise<AdminAnalytics> {
   const supabase = await createClient();
-  const [{ data: appts }, { data: preds }, { data: payments }] = await Promise.all([
-    supabase.from("appointments").select("status, scheduled_start").is("deleted_at", null),
-    supabase.from("predictions").select("risk_level").is("deleted_at", null),
-    supabase.from("appointment_payments").select("amount, collected_at, currency"),
-  ]);
 
-  const statusMap = new Map<AppointmentStatus, number>();
-  const trendMap = new Map<string, number>();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const weekEnd = new Date(today.getTime() + 7 * 86_400_000);
+  const lookbackStart = new Date(today.getTime() - 6 * 86_400_000);
 
-  for (const a of appts ?? []) {
-    statusMap.set(a.status, (statusMap.get(a.status) ?? 0) + 1);
+  // Counts are grouped in Postgres; trends read only the bounded date windows.
+  const [{ data: statusRows }, { data: riskRows }, { data: trendAppts }, { data: payments }] =
+    await Promise.all([
+      supabase.rpc("appointment_status_counts"),
+      supabase.rpc("prediction_risk_counts"),
+      supabase
+        .from("appointments")
+        .select("scheduled_start")
+        .is("deleted_at", null)
+        .gte("scheduled_start", today.toISOString())
+        .lt("scheduled_start", weekEnd.toISOString()),
+      supabase
+        .from("appointment_payments")
+        .select("amount, collected_at")
+        .gte("collected_at", lookbackStart.toISOString()),
+    ]);
+
+  const statusMap = new Map<AppointmentStatus, number>();
+  let totalAppointments = 0;
+  for (const s of statusRows ?? []) {
+    statusMap.set(s.status, s.count);
+    totalAppointments += s.count;
+  }
+
+  const trendMap = new Map<string, number>();
+  for (const a of trendAppts ?? []) {
     const d = new Date(a.scheduled_start);
     d.setHours(0, 0, 0, 0);
-    const diff = Math.round((d.getTime() - today.getTime()) / 86_400_000);
-    if (diff >= 0 && diff < 7) {
-      const key = d.toISOString().slice(0, 10);
-      trendMap.set(key, (trendMap.get(key) ?? 0) + 1);
-    }
+    const key = d.toISOString().slice(0, 10);
+    trendMap.set(key, (trendMap.get(key) ?? 0) + 1);
   }
 
   const riskMap = new Map<RiskLevel, number>();
-  for (const p of preds ?? []) {
-    riskMap.set(p.risk_level, (riskMap.get(p.risk_level) ?? 0) + 1);
-  }
+  for (const r of riskRows ?? []) riskMap.set(r.risk_level, r.count);
 
   const weeklyTrend: { date: string; count: number }[] = [];
   for (let i = 0; i < 7; i++) {
@@ -300,12 +315,13 @@ export async function getAdminAnalytics(): Promise<AdminAnalytics> {
     weeklyTrend.push({ date: key, count: trendMap.get(key) ?? 0 });
   }
 
+  // All-time income is aggregated in Postgres; the trend uses the bounded rows.
+  const { data: incomeRows } = await supabase.rpc("payment_income_by_hospital");
+  const totalIncome = (incomeRows ?? []).reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+
   const incomeMap = new Map<string, number>();
-  let totalIncome = 0;
-  const lookbackStart = new Date(today.getTime() - 6 * 86_400_000);
   for (const p of payments ?? []) {
     const amount = Number(p.amount) || 0;
-    totalIncome += amount;
     const d = new Date(p.collected_at);
     d.setHours(0, 0, 0, 0);
     if (d >= lookbackStart && d <= today) {
@@ -322,7 +338,7 @@ export async function getAdminAnalytics(): Promise<AdminAnalytics> {
   }
 
   return {
-    totalAppointments: (appts ?? []).length,
+    totalAppointments,
     statusCounts: [...statusMap.entries()].map(([status, count]) => ({ status, count })),
     riskCounts: [...riskMap.entries()].map(([level, count]) => ({ level, count })),
     weeklyTrend,

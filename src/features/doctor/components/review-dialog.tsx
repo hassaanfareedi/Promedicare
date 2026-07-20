@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, Stethoscope, CheckCircle2, XCircle, RefreshCw } from "lucide-react";
@@ -112,36 +112,42 @@ export function ReviewDialog({
   const [brief, setBrief] = useState<ClinicalBrief | null>(initialBrief);
   const [briefLoading, setBriefLoading] = useState(false);
   const [briefError, setBriefError] = useState<string | null>(null);
+  // Ensures only the latest brief request applies (manual retry + auto-load can race).
+  const briefReqId = useRef(0);
 
   function loadBrief() {
+    const reqId = ++briefReqId.current;
     setBriefLoading(true);
     setBriefError(null);
     startTransition(async () => {
       const res = await ensureClinicalSummary(predictionId);
+      if (reqId !== briefReqId.current) return;
       setBriefLoading(false);
       if (!res.ok) {
         setBriefError(res.error);
         return;
       }
-      setBrief(res.data!.brief);
+      setBrief(res.data.brief);
     });
   }
 
   useEffect(() => {
     if (!open || brief || briefLoading || briefError) return;
-    let cancelled = false;
+    const reqId = ++briefReqId.current;
+    let active = true;
     setBriefLoading(true);
     void ensureClinicalSummary(predictionId).then((res) => {
-      if (cancelled) return;
+      if (!active || reqId !== briefReqId.current) return;
       setBriefLoading(false);
       if (!res.ok) {
         setBriefError(res.error);
         return;
       }
-      setBrief(res.data!.brief);
+      setBrief(res.data.brief);
     });
     return () => {
-      cancelled = true;
+      // Invalidate this request so a late resolve/reopen can't apply stale data.
+      active = false;
     };
   }, [open, brief, briefLoading, briefError, predictionId]);
 

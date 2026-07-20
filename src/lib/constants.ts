@@ -113,3 +113,26 @@ export const APPOINTMENT_STATUS_META: Record<
     staffHint: "Missed appointment",
   },
 };
+
+const RISK_META_FALLBACK: (typeof RISK_META)[RiskLevel] = {
+  label: "Unknown",
+  description: "Risk level could not be determined.",
+  tone: "text-muted-foreground bg-muted border-border",
+};
+
+const APPOINTMENT_STATUS_META_FALLBACK: (typeof APPOINTMENT_STATUS_META)[AppointmentStatus] = {
+  label: "Unknown",
+  tone: "bg-muted text-muted-foreground",
+  hint: "Status unavailable",
+  staffHint: "Status unavailable",
+};
+
+/** Risk meta with a safe fallback for unexpected values from the DB. */
+export function getRiskMeta(level: string | null | undefined) {
+  return (level && RISK_META[level as RiskLevel]) || RISK_META_FALLBACK;
+}
+
+/** Appointment-status meta with a safe fallback for unexpected DB values. */
+export function getAppointmentStatusMeta(status: string | null | undefined) {
+  return (status && APPOINTMENT_STATUS_META[status as AppointmentStatus]) || APPOINTMENT_STATUS_META_FALLBACK;
+}

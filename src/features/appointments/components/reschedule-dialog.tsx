@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, CalendarClock, Clock } from "lucide-react";
@@ -29,14 +29,18 @@ export function RescheduleDialog({
   const [slots, setSlots] = useState<SlotGroup[]>([]);
   const [loading, setLoading] = useState(false);
   const [pending, startTransition] = useTransition();
+  const loadId = useRef(0);
 
   async function load() {
     if (!doctorId) return;
+    const reqId = ++loadId.current;
     setLoading(true);
     try {
-      setSlots(await getDoctorSlots(doctorId));
+      const groups = await getDoctorSlots(doctorId);
+      if (reqId !== loadId.current) return; // superseded by a newer load
+      setSlots(groups);
     } finally {
-      setLoading(false);
+      if (reqId === loadId.current) setLoading(false);
     }
   }
 

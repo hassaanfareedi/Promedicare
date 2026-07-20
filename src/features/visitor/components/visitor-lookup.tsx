@@ -174,6 +174,7 @@ export function VisitorLookup() {
                   name="dob"
                   render={({ field }) => (
                     <FormItem>
+                      <FormLabel>Date of birth</FormLabel>
                       <FormControl>
                         <Input type="date" {...field} />
                       </FormControl>
@@ -188,6 +189,7 @@ export function VisitorLookup() {
                   name="phone"
                   render={({ field }) => (
                     <FormItem>
+                      <FormLabel>Registered phone</FormLabel>
                       <FormControl>
                         <Input type="tel" placeholder="+92 300 1234567" {...field} />
                       </FormControl>
@@ -198,7 +200,11 @@ export function VisitorLookup() {
               </TabsContent>
             </Tabs>
 
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {error && (
+              <p role="alert" className="text-sm text-destructive">
+                {error}
+              </p>
+            )}
 
             <Button type="submit" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Search className="size-4" />}

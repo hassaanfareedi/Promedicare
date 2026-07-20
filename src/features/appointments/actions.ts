@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { requireUser } from "@/lib/auth/session";
 import { logAudit } from "@/lib/audit";
 import { notify } from "@/lib/notifications";
@@ -35,7 +36,7 @@ export async function getDoctorSlots(doctorId: string): Promise<SlotGroup[]> {
 export async function bookAppointment(
   input: BookAppointmentInput,
 ): Promise<MutationResult<{ appointmentId: string }>> {
-  await requireUser();
+  const user = await requireUser();
   const parsed = bookAppointmentSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid booking details" };
@@ -54,6 +55,23 @@ export async function bookAppointment(
 
   if (error || !appointmentId) {
     return { ok: false, error: error?.message ?? "Could not book this appointment." };
+  }
+
+  // Tenant link: on a patient's first booking, tie their profile to that
+  // hospital so hospital staff can discover them (e.g. for staff promotion).
+  // profiles.hospital_id is a privileged field the patient can't self-set, so
+  // use the service-role client. Only set it once (when currently unassigned).
+  if (user.profile.role === "patient" && !user.profile.hospital_id) {
+    try {
+      const admin = createAdminClient();
+      await admin
+        .from("profiles")
+        .update({ hospital_id: v.hospitalId })
+        .eq("id", user.id)
+        .is("hospital_id", null);
+    } catch {
+      // Non-fatal: the booking already succeeded.
+    }
   }
 
   // Notify the assigned doctor (best-effort). Patients may read active doctor rows.
@@ -158,6 +176,9 @@ export async function rescheduleAppointment(
   revalidatePath("/patient/appointments");
   revalidatePath("/patient");
   revalidatePath("/reception/appointments");
+  revalidatePath("/reception");
+  revalidatePath("/admin/appointments");
+  revalidatePath("/admin");
   revalidatePath("/doctor/schedule");
   return { ok: true };
 }
@@ -196,5 +217,10 @@ export async function cancelAppointment(
 
   revalidatePath("/patient/appointments");
   revalidatePath("/patient");
+  revalidatePath("/reception/appointments");
+  revalidatePath("/reception");
+  revalidatePath("/admin/appointments");
+  revalidatePath("/admin");
+  revalidatePath("/doctor/schedule");
   return { ok: true };
 }

@@ -959,6 +959,32 @@ export type Database = {
       }
     }
     Functions: {
+      appointment_status_counts: {
+        Args: never
+        Returns: {
+          status: Database["public"]["Enums"]["appointment_status"]
+          count: number
+        }[]
+      }
+      prediction_risk_counts: {
+        Args: never
+        Returns: {
+          risk_level: Database["public"]["Enums"]["risk_level"]
+          count: number
+        }[]
+      }
+      profile_role_counts: {
+        Args: never
+        Returns: { role: Database["public"]["Enums"]["user_role"]; count: number }[]
+      }
+      appointments_count_by_hospital: {
+        Args: never
+        Returns: { hospital_id: string; count: number }[]
+      }
+      payment_income_by_hospital: {
+        Args: never
+        Returns: { hospital_id: string; amount: number }[]
+      }
       book_appointment: {
         Args: {
           p_department?: string

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   Activity,
@@ -23,6 +24,8 @@ import { cn } from "@/lib/utils";
 import type { RiskLevel } from "@/types";
 
 const CANCELLABLE = new Set(["pending", "confirmed"]);
+
+export const metadata: Metadata = { title: "Patient dashboard" };
 
 export default async function PatientDashboard() {
   const { displayName, upcoming, recentScreenings, stats } = await getPatientOverview();
