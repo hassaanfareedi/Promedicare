@@ -12,12 +12,28 @@ function isPublicPath(pathname: string): boolean {
 }
 
 /**
+ * Soft App Router / prefetch / RSC flights. A middleware redirect here gets
+ * cached by the client and then deadens the matching <Link> until a hard reload.
+ */
+function isSoftNavigation(request: NextRequest): boolean {
+  return (
+    request.headers.get("rsc") === "1" ||
+    request.headers.get("next-router-prefetch") === "1" ||
+    request.headers.has("next-router-segment-prefetch") ||
+    request.headers.has("next-router-state-tree") ||
+    request.headers.get("purpose") === "prefetch" ||
+    (request.headers.get("sec-purpose")?.includes("prefetch") ?? false)
+  );
+}
+
+/**
  * Refreshes the Supabase session on every request and enforces coarse-grained,
  * role-aware route protection. This is the first of three RBAC layers
  * (middleware -> layout guards -> RLS).
  */
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
+  const softNav = isSoftNavigation(request);
 
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -41,6 +57,10 @@ export async function updateSession(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // Soft-nav: refresh session/cookies only — never redirect. Layout `requireRole`
+  // still enforces access on the real document render.
+  if (softNav) return response;
 
   const { pathname } = request.nextUrl;
 
@@ -73,37 +93,19 @@ export async function updateSession(request: NextRequest) {
     .single();
 
   // If the profile lookup failed (transient error / RLS hiccup), do not issue
-  // role or onboarding redirects. Bouncing an authenticated RSC navigation on a
-  // null profile can abort client-side navigation. The server layout guards
-  // (`requireRole`) still enforce access on the actual render.
+  // role or onboarding redirects. The server layout guards (`requireRole`) still
+  // enforce access on the actual render.
   if (!profile) return response;
 
   const role = profile.role as UserRole;
   const onboarded = profile.onboarding_completed ?? false;
 
-  // Soft-nav / prefetch / RSC flights: a redirect response here gets cached by
-  // the App Router and then deadens the corresponding <Link> click until a
-  // hard reload. Skip role/onboarding/portal-prefix redirects for these; layout
-  // `requireRole` still enforces access on the real document render.
-  // Unauthenticated → login (above) is intentionally still applied.
-  const isSoftNav =
-    request.headers.get("rsc") === "1" ||
-    request.headers.get("next-router-prefetch") === "1" ||
-    request.headers.has("next-router-segment-prefetch") ||
-    request.headers.get("purpose") === "prefetch" ||
-    (request.headers.get("sec-purpose")?.includes("prefetch") ?? false);
-
   // Keep signed-in users out of the auth pages (document navigations only).
-  if (
-    !isSoftNav &&
-    ["/login", "/register", "/forgot-password"].some((p) => pathname.startsWith(p))
-  ) {
+  if (["/login", "/register", "/forgot-password"].some((p) => pathname.startsWith(p))) {
     return redirectTo((url) => {
       url.pathname = ROLE_HOME[role];
     });
   }
-
-  if (isSoftNav) return response;
 
   // Profile-completion gate (patients complete an onboarding profile).
   // Allow password recovery while onboarding is incomplete.

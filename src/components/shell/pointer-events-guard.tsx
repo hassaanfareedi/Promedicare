@@ -25,6 +25,14 @@ function clearPointerLocks() {
       el.removeAttribute("inert");
     }
   }
+
+  // Stale Base UI modal leftovers can leave inert markers without updating pathname.
+  document.querySelectorAll("[data-base-ui-inert]").forEach((el) => {
+    el.removeAttribute("data-base-ui-inert");
+    if (el instanceof HTMLElement && el.style.pointerEvents === "none") {
+      el.style.pointerEvents = "";
+    }
+  });
 }
 
 export function PointerEventsGuard() {

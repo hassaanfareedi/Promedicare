@@ -367,8 +367,8 @@ function AddDoctorDialog({
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
-              Share the email and temporary password with the doctor. They can change it via Forgot
-              password.
+              At least 8 characters, with uppercase, lowercase, and a number. Share the email and
+              temporary password with the doctor — they can change it via Forgot password.
             </p>
             <ClinicalFields {...clinical} idPrefix="new" />
             <Button
@@ -463,6 +463,14 @@ function doctorSubtitle(doctor: AdminDoctor): string {
   return specialty ?? department ?? "General";
 }
 
+function doctorDisplayName(doctor: AdminDoctor): string {
+  const name = doctor.profile?.full_name?.trim();
+  if (name) return formatDoctorName(name);
+  const email = doctor.profile?.email?.trim();
+  if (email) return email;
+  return "Doctor (name missing)";
+}
+
 function DoctorCard({
   doctor,
   specialties,
@@ -474,6 +482,7 @@ function DoctorCard({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const nameMissing = !doctor.profile?.full_name?.trim();
 
   function toggle(active: boolean) {
     startTransition(async () => {
@@ -488,10 +497,13 @@ function DoctorCard({
       <CardContent className="space-y-4 p-5">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="min-w-0">
-            <p className="truncate font-medium">
-              {formatDoctorName(doctor.profile?.full_name ?? "Unnamed")}
-            </p>
+            <p className="truncate font-medium">{doctorDisplayName(doctor)}</p>
             <p className="truncate text-sm text-muted-foreground">{doctorSubtitle(doctor)}</p>
+            {nameMissing && doctor.profile?.email && (
+              <p className="mt-0.5 truncate text-xs text-amber-700 dark:text-amber-300">
+                Set a full name via Edit — account: {doctor.profile.email}
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <EditDoctorDialog

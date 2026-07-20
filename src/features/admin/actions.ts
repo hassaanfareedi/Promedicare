@@ -313,16 +313,17 @@ export async function createDoctorAccount(
 
   const userId = created.user.id;
 
-  const { error: profileErr } = await admin
-    .from("profiles")
-    .update({
+  const { error: profileErr } = await admin.from("profiles").upsert(
+    {
+      id: userId,
       role: "doctor",
       hospital_id: hid,
       full_name: v.fullName,
       email: v.email,
       onboarding_completed: true,
-    })
-    .eq("id", userId);
+    },
+    { onConflict: "id" },
+  );
 
   if (profileErr) {
     await admin.auth.admin.deleteUser(userId);

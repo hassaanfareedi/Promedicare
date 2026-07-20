@@ -19,6 +19,74 @@ import {
 
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
+const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
+const MINUTES = ["00", "15", "30", "45"];
+
+function splitTime(value: string): { hour: string; minute: string } {
+  const [h = "09", m = "00"] = value.split(":");
+  return { hour: h.padStart(2, "0"), minute: m.padStart(2, "0").slice(0, 2) };
+}
+
+function TimeSelect({
+  id,
+  label,
+  value,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  const { hour, minute } = splitTime(value);
+  const minuteOptions = MINUTES.includes(minute) ? MINUTES : [...MINUTES, minute].sort();
+
+  return (
+    <div className="space-y-1">
+      <Label className="text-xs" htmlFor={`${id}-hour`}>
+        {label}
+      </Label>
+      <div className="flex items-center gap-1">
+        <Select
+          value={hour}
+          onValueChange={(v) => onChange(`${v ?? hour}:${minute}`)}
+          items={HOURS.map((h) => ({ value: h, label: h }))}
+        >
+          <SelectTrigger id={`${id}-hour`} className="w-[4.5rem]" aria-label={`${label} hour`}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {HOURS.map((h) => (
+              <SelectItem key={h} value={h}>
+                {h}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <span className="text-sm text-muted-foreground" aria-hidden>
+          :
+        </span>
+        <Select
+          value={minute}
+          onValueChange={(v) => onChange(`${hour}:${v ?? minute}`)}
+          items={minuteOptions.map((m) => ({ value: m, label: m }))}
+        >
+          <SelectTrigger id={`${id}-minute`} className="w-[4.5rem]" aria-label={`${label} minute`}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {minuteOptions.map((m) => (
+              <SelectItem key={m} value={m}>
+                {m}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+}
+
 export function AvailabilityEditor({ doctor }: { doctor: AdminDoctor }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -107,30 +175,13 @@ export function AvailabilityEditor({ doctor }: { doctor: AdminDoctor }) {
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-1">
-          <Label className="text-xs" htmlFor={`avail-start-${doctor.id}`}>
-            Start
-          </Label>
-          <Input
-            id={`avail-start-${doctor.id}`}
-            type="time"
-            value={start}
-            onChange={(e) => setStart(e.target.value)}
-            className="w-28"
-          />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs" htmlFor={`avail-end-${doctor.id}`}>
-            End
-          </Label>
-          <Input
-            id={`avail-end-${doctor.id}`}
-            type="time"
-            value={end}
-            onChange={(e) => setEnd(e.target.value)}
-            className="w-28"
-          />
-        </div>
+        <TimeSelect
+          id={`avail-start-${doctor.id}`}
+          label="Start"
+          value={start}
+          onChange={setStart}
+        />
+        <TimeSelect id={`avail-end-${doctor.id}`} label="End" value={end} onChange={setEnd} />
         <div className="space-y-1">
           <Label className="text-xs" htmlFor={`avail-slot-${doctor.id}`}>
             Slot (min)

@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import type { NavItem } from "@/components/shell/nav-config";
 import { fetchPendingAppointmentNavBadge } from "@/features/appointments/nav-badges";
 import { cn } from "@/lib/utils";
@@ -26,7 +26,13 @@ export function SidebarNav({
   pollBadges = true,
 }: Props) {
   const pathname = usePathname();
+  const router = useRouter();
+  const pathnameRef = useRef(pathname);
   const [badges, setBadges] = useState<Record<string, number>>(initialBadges);
+
+  useEffect(() => {
+    pathnameRef.current = pathname;
+  }, [pathname]);
 
   useEffect(() => {
     setBadges(initialBadges);
@@ -52,6 +58,21 @@ export function SidebarNav({
     return () => clearInterval(interval);
   }, [pendingAppointmentsHref, pollBadges, refreshPending]);
 
+  function handleNavClick(href: string) {
+    onNavigate?.();
+    if (pathnameRef.current === href) return;
+
+    router.push(href);
+
+    // Soft App Router navigations can silently no-op after a poisoned RSC
+    // flight. If the path never updates to the target, fall back to a full load.
+    window.setTimeout(() => {
+      if (pathnameRef.current !== href) {
+        window.location.assign(href);
+      }
+    }, 400);
+  }
+
   return (
     <nav className="grid gap-1 px-3">
       {items.map((item) => {
@@ -73,7 +94,7 @@ export function SidebarNav({
             key={item.href}
             href={item.href}
             prefetch={false}
-            onClick={onNavigate}
+            onClick={() => handleNavClick(item.href)}
             aria-current={active ? "page" : undefined}
             aria-label={label}
             className={cn(
