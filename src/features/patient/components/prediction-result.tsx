@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { CalendarPlus, Stethoscope, AlertTriangle, TrendingUp, Phone } from "lucide-react";
 import type { AiPrediction } from "@/schemas/prediction";
 import { RISK_META } from "@/lib/constants";
@@ -6,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { AiDisclaimer } from "@/components/shared/ai-disclaimer";
+import { ReliableNavLink } from "@/components/shared/reliable-nav-link";
 import { buttonVariants } from "@/components/ui/button";
 
 type Props = {
@@ -116,9 +116,9 @@ export function PredictionResult({ prediction, degraded, bookHref }: Props) {
               <p className="font-medium">{prediction.recommended_specialty}</p>
             </div>
             {bookHref && (
-              <Link href={bookHref} className={buttonVariants()}>
+              <ReliableNavLink href={bookHref} className={buttonVariants()}>
                 <CalendarPlus className="size-4" /> Book appointment
-              </Link>
+              </ReliableNavLink>
             )}
           </div>
         </CardContent>
