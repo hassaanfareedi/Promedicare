@@ -89,14 +89,24 @@ export async function getPromotableProfiles(): Promise<Profile[]> {
 }
 
 export async function getDoctorsAdmin(): Promise<AdminDoctor[]> {
+  const user = await getCurrentUser();
+  const hid = user?.profile.hospital_id;
   const supabase = await createClient();
-  const { data } = await supabase
+  let query = supabase
     .from("doctors")
     .select(
       "id, profile_id, is_active, license_number, years_experience, consultation_fee, profile:profiles(id, full_name, email), specialty:specialties(id, name), department:departments(id, name), availability:doctor_availability(*)",
     )
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
+
+  // Defense in depth: hospital admins (and other non–super-admins) only see their hospital.
+  if (user?.profile.role !== "super_admin") {
+    if (!hid) return [];
+    query = query.eq("hospital_id", hid);
+  }
+
+  const { data } = await query;
 
   const rows = (data ?? []) as AdminDoctor[];
   const missingIds = [
