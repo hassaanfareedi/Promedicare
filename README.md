@@ -6,22 +6,20 @@ AI-assisted early disease-risk screening, specialist matching and appointment ma
 
 ## Demo
 
-<video src="https://raw.githubusercontent.com/hassaanfareedi/Promedicare/main/public/demo.webm" controls width="100%"></video>
-
-If the player above doesn't load, [watch the demo video](public/demo.webm).
-
 <!-- LIVE_URL -->
-Live demo: _deployment in progress_
+Live demo: [https://promedicare.vercel.app](https://promedicare.vercel.app)
+
+For a full walkthrough of every portal, use the demo logins below after seeding (or on the live deploy if demo data is present).
 
 ## What it does
 
 ProMediCare AI connects six roles on one secure platform:
 
-- Visitor — modern marketing site with a smooth preloader, plus a secure public record lookup (Patient ID + a second verification factor, rate limited).
-- Patient — onboarding, AI symptom screening with a plain-language risk read, specialist matching, appointment booking, reschedule/cancel, screening history and profile.
-- Doctor — daily schedule, patient list, AI screening review with outcomes, and appointment status control.
-- Receptionist — walk-in registration, check-in/out queue, hospital appointments and patient directory.
-- Hospital Admin — departments, doctors and availability, staff roles, appointments and analytics.
+- Visitor — marketing site with a smooth preloader, plus a secure public record lookup (Patient ID + a second verification factor, rate limited).
+- Patient — onboarding, AI symptom screening with a plain-language risk read, specialist matching, appointment booking, reschedule/cancel, screening history and profile. In-app notifications for booking and screening review.
+- Doctor — daily schedule, patient list, AI screening review (with clinical brief), consult notes, and appointment status control.
+- Receptionist — walk-in registration, check-in queue (consultation fee), hospital appointments and patient directory.
+- Hospital Admin — departments, doctors (create or link) and availability, staff roles, appointments and analytics.
 - Super Admin — hospitals, global specialties, hospital-admin assignment, platform analytics, audit logs and settings.
 
 ## Tech stack
@@ -56,14 +54,14 @@ Copy `.env.example` to `.env.local` and fill in:
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-SUPABASE_SERVICE_ROLE_KEY=...      # server-only, used by the seed script
+SUPABASE_SERVICE_ROLE_KEY=...      # server-only: seed script + admin "New doctor"
 GROQ_API_KEY=...
 GROQ_BASE_URL=https://api.groq.com/openai/v1
 GROQ_MODEL=llama-3.3-70b-versatile
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
-On Vercel production, set `NEXT_PUBLIC_SITE_URL=https://promedicare.vercel.app` (or your custom domain) so OAuth and password-reset redirects return to the correct host.
+On Vercel production, set the same variables (including `SUPABASE_SERVICE_ROLE_KEY` so hospital admins can create doctor accounts) and `NEXT_PUBLIC_SITE_URL=https://promedicare.vercel.app` so OAuth and password-reset redirects return to the correct host.
 
 ### 3. Google sign-in (optional)
 
@@ -90,7 +88,7 @@ npm install
 npm run dev
 ```
 
-Database migrations live in `supabase/migrations/` and are applied to the Supabase project.
+Database migrations live in `supabase/migrations/` and must be applied to your Supabase project (Dashboard SQL or Supabase MCP/CLI).
 
 ### 5. Seed demo data
 
@@ -98,7 +96,7 @@ Database migrations live in `supabase/migrations/` and are applied to the Supaba
 npm run seed
 ```
 
-This creates six confirmed demo logins and enough data for every screen to render.
+This creates confirmed demo logins and enough data for every screen to render. Requires `SUPABASE_SERVICE_ROLE_KEY`.
 
 ## Demo logins
 
@@ -116,7 +114,7 @@ Public record lookup: `PMC-200001` with DOB `1990-05-14` (or phone `+15551230001
 
 ## Testing
 
-A Playwright suite covers every role's flows, buttons and the public visitor lookup.
+A Playwright suite covers the main flows for each role and the public visitor lookup.
 
 ```bash
 npm run test:e2e         # headless run (starts the app automatically)
@@ -143,9 +141,10 @@ PLAYWRIGHT_BASE_URL=https://<your-app>.vercel.app npm run test:e2e
 
 ## Security notes
 
-- The Supabase service-role key is used only by local/CI scripts and is never shipped to the client.
+- The Supabase service-role key is **server-only**: used by the seed script and by hospital-admin doctor account creation (`createAdminClient`). Never expose it to the client.
 - Row-Level Security governs every table; the app relies on policies rather than trusting the client.
 - Public lookup is rate limited and returns generic errors to prevent Patient ID enumeration.
+- Notifications are **in-app** (with Realtime). Auth confirmation / password-reset emails are handled by Supabase Auth — there is no separate appointment-reminder email/SMS pipeline.
 
 ---
 

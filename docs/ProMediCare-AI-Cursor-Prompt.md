@@ -57,7 +57,7 @@ Requirements for the AI layer:
 1. **Visitor** (unauthenticated) — marketing site only
 2. **Patient** — health records, AI symptom check, appointment booking
 3. **Doctor** — schedule, patient list, AI prediction review, consultation notes
-4. **Receptionist** — booking, check-in/out, queue management
+4. **Receptionist** — booking, check-in queue, queue management
 5. **Hospital Admin** — manages one hospital: staff, departments, appointments, analytics
 6. **Super Admin** — manages the whole platform: all hospitals, global config, global analytics
 
@@ -83,11 +83,11 @@ Nothing else starts until these six are working and committed.
 ## Build Sequence (phased, urgent timeline)
 
 **Phase 1 — Core loop (MVP)**
-Foundation (above) → Auth → Patient Portal core (profile, symptom entry, AI prediction with disclaimer, specialist recommendation) → Appointment booking (patient side) → Doctor Portal core (schedule, patient list, prediction review) → basic notifications (email + in-app for booking/confirmation).
+Foundation (above) → Auth → Patient Portal core (profile, symptom entry, AI prediction with disclaimer, specialist recommendation) → Appointment booking (patient side) → Doctor Portal core (schedule, patient list, prediction review) → basic notifications (in-app for booking/confirmation).
 *Goal: a patient can register, describe symptoms, get an AI-assisted risk read with disclaimer, get matched to a specialist, and book an appointment a doctor can see.*
 
 **Phase 2 — Operational roles**
-Receptionist Portal (walk-in registration, check-in/out, queue management, doctor availability) → Hospital Admin Portal (manage users, doctors, departments, specialties, appointments) → richer notifications (reminders, realtime) → rescheduling/cancellation flows across all roles.
+Receptionist Portal (walk-in registration, check-in queue, queue management, doctor availability) → Hospital Admin Portal (manage users, doctors, departments, appointments) → richer notifications (realtime in-app) → rescheduling/cancellation flows across all roles.
 
 **Phase 3 — Platform layer & polish**
 Super Admin Portal (hospitals, global config, feature flags, platform analytics) → Analytics & Reporting across all portals (charts, CSV/PDF export) → audit logs/system logs → Marketing site (can be built in parallel by a second track if time allows, since it has no dependency on the app shell) → dark mode, accessibility pass, performance pass (image optimization, caching, pagination, code splitting).

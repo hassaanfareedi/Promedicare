@@ -50,7 +50,7 @@ const STEPS = [
 const FEATURES = [
   { icon: Brain, title: "AI symptom screening", body: "Fast, structured risk assessment powered by Groq — decision support, never a diagnosis." },
   { icon: Stethoscope, title: "Specialist matching", body: "Automatically routed to the most relevant specialty for your symptoms." },
-  { icon: CalendarCheck, title: "Effortless booking", body: "Real-time slots with no double-booking, plus reminders and easy rescheduling." },
+  { icon: CalendarCheck, title: "Effortless booking", body: "Real-time slots with no double-booking, plus easy rescheduling from your portal." },
   { icon: ShieldCheck, title: "Privacy by design", body: "Row-level security and least-privilege access protect every record." },
   { icon: Building2, title: "Multi-hospital", body: "Built for many hospitals with role-based portals for every kind of user." },
   { icon: Sparkles, title: "Doctor-in-the-loop", body: "Every AI screening is logged for clinicians to review and act on." },
