@@ -23,12 +23,9 @@ import {
 import { PrescriptionPrintView } from "@/features/clinical/components/prescription-print";
 
 const STEPS = [
-  { id: "subjective", label: "Subjective" },
-  { id: "objective", label: "Objective" },
-  { id: "assessment", label: "Assessment" },
-  { id: "plan", label: "Plan" },
-  { id: "rx", label: "Prescription" },
-  { id: "print", label: "Print" },
+  { id: "notes", label: "Visit notes" },
+  { id: "meds", label: "Medicines" },
+  { id: "done", label: "Done" },
 ];
 
 type Props = {
@@ -84,17 +81,18 @@ export function ConsultWizard({
   }
 
   function validateStep(): string | null {
-    if (step === 0 && !subjective.trim()) return "Subjective notes are required.";
-    if (step === 1 && !objective.trim()) return "Objective notes are required.";
-    if (step === 2) {
-      if (!assessment.trim()) return "Assessment is required.";
-      if (!diagnosis.trim()) return "Diagnosis is required.";
+    if (step === 0) {
+      if (!subjective.trim()) return "Add the patient's symptoms.";
+      if (!objective.trim()) return "Add exam findings.";
+      if (!assessment.trim()) return "Add your assessment.";
+      if (!diagnosis.trim()) return "Add a diagnosis.";
+      if (!plan.trim()) return "Add the treatment plan.";
     }
-    if (step === 3 && !plan.trim()) return "Plan is required.";
-    if (step === 4) {
-      if (!prescription.trim()) return "Prescription instructions are required.";
-      const named = medications.filter((m) => m.name.trim());
-      if (named.length === 0) return "Add at least one medication.";
+    if (step === 1) {
+      if (!prescription.trim()) return "Add prescription instructions.";
+      if (medications.filter((m) => m.name.trim()).length === 0) {
+        return "Add at least one medication.";
+      }
     }
     return null;
   }
@@ -105,7 +103,7 @@ export function ConsultWizard({
       toast.error(err);
       return;
     }
-    if (step === 4) {
+    if (step === 1) {
       finish();
       return;
     }
@@ -129,7 +127,7 @@ export function ConsultWizard({
         return;
       }
       setCompleted(true);
-      setStep(5);
+      setStep(2);
       toast.success("Consultation completed");
       router.refresh();
     });
@@ -167,193 +165,210 @@ export function ConsultWizard({
         }
       }}
     >
-      <DialogContent className="max-h-[90vh] overflow-y-auto overscroll-contain sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Complete consultation — {patientName}</DialogTitle>
-          <DialogDescription>
-            Document the visit, prescribe medications, and attach files before completing.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent
+        className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl"
+        showCloseButton
+      >
+        <div className="shrink-0 space-y-4 border-b px-4 pt-4 pb-3">
+          <DialogHeader className="pr-8">
+            <DialogTitle>Complete consultation — {patientName}</DialogTitle>
+            <DialogDescription>Document the visit, then prescribe.</DialogDescription>
+          </DialogHeader>
+          <Stepper steps={STEPS} current={step} />
+        </div>
 
-        <Stepper steps={STEPS} current={step} className="mb-4" />
-
-        {step === 0 && (
-          <Field
-            label="Subjective"
-            hint="Patient-reported symptoms and history"
-            value={subjective}
-            onChange={setSubjective}
-          />
-        )}
-        {step === 1 && (
-          <Field
-            label="Objective"
-            hint="Exam findings and vitals"
-            value={objective}
-            onChange={setObjective}
-          />
-        )}
-        {step === 2 && (
-          <div className="space-y-4">
-            <Field label="Assessment" value={assessment} onChange={setAssessment} />
-            <div className="space-y-2">
-              <Label htmlFor="diagnosis">Diagnosis</Label>
-              <Input
-                id="diagnosis"
-                value={diagnosis}
-                onChange={(e) => setDiagnosis(e.target.value)}
-                placeholder="Primary diagnosis"
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
+          {step === 0 && (
+            <div className="space-y-4">
+              <Field
+                label="Symptoms"
+                hint="What the patient reports (subjective)"
+                value={subjective}
+                onChange={setSubjective}
               />
-            </div>
-          </div>
-        )}
-        {step === 3 && (
-          <div className="space-y-4">
-            <Field label="Plan" value={plan} onChange={setPlan} />
-            <div className="space-y-2">
-              <Label htmlFor="test-files">Test files (optional)</Label>
-              <Input
-                id="test-files"
-                type="file"
-                accept=".pdf,image/*"
-                multiple
-                disabled={uploading || pending}
-                onChange={(e) => void onUpload(e.target.files)}
+              <Field
+                label="Exam findings"
+                hint="Vitals and exam (objective)"
+                value={objective}
+                onChange={setObjective}
               />
-              <p className="text-xs text-muted-foreground">PDF or images, up to 10 MB each.</p>
-            </div>
-          </div>
-        )}
-        {step === 4 && (
-          <div className="space-y-4">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label>Medications</Label>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setMedications((m) => [...m, emptyMed()])}
-                >
-                  <Plus className="size-4" /> Add
-                </Button>
+              <Field
+                label="Assessment"
+                hint="Your clinical impression"
+                value={assessment}
+                onChange={setAssessment}
+              />
+              <div className="space-y-2">
+                <Label htmlFor="diagnosis">Diagnosis</Label>
+                <Input
+                  id="diagnosis"
+                  value={diagnosis}
+                  onChange={(e) => setDiagnosis(e.target.value)}
+                  placeholder="Primary diagnosis"
+                />
               </div>
-              {medications.map((med, i) => (
-                <div key={i} className="grid gap-2 rounded-lg border p-3 sm:grid-cols-2">
-                  <Input
-                    placeholder="Medication"
-                    value={med.name}
-                    onChange={(e) =>
-                      setMedications((rows) =>
-                        rows.map((r, idx) => (idx === i ? { ...r, name: e.target.value } : r)),
-                      )
-                    }
-                  />
-                  <Input
-                    placeholder="Dose"
-                    value={med.dose ?? ""}
-                    onChange={(e) =>
-                      setMedications((rows) =>
-                        rows.map((r, idx) => (idx === i ? { ...r, dose: e.target.value } : r)),
-                      )
-                    }
-                  />
-                  <Input
-                    placeholder="Frequency"
-                    value={med.frequency ?? ""}
-                    onChange={(e) =>
-                      setMedications((rows) =>
-                        rows.map((r, idx) =>
-                          idx === i ? { ...r, frequency: e.target.value } : r,
-                        ),
-                      )
-                    }
-                  />
-                  <div className="flex gap-2">
+              <Field
+                label="Plan"
+                hint="Follow-up, advice, and next steps"
+                value={plan}
+                onChange={setPlan}
+              />
+              <div className="space-y-2">
+                <Label htmlFor="test-files">Test files (optional)</Label>
+                <Input
+                  id="test-files"
+                  type="file"
+                  accept=".pdf,image/*"
+                  multiple
+                  disabled={uploading || pending}
+                  onChange={(e) => void onUpload(e.target.files)}
+                />
+                <p className="text-xs text-muted-foreground">PDF or images, up to 10 MB each.</p>
+              </div>
+            </div>
+          )}
+
+          {step === 1 && (
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <Label>Medications</Label>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setMedications((m) => [...m, emptyMed()])}
+                  >
+                    <Plus className="size-4" aria-hidden /> Add
+                  </Button>
+                </div>
+                {medications.map((med, i) => (
+                  <div key={i} className="grid gap-2 rounded-xl border p-3 sm:grid-cols-2">
                     <Input
-                      placeholder="Duration"
-                      value={med.duration ?? ""}
+                      placeholder="Medication"
+                      value={med.name}
+                      onChange={(e) =>
+                        setMedications((rows) =>
+                          rows.map((r, idx) => (idx === i ? { ...r, name: e.target.value } : r)),
+                        )
+                      }
+                    />
+                    <Input
+                      placeholder="Dose"
+                      value={med.dose ?? ""}
+                      onChange={(e) =>
+                        setMedications((rows) =>
+                          rows.map((r, idx) => (idx === i ? { ...r, dose: e.target.value } : r)),
+                        )
+                      }
+                    />
+                    <Input
+                      placeholder="Frequency"
+                      value={med.frequency ?? ""}
                       onChange={(e) =>
                         setMedications((rows) =>
                           rows.map((r, idx) =>
-                            idx === i ? { ...r, duration: e.target.value } : r,
+                            idx === i ? { ...r, frequency: e.target.value } : r,
                           ),
                         )
                       }
                     />
-                    {medications.length > 1 && (
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="ghost"
-                        aria-label="Remove medication"
-                        onClick={() => setMedications((rows) => rows.filter((_, idx) => idx !== i))}
-                      >
-                        <Trash2 className="size-4" aria-hidden />
-                      </Button>
-                    )}
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Duration"
+                        value={med.duration ?? ""}
+                        onChange={(e) =>
+                          setMedications((rows) =>
+                            rows.map((r, idx) =>
+                              idx === i ? { ...r, duration: e.target.value } : r,
+                            ),
+                          )
+                        }
+                      />
+                      {medications.length > 1 && (
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          aria-label="Remove medication"
+                          onClick={() =>
+                            setMedications((rows) => rows.filter((_, idx) => idx !== i))
+                          }
+                        >
+                          <Trash2 className="size-4" aria-hidden />
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+              <Field
+                label="Instructions"
+                hint="How to take the medicines"
+                value={prescription}
+                onChange={setPrescription}
+              />
             </div>
-            <Field
-              label="Instructions"
-              hint="Additional prescription guidance"
-              value={prescription}
-              onChange={setPrescription}
-            />
-          </div>
-        )}
-        {step === 5 && (
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Visit completed. Print the prescription for the patient.
-            </p>
-            <PrescriptionPrintView
-              patientName={patientName}
-              patientCode={patientCode}
-              doctorName={doctorName}
-              diagnosis={diagnosis}
-              prescription={prescription}
-              medications={medications.filter((m) => m.name.trim())}
-              date={new Date().toISOString()}
-            />
-          </div>
-        )}
+          )}
 
-        <DialogFooter className="gap-2 sm:gap-0">
-          {step > 0 && step < 5 && (
-            <Button type="button" variant="outline" disabled={pending} onClick={() => setStep((s) => s - 1)}>
-              Back
-            </Button>
+          {step === 2 && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Visit completed. Print the prescription for the patient.
+              </p>
+              <PrescriptionPrintView
+                patientName={patientName}
+                patientCode={patientCode}
+                doctorName={doctorName}
+                diagnosis={diagnosis}
+                prescription={prescription}
+                medications={medications.filter((m) => m.name.trim())}
+                date={new Date().toISOString()}
+              />
+            </div>
           )}
-          {step < 4 && (
-            <Button type="button" disabled={pending || uploading} onClick={next}>
-              Next
-            </Button>
-          )}
-          {step === 4 && (
-            <Button type="button" disabled={pending} onClick={next}>
-              {pending && <Loader2 className="size-4 animate-spin" />}
-              Complete visit
-            </Button>
-          )}
-          {step === 5 && (
-            <>
-              <Button type="button" variant="outline" onClick={() => window.print()}>
-                <Printer className="size-4" /> Print
-              </Button>
+        </div>
+
+        <DialogFooter className="mx-0 mb-0 shrink-0 rounded-none border-t sm:justify-between">
+          <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            {step === 1 && (
               <Button
                 type="button"
-                onClick={() => {
-                  onOpenChange(false);
-                  reset();
-                }}
+                variant="outline"
+                disabled={pending}
+                onClick={() => setStep(0)}
               >
-                Done
+                Back
               </Button>
-            </>
-          )}
+            )}
+            {step === 0 && (
+              <Button type="button" disabled={pending || uploading} onClick={next}>
+                Next
+              </Button>
+            )}
+            {step === 1 && (
+              <Button type="button" disabled={pending} onClick={next}>
+                {pending && <Loader2 className="size-4 animate-spin" aria-hidden />}
+                Complete visit
+              </Button>
+            )}
+            {step === 2 && (
+              <>
+                <Button type="button" variant="outline" onClick={() => window.print()}>
+                  <Printer className="size-4" aria-hidden /> Print
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    onOpenChange(false);
+                    reset();
+                  }}
+                >
+                  Done
+                </Button>
+              </>
+            )}
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -373,7 +388,7 @@ function Field({
 }) {
   const id = useId();
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       <Label htmlFor={id}>{label}</Label>
       {hint && (
         <p id={`${id}-hint`} className="text-xs text-muted-foreground">
@@ -382,7 +397,7 @@ function Field({
       )}
       <Textarea
         id={id}
-        rows={5}
+        rows={3}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-describedby={hint ? `${id}-hint` : undefined}

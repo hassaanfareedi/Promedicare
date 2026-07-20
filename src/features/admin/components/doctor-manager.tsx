@@ -54,7 +54,11 @@ export function DoctorManager({ doctors, candidates, specialties, departments }:
       </div>
 
       {doctors.length === 0 ? (
-        <EmptyState icon={BriefcaseMedical} title="No doctors yet" description="Add a doctor from your hospital staff." />
+        <EmptyState
+          icon={BriefcaseMedical}
+          title="No doctors yet"
+          description="Add a doctor from hospital staff or a patient account."
+        />
       ) : (
         <div className="space-y-4">
           {doctors.map((d) => (
@@ -133,40 +137,41 @@ function AddDoctorDialog({
         <DialogHeader>
           <DialogTitle>Add doctor</DialogTitle>
           <DialogDescription>
-            Link a staff member with the Doctor role to a clinical profile and optional specialty.
+            Choose a hospital user, then set specialty and fee. They will get the Doctor role if
+            needed.
           </DialogDescription>
         </DialogHeader>
         {candidates.length === 0 ? (
           <div className="space-y-4 py-2">
             <p className="text-sm text-muted-foreground">
-              No eligible staff yet. On Staff, assign someone the Doctor role, then return here to
-              link their clinical profile.
+              No users left to link. Register a patient account first, or promote someone under
+              Staff, then return here.
             </p>
             <Link
               href="/admin/staff"
               className={buttonVariants({ variant: "outline", size: "sm" })}
               onClick={() => setOpen(false)}
             >
-              Go to Staff
+              Open Staff
             </Link>
           </div>
         ) : (
           <div className="grid gap-4">
             <div className="space-y-2">
-              <Label>Staff member</Label>
+              <Label>User</Label>
               <Select
                 value={profileId || null}
                 onValueChange={(v) => setProfileId(v ?? "")}
                 items={[
-                  { value: null, label: "Select a staff member" },
+                  { value: null, label: "Select a user" },
                   ...candidates.map((c) => ({
                     value: c.id,
                     label: candidateLabel(c),
                   })),
                 ]}
               >
-                <SelectTrigger>
-                  <SelectValue />
+                <SelectTrigger aria-label="User">
+                  <SelectValue placeholder="Select a user" />
                 </SelectTrigger>
                 <SelectContent>
                   {candidates.map((c) => (

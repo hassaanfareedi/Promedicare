@@ -206,14 +206,12 @@ export async function addDoctor(input: DoctorInput): Promise<MutationResult> {
     .maybeSingle();
 
   if (profileErr) return { ok: false, error: profileErr.message };
-  if (!profile || profile.hospital_id !== hid) {
-    return { ok: false, error: "Staff member not found in your hospital." };
+  if (!profile) return { ok: false, error: "User not found." };
+  if (profile.role === "super_admin" || profile.role === "hospital_admin") {
+    return { ok: false, error: "Admin accounts cannot be linked as doctors." };
   }
-  if (profile.role !== "doctor") {
-    return {
-      ok: false,
-      error: "Only staff with the Doctor role can be added. Assign Doctor on Staff first.",
-    };
+  if (profile.hospital_id && profile.hospital_id !== hid) {
+    return { ok: false, error: "User belongs to another hospital." };
   }
 
   const { data: existingDoctor } = await supabase
@@ -225,6 +223,21 @@ export async function addDoctor(input: DoctorInput): Promise<MutationResult> {
 
   if (existingDoctor) {
     return { ok: false, error: "This staff member already has a doctor profile." };
+  }
+
+  // One-step: assign Doctor role (and hospital) when promoting receptionist/patient.
+  if (profile.role !== "doctor" || profile.hospital_id !== hid) {
+    const { error: roleErr } = await supabase
+      .from("profiles")
+      .update({ role: "doctor", hospital_id: hid })
+      .eq("id", profile.id);
+    if (roleErr) return { ok: false, error: roleErr.message };
+    await logAudit({
+      action: "staff.promoted",
+      entityType: "profile",
+      entityId: profile.id,
+      metadata: { role: "doctor", from: profile.role, via: "add_doctor" },
+    });
   }
 
   const { data, error } = await supabase
