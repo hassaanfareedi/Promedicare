@@ -47,3 +47,13 @@ export const predictionReviewSchema = z.object({
 });
 
 export type PredictionReviewInput = z.infer<typeof predictionReviewSchema>;
+
+/** Clinician-oriented brief generated from a stored screening (not a diagnosis). */
+export const clinicalBriefSchema = z.object({
+  chief_symptoms: z.string().min(1).max(300),
+  risk_rationale: z.string().min(1).max(500),
+  red_flags: z.array(z.string().max(200)).max(10).optional().default([]),
+  suggested_focus: z.string().min(1).max(400),
+});
+
+export type ClinicalBrief = z.infer<typeof clinicalBriefSchema>;

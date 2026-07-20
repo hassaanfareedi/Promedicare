@@ -10,12 +10,14 @@ const uuidSchema = z.string().uuid();
 import {
   departmentSchema,
   doctorSchema,
+  createDoctorAccountSchema,
   updateDoctorSchema,
   availabilitySchema,
   roleAssignSchema,
   promoteStaffSchema,
   type DepartmentInput,
   type DoctorInput,
+  type CreateDoctorAccountInput,
   type UpdateDoctorInput,
   type AvailabilityInput,
   type RoleAssignInput,
@@ -26,6 +28,7 @@ import {
   type UpdateHospitalInput,
 } from "@/schemas/platform";
 import type { MutationResult } from "@/features/patient/actions";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 async function hospitalId(): Promise<string | null> {
   const user = await requireRole(["hospital_admin", "super_admin"]);
@@ -266,6 +269,97 @@ export async function addDoctor(input: DoctorInput): Promise<MutationResult> {
   revalidatePath("/admin/doctors");
   revalidatePath("/admin/staff");
   return { ok: true };
+}
+
+/**
+ * Create a brand-new doctor account for this hospital: Auth user + profile +
+ * clinical doctor row. Uses the service-role client for Auth Admin APIs.
+ */
+export async function createDoctorAccount(
+  input: CreateDoctorAccountInput,
+): Promise<MutationResult<{ doctorId: string }>> {
+  const hid = await hospitalId();
+  if (!hid) return { ok: false, error: "Your account is not linked to a hospital." };
+  const parsed = createDoctorAccountSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid details" };
+  }
+  const v = parsed.data;
+
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Admin client is not configured.",
+    };
+  }
+
+  const { data: created, error: createErr } = await admin.auth.admin.createUser({
+    email: v.email,
+    password: v.password,
+    email_confirm: true,
+    user_metadata: { full_name: v.fullName },
+  });
+
+  if (createErr || !created.user) {
+    const msg = createErr?.message ?? "Could not create the account.";
+    if (/already|registered|exists/i.test(msg)) {
+      return { ok: false, error: "An account with this email already exists." };
+    }
+    return { ok: false, error: msg };
+  }
+
+  const userId = created.user.id;
+
+  const { error: profileErr } = await admin
+    .from("profiles")
+    .update({
+      role: "doctor",
+      hospital_id: hid,
+      full_name: v.fullName,
+      email: v.email,
+      onboarding_completed: true,
+    })
+    .eq("id", userId);
+
+  if (profileErr) {
+    await admin.auth.admin.deleteUser(userId);
+    return { ok: false, error: profileErr.message };
+  }
+
+  const { data: doctor, error: doctorErr } = await admin
+    .from("doctors")
+    .insert({
+      hospital_id: hid,
+      profile_id: userId,
+      specialty_id: v.specialtyId || null,
+      department_id: v.departmentId || null,
+      license_number: v.licenseNumber || null,
+      years_experience: v.yearsExperience ?? null,
+      consultation_fee: v.consultationFee ?? null,
+    })
+    .select("id")
+    .single();
+
+  if (doctorErr || !doctor) {
+    await admin.auth.admin.deleteUser(userId);
+    if (doctorErr?.code === "23505") {
+      return { ok: false, error: "This account already has a doctor profile." };
+    }
+    return { ok: false, error: doctorErr?.message ?? "Could not create doctor profile." };
+  }
+
+  await logAudit({
+    action: "doctor.created",
+    entityType: "doctor",
+    entityId: doctor.id,
+    metadata: { profileId: userId, email: v.email, via: "create_account" },
+  });
+  revalidatePath("/admin/doctors");
+  revalidatePath("/admin/staff");
+  return { ok: true, data: { doctorId: doctor.id } };
 }
 
 export async function updateDoctor(input: UpdateDoctorInput): Promise<MutationResult> {

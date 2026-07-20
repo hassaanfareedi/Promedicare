@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, Plus, BriefcaseMedical, Pencil } from "lucide-react";
-import { addDoctor, updateDoctor, setDoctorActive } from "@/features/admin/actions";
+import { addDoctor, createDoctorAccount, updateDoctor, setDoctorActive } from "@/features/admin/actions";
 import type { AdminDoctor } from "@/features/admin/data";
 import { AvailabilityEditor } from "@/features/admin/components/availability-editor";
 import type { Department, Profile, Specialty } from "@/types";
@@ -33,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 function candidateLabel(c: Profile): string {
   const name = c.full_name ?? c.email ?? c.id;
@@ -57,7 +58,7 @@ export function DoctorManager({ doctors, candidates, specialties, departments }:
         <EmptyState
           icon={BriefcaseMedical}
           title="No doctors yet"
-          description="Add a doctor from hospital staff or a patient account."
+          description="Create a new doctor account or link an existing hospital user."
         />
       ) : (
         <div className="space-y-4">
@@ -75,6 +76,119 @@ export function DoctorManager({ doctors, candidates, specialties, departments }:
   );
 }
 
+function ClinicalFields({
+  specialtyId,
+  setSpecialtyId,
+  departmentId,
+  setDepartmentId,
+  license,
+  setLicense,
+  years,
+  setYears,
+  fee,
+  setFee,
+  specialties,
+  departments,
+  idPrefix,
+}: {
+  specialtyId: string;
+  setSpecialtyId: (v: string) => void;
+  departmentId: string;
+  setDepartmentId: (v: string) => void;
+  license: string;
+  setLicense: (v: string) => void;
+  years: string;
+  setYears: (v: string) => void;
+  fee: string;
+  setFee: (v: string) => void;
+  specialties: Specialty[];
+  departments: Department[];
+  idPrefix: string;
+}) {
+  return (
+    <>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label>Specialty</Label>
+          <Select
+            value={specialtyId || null}
+            onValueChange={(v) => setSpecialtyId(v ?? "")}
+            items={[
+              { value: null, label: "None" },
+              ...specialties.map((s) => ({ value: s.id, label: s.name })),
+            ]}
+          >
+            <SelectTrigger aria-label="Specialty">
+              <SelectValue placeholder="Optional" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={null}>None</SelectItem>
+              {specialties.map((s) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>Department</Label>
+          <Select
+            value={departmentId || null}
+            onValueChange={(v) => setDepartmentId(v ?? "")}
+            items={[
+              { value: null, label: "None" },
+              ...departments.map((dep) => ({ value: dep.id, label: dep.name })),
+            ]}
+          >
+            <SelectTrigger aria-label="Department">
+              <SelectValue placeholder="Optional" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={null}>None</SelectItem>
+              {departments.map((dep) => (
+                <SelectItem key={dep.id} value={dep.id}>
+                  {dep.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="space-y-2">
+          <Label htmlFor={`${idPrefix}-license`}>License</Label>
+          <Input
+            id={`${idPrefix}-license`}
+            value={license}
+            onChange={(e) => setLicense(e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor={`${idPrefix}-years`}>Years exp.</Label>
+          <Input
+            id={`${idPrefix}-years`}
+            type="number"
+            min={0}
+            value={years}
+            onChange={(e) => setYears(e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor={`${idPrefix}-fee`}>Fee</Label>
+          <Input
+            id={`${idPrefix}-fee`}
+            type="number"
+            min={0}
+            value={fee}
+            onChange={(e) => setFee(e.target.value)}
+          />
+        </div>
+      </div>
+    </>
+  );
+}
+
 function AddDoctorDialog({
   candidates,
   specialties,
@@ -87,6 +201,13 @@ function AddDoctorDialog({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
+  const [mode, setMode] = useState<"new" | "existing">("new");
+
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
   const [profileId, setProfileId] = useState("");
   const [specialtyId, setSpecialtyId] = useState("");
   const [departmentId, setDepartmentId] = useState("");
@@ -95,6 +216,11 @@ function AddDoctorDialog({
   const [fee, setFee] = useState("");
 
   function resetForm() {
+    setMode("new");
+    setFullName("");
+    setEmail("");
+    setPassword("");
+    setConfirmPassword("");
     setProfileId("");
     setSpecialtyId("");
     setDepartmentId("");
@@ -103,7 +229,46 @@ function AddDoctorDialog({
     setFee("");
   }
 
-  function submit() {
+  const clinical = {
+    specialtyId,
+    setSpecialtyId,
+    departmentId,
+    setDepartmentId,
+    license,
+    setLicense,
+    years,
+    setYears,
+    fee,
+    setFee,
+    specialties,
+    departments,
+  };
+
+  function submitNew() {
+    startTransition(async () => {
+      const res = await createDoctorAccount({
+        fullName,
+        email,
+        password,
+        confirmPassword,
+        specialtyId: specialtyId || undefined,
+        departmentId: departmentId || undefined,
+        licenseNumber: license || undefined,
+        yearsExperience: years ? Number(years) : undefined,
+        consultationFee: fee ? Number(fee) : undefined,
+      });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success("Doctor account created");
+      setOpen(false);
+      resetForm();
+      router.refresh();
+    });
+  }
+
+  function submitExisting() {
     startTransition(async () => {
       const res = await addDoctor({
         profileId,
@@ -125,7 +290,13 @@ function AddDoctorDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) resetForm();
+      }}
+    >
       <DialogTrigger
         render={
           <Button size="sm">
@@ -137,123 +308,147 @@ function AddDoctorDialog({
         <DialogHeader>
           <DialogTitle>Add doctor</DialogTitle>
           <DialogDescription>
-            Choose a hospital user, then set specialty and fee. They will get the Doctor role if
-            needed.
+            Create a new login for this hospital, or link someone who already has an account.
           </DialogDescription>
         </DialogHeader>
-        {candidates.length === 0 ? (
-          <div className="space-y-4 py-2">
-            <p className="text-sm text-muted-foreground">
-              No users left to link. Register a patient account first, or promote someone under
-              Staff, then return here.
-            </p>
-            <Link
-              href="/admin/staff"
-              className={buttonVariants({ variant: "outline", size: "sm" })}
-              onClick={() => setOpen(false)}
-            >
-              Open Staff
-            </Link>
-          </div>
-        ) : (
-          <div className="grid gap-4">
+
+        <Tabs
+          value={mode}
+          onValueChange={(v) => setMode(v as "new" | "existing")}
+          className="gap-4"
+        >
+          <TabsList className="w-full">
+            <TabsTrigger value="new">New doctor</TabsTrigger>
+            <TabsTrigger value="existing">Link existing</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="new" className="grid gap-4">
             <div className="space-y-2">
-              <Label>User</Label>
-              <Select
-                value={profileId || null}
-                onValueChange={(v) => setProfileId(v ?? "")}
-                items={[
-                  { value: null, label: "Select a user" },
-                  ...candidates.map((c) => ({
-                    value: c.id,
-                    label: candidateLabel(c),
-                  })),
-                ]}
-              >
-                <SelectTrigger aria-label="User">
-                  <SelectValue placeholder="Select a user" />
-                </SelectTrigger>
-                <SelectContent>
-                  {candidates.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {candidateLabel(c)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="new-doc-name">Full name</Label>
+              <Input
+                id="new-doc-name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Dr. Sara Ahmed"
+                autoComplete="name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-doc-email">Email</Label>
+              <Input
+                id="new-doc-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="doctor@hospital.com"
+                autoComplete="off"
+              />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>Specialty</Label>
-                <Select
-                  value={specialtyId || null}
-                  onValueChange={(v) => setSpecialtyId(v ?? "")}
-                  items={[
-                    { value: null, label: "None" },
-                    ...specialties.map((s) => ({ value: s.id, label: s.name })),
-                  ]}
-                >
-                  <SelectTrigger aria-label="Specialty">
-                    <SelectValue placeholder="Optional" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={null}>None</SelectItem>
-                    {specialties.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="new-doc-password">Temporary password</Label>
+                <Input
+                  id="new-doc-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
+                />
               </div>
               <div className="space-y-2">
-                <Label>Department</Label>
-                <Select
-                  value={departmentId || null}
-                  onValueChange={(v) => setDepartmentId(v ?? "")}
-                  items={[
-                    { value: null, label: "None" },
-                    ...departments.map((dep) => ({ value: dep.id, label: dep.name })),
-                  ]}
-                >
-                  <SelectTrigger aria-label="Department">
-                    <SelectValue placeholder="Optional" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={null}>None</SelectItem>
-                    {departments.map((dep) => (
-                      <SelectItem key={dep.id} value={dep.id}>
-                        {dep.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="new-doc-confirm">Confirm password</Label>
+                <Input
+                  id="new-doc-confirm"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  autoComplete="new-password"
+                />
               </div>
             </div>
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="space-y-2">
-                <Label htmlFor="license">License</Label>
-                <Input id="license" value={license} onChange={(e) => setLicense(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="years">Years exp.</Label>
-                <Input id="years" type="number" min={0} value={years} onChange={(e) => setYears(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="fee">Fee</Label>
-                <Input id="fee" type="number" min={0} value={fee} onChange={(e) => setFee(e.target.value)} />
-              </div>
-            </div>
-            <Button onClick={submit} disabled={pending || !profileId} className="justify-self-end">
+            <p className="text-xs text-muted-foreground">
+              Share the email and temporary password with the doctor. They can change it via Forgot
+              password.
+            </p>
+            <ClinicalFields {...clinical} idPrefix="new" />
+            <Button
+              onClick={submitNew}
+              disabled={pending || fullName.trim().length < 2 || !email.trim() || !password}
+              className="justify-self-end"
+            >
               {pending ? (
                 <Loader2 className="size-4 animate-spin" aria-hidden />
               ) : (
                 <Plus className="size-4" aria-hidden />
               )}
-              Add doctor
+              Create doctor
             </Button>
-          </div>
-        )}
+          </TabsContent>
+
+          <TabsContent value="existing" className="grid gap-4">
+            {candidates.length === 0 ? (
+              <div className="space-y-4 py-2">
+                <p className="text-sm text-muted-foreground">
+                  No users left to link. Create a new doctor account instead, or register a patient
+                  first.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" size="sm" variant="outline" onClick={() => setMode("new")}>
+                    Create new doctor
+                  </Button>
+                  <Link
+                    href="/admin/staff"
+                    className={buttonVariants({ variant: "outline", size: "sm" })}
+                    onClick={() => setOpen(false)}
+                  >
+                    Open Staff
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label>User</Label>
+                  <Select
+                    value={profileId || null}
+                    onValueChange={(v) => setProfileId(v ?? "")}
+                    items={[
+                      { value: null, label: "Select a user" },
+                      ...candidates.map((c) => ({
+                        value: c.id,
+                        label: candidateLabel(c),
+                      })),
+                    ]}
+                  >
+                    <SelectTrigger aria-label="User">
+                      <SelectValue placeholder="Select a user" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {candidates.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {candidateLabel(c)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <ClinicalFields {...clinical} idPrefix="link" />
+                <Button
+                  onClick={submitExisting}
+                  disabled={pending || !profileId}
+                  className="justify-self-end"
+                >
+                  {pending ? (
+                    <Loader2 className="size-4 animate-spin" aria-hidden />
+                  ) : (
+                    <Plus className="size-4" aria-hidden />
+                  )}
+                  Link as doctor
+                </Button>
+              </>
+            )}
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

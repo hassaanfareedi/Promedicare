@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/session";
 import { logAudit } from "@/lib/audit";
 import { notify } from "@/lib/notifications";
-import { predictionReviewSchema, type PredictionReviewInput } from "@/schemas/prediction";
+import { predictionReviewSchema, type PredictionReviewInput, clinicalBriefSchema, type ClinicalBrief } from "@/schemas/prediction";
 import {
   updateAppointmentStatusSchema,
   type UpdateAppointmentStatusInput,
@@ -17,6 +17,10 @@ import {
 import type { MutationResult } from "@/features/patient/actions";
 import type { Json, TablesUpdate } from "@/types/database";
 import { getMyDoctor } from "@/features/doctor/data";
+import { runClinicalBrief } from "@/lib/ai/groq-client";
+import { parseScreeningIntake } from "@/features/patient/intake-parser";
+import { toAiPrediction } from "@/features/patient/prediction-mapper";
+import type { Prediction } from "@/types";
 
 /** Doctor reviews an AI screening, recording an outcome and optional notes. */
 export async function reviewPrediction(
@@ -75,7 +79,68 @@ export async function reviewPrediction(
 
   revalidatePath("/doctor/reviews");
   revalidatePath("/doctor");
+  revalidatePath("/patient/screenings");
   return { ok: true };
+}
+
+function parseStoredBrief(raw: string | null): ClinicalBrief | null {
+  if (!raw?.trim()) return null;
+  try {
+    const parsed = clinicalBriefSchema.safeParse(JSON.parse(raw));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Returns a cached clinical brief, or generates and stores one on first open.
+ * Does not run on the patient screening path.
+ */
+export async function ensureClinicalSummary(
+  predictionId: string,
+): Promise<MutationResult<{ brief: ClinicalBrief; cached: boolean }>> {
+  await requireRole(["doctor", "hospital_admin", "super_admin"]);
+  const supabase = await createClient();
+
+  const { data: row, error } = await supabase
+    .from("predictions")
+    .select("*")
+    .eq("id", predictionId)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (error) return { ok: false, error: error.message };
+  if (!row) return { ok: false, error: "Screening not found or not accessible." };
+
+  const cached = parseStoredBrief(row.clinical_summary);
+  if (cached) {
+    return { ok: true, data: { brief: cached, cached: true } };
+  }
+
+  const intake = parseScreeningIntake(row.input_symptoms, row.input_text);
+  const prediction = toAiPrediction(row as Prediction);
+  const generated = await runClinicalBrief({ intake, prediction });
+  if (!generated.ok) {
+    return { ok: false, error: generated.error };
+  }
+
+  const serialized = JSON.stringify(generated.brief);
+  const { error: saveErr } = await supabase
+    .from("predictions")
+    .update({ clinical_summary: serialized })
+    .eq("id", predictionId);
+
+  if (saveErr) return { ok: false, error: saveErr.message };
+
+  await logAudit({
+    action: "prediction.clinical_summary",
+    entityType: "prediction",
+    entityId: predictionId,
+    metadata: { model: generated.model },
+  });
+
+  return { ok: true, data: { brief: generated.brief, cached: false } };
 }
 
 /**

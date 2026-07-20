@@ -8,7 +8,14 @@ import { symptomIntakeSchema, type SymptomIntakeInput } from "@/schemas/predicti
 import { runSymptomPrediction } from "@/lib/ai/groq-client";
 import type { AiPrediction } from "@/schemas/prediction";
 import { logAudit } from "@/lib/audit";
+import { rateLimit } from "@/lib/rate-limit";
 import type { Json } from "@/types/database";
+import {
+  ageFromDob,
+  intakeToStoredJson,
+  matchSpecialtyId,
+  sexFromGender,
+} from "@/features/patient/intake-parser";
 
 export type MutationResult<T = undefined> =
   | { ok: true; data?: T }
@@ -34,23 +41,43 @@ export async function runScreening(
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Please review your symptoms" };
   }
+
+  const limited = rateLimit(`screening:${user.id}`, { limit: 5, windowMs: 10 * 60_000 });
+  if (!limited.allowed) {
+    const mins = Math.max(1, Math.ceil(limited.retryAfterMs / 60_000));
+    return {
+      ok: false,
+      error: `Too many screenings. Please wait about ${mins} minute(s) and try again.`,
+    };
+  }
+
   const supabase = await createClient();
 
   const { data: patient } = await supabase
     .from("patients")
-    .select("id, hospital_id")
+    .select("id, hospital_id, dob, gender")
     .eq("profile_id", user.id)
     .maybeSingle();
   if (!patient) return { ok: false, error: "Complete your patient profile first." };
 
-  const { prediction, model, degraded } = await runSymptomPrediction(parsed.data);
+  const intake: SymptomIntakeInput = {
+    ...parsed.data,
+    age: parsed.data.age ?? ageFromDob(patient.dob),
+    sex: parsed.data.sex ?? sexFromGender(patient.gender),
+  };
 
-  // Best-effort mapping of the model's free-text specialty to a known specialty.
-  const { data: specialty } = await supabase
+  const { data: specialtyRows } = await supabase
     .from("specialties")
-    .select("id")
-    .ilike("name", prediction.recommended_specialty)
-    .maybeSingle();
+    .select("id, name")
+    .order("name");
+  const specialties = specialtyRows ?? [];
+  const specialtyNames = specialties.map((s) => s.name);
+
+  const { prediction, model, degraded } = await runSymptomPrediction(intake, specialtyNames);
+
+  const matched = matchSpecialtyId(prediction.recommended_specialty, specialties);
+  const specialtyLabel = matched?.name ?? prediction.recommended_specialty;
+  const specialtyId = matched?.id ?? null;
 
   const { data: row, error } = await supabase
     .from("predictions")
@@ -63,11 +90,11 @@ export async function runScreening(
       confidence: prediction.confidence,
       explanation: prediction.explanation,
       predicted_conditions: prediction.predicted_conditions as unknown as Json,
-      input_symptoms: parsed.data.symptoms as unknown as Json,
-      input_text: parsed.data.notes || null,
-      recommended_specialty_id: specialty?.id ?? null,
-      recommended_specialty_label: prediction.recommended_specialty,
-      raw_output: prediction as unknown as Json,
+      input_symptoms: intakeToStoredJson(intake),
+      input_text: intake.notes || null,
+      recommended_specialty_id: specialtyId,
+      recommended_specialty_label: specialtyLabel,
+      raw_output: { ...prediction, recommended_specialty: specialtyLabel } as unknown as Json,
       status: "pending_review",
     })
     .select("id")
@@ -90,9 +117,9 @@ export async function runScreening(
     ok: true,
     data: {
       predictionId: row.id,
-      prediction,
+      prediction: { ...prediction, recommended_specialty: specialtyLabel },
       degraded,
-      recommendedSpecialtyId: specialty?.id ?? null,
+      recommendedSpecialtyId: specialtyId,
     },
   };
 }

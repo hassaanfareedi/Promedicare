@@ -1,7 +1,19 @@
 import "server-only";
 import { z } from "zod";
-import { aiPredictionSchema, type AiPrediction, type SymptomIntakeInput } from "@/schemas/prediction";
-import { SYMPTOM_SYSTEM_PROMPT, buildSymptomUserPrompt } from "@/lib/ai/prompts";
+import {
+  aiPredictionSchema,
+  clinicalBriefSchema,
+  type AiPrediction,
+  type ClinicalBrief,
+  type SymptomIntakeInput,
+} from "@/schemas/prediction";
+import {
+  SYMPTOM_SYSTEM_PROMPT,
+  CLINICAL_BRIEF_SYSTEM_PROMPT,
+  buildSymptomUserPrompt,
+  buildClinicalBriefUserPrompt,
+} from "@/lib/ai/prompts";
+import type { ParsedScreeningIntake } from "@/features/patient/intake-parser";
 
 type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 
@@ -111,16 +123,66 @@ export type SymptomPrediction = {
 };
 
 /** Runs symptom-based risk screening. Always returns a usable result. */
-export async function runSymptomPrediction(input: SymptomIntakeInput): Promise<SymptomPrediction> {
+export async function runSymptomPrediction(
+  input: SymptomIntakeInput,
+  specialtyNames: string[] = [],
+): Promise<SymptomPrediction> {
+  const names =
+    specialtyNames.length > 0
+      ? specialtyNames
+      : ["General Medicine"];
   const result = await callGroqJSON(aiPredictionSchema, [
     { role: "system", content: SYMPTOM_SYSTEM_PROMPT },
-    { role: "user", content: buildSymptomUserPrompt(input) },
+    { role: "user", content: buildSymptomUserPrompt(input, names) },
   ]);
 
   if (result.ok) {
-    return { prediction: result.data, model: result.model, degraded: false };
+    let prediction = result.data;
+    // Snap specialty to an allowed name when the model drifts slightly.
+    const matched = names.find(
+      (n) => n.trim().toLowerCase() === prediction.recommended_specialty.trim().toLowerCase(),
+    );
+    if (!matched) {
+      const fuzzy = names.find((n) => {
+        const a = n.trim().toLowerCase();
+        const b = prediction.recommended_specialty.trim().toLowerCase();
+        return a.includes(b) || b.includes(a);
+      });
+      prediction = {
+        ...prediction,
+        recommended_specialty: fuzzy ?? names[0] ?? "General Medicine",
+      };
+    } else {
+      prediction = { ...prediction, recommended_specialty: matched };
+    }
+    return { prediction, model: result.model, degraded: false };
   }
-  return { prediction: fallbackPrediction(), model: getConfig().model, degraded: true };
+  const fallback = fallbackPrediction();
+  return {
+    prediction: {
+      ...fallback,
+      recommended_specialty: names[0] ?? fallback.recommended_specialty,
+    },
+    model: getConfig().model,
+    degraded: true,
+  };
+}
+
+export type ClinicalBriefResult =
+  | { ok: true; brief: ClinicalBrief; model: string }
+  | { ok: false; error: string };
+
+/** Generates a clinician brief from intake + prediction. Does not fall back silently. */
+export async function runClinicalBrief(args: {
+  intake: ParsedScreeningIntake;
+  prediction: AiPrediction;
+}): Promise<ClinicalBriefResult> {
+  const result = await callGroqJSON(clinicalBriefSchema, [
+    { role: "system", content: CLINICAL_BRIEF_SYSTEM_PROMPT },
+    { role: "user", content: buildClinicalBriefUserPrompt(args) },
+  ]);
+  if (result.ok) return { ok: true, brief: result.data, model: result.model };
+  return { ok: false, error: result.error };
 }
 
 /** Minimal structured "hello world" used to verify the key/model once set. */

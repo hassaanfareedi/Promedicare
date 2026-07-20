@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Stethoscope } from "lucide-react";
 import { getReviewablePredictions } from "@/features/doctor/data";
 import { toAiPrediction } from "@/features/patient/prediction-mapper";
+import { parseScreeningIntake } from "@/features/patient/intake-parser";
+import { clinicalBriefSchema, type ClinicalBrief } from "@/schemas/prediction";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { AiDisclaimer } from "@/components/shared/ai-disclaimer";
@@ -15,8 +17,19 @@ import type { RiskLevel } from "@/types";
 
 export const metadata: Metadata = { title: "AI reviews" };
 
+function parseBrief(raw: string | null | undefined): ClinicalBrief | null {
+  if (!raw?.trim()) return null;
+  try {
+    const parsed = clinicalBriefSchema.safeParse(JSON.parse(raw));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
+
 function ReviewRow({ p }: { p: PredictionWithPatient }) {
   const reviewed = p.status !== "pending_review";
+  const intake = parseScreeningIntake(p.input_symptoms, p.input_text);
   return (
     <Card>
       <CardContent className="flex flex-wrap items-center justify-between gap-4 p-4">
@@ -28,12 +41,20 @@ function ReviewRow({ p }: { p: PredictionWithPatient }) {
           <p className="mt-0.5 text-sm text-muted-foreground">
             {p.recommended_specialty_label ?? "Screening"} · {formatDateTime(p.created_at)}
           </p>
+          {intake.symptoms.length > 0 && (
+            <p className="mt-1 truncate text-xs text-muted-foreground">
+              {intake.symptoms.slice(0, 4).join(", ")}
+              {intake.symptoms.length > 4 ? "…" : ""}
+            </p>
+          )}
         </div>
         <ReviewDialog
           predictionId={p.id}
           prediction={toAiPrediction(p)}
+          intake={intake}
           patientName={p.patient?.full_name ?? "Patient"}
           alreadyReviewed={reviewed}
+          initialBrief={parseBrief(p.clinical_summary)}
         />
       </CardContent>
     </Card>

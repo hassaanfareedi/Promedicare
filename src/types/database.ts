@@ -730,6 +730,7 @@ export type Database = {
           confidence: number | null
           created_at: string
           created_by: string | null
+          clinical_summary: string | null
           deleted_at: string | null
           explanation: string | null
           hospital_id: string | null
@@ -754,6 +755,7 @@ export type Database = {
           confidence?: number | null
           created_at?: string
           created_by?: string | null
+          clinical_summary?: string | null
           deleted_at?: string | null
           explanation?: string | null
           hospital_id?: string | null
@@ -778,6 +780,7 @@ export type Database = {
           confidence?: number | null
           created_at?: string
           created_by?: string | null
+          clinical_summary?: string | null
           deleted_at?: string | null
           explanation?: string | null
           hospital_id?: string | null

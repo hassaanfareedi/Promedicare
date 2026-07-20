@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarPlus, Stethoscope, AlertTriangle, TrendingUp } from "lucide-react";
+import { CalendarPlus, Stethoscope, AlertTriangle, TrendingUp, Phone } from "lucide-react";
 import type { AiPrediction } from "@/schemas/prediction";
 import { RISK_META } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -16,6 +16,10 @@ type Props = {
 
 export function PredictionResult({ prediction, degraded, bookHref }: Props) {
   const risk = RISK_META[prediction.risk_level];
+  const confidencePct = Math.round((prediction.confidence ?? 0) * 100);
+  const showUrgent =
+    prediction.risk_level === "urgent" ||
+    (prediction.red_flags != null && prediction.red_flags.length > 0);
 
   return (
     <div className="space-y-4">
@@ -39,16 +43,39 @@ export function PredictionResult({ prediction, degraded, bookHref }: Props) {
             </div>
           )}
 
+          {showUrgent && (
+            <div className="rounded-lg border border-red-300 bg-red-50 p-4 dark:border-red-900/70 dark:bg-red-950/40">
+              <p className="flex items-center gap-2 text-sm font-semibold text-red-800 dark:text-red-200">
+                <Phone className="size-4 shrink-0" aria-hidden />
+                Seek emergency or urgent care now if symptoms are severe or worsening
+              </p>
+              <p className="mt-1 text-sm text-red-700/90 dark:text-red-300/90">
+                This screening is not a substitute for emergency services. Call your local emergency
+                number or go to the nearest ER when in doubt.
+              </p>
+            </div>
+          )}
+
           <div>
-            <p className="mb-1 text-sm font-medium text-muted-foreground">{risk.description}</p>
+            <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-medium text-muted-foreground">{risk.description}</p>
+              <p className="text-xs tabular-nums text-muted-foreground">
+                Screening confidence {confidencePct}%
+              </p>
+            </div>
             <p className="text-sm leading-relaxed">{prediction.explanation}</p>
           </div>
 
           {prediction.predicted_conditions.length > 0 && (
             <div className="space-y-3">
-              <p className="flex items-center gap-2 text-sm font-medium">
-                <TrendingUp className="size-4 text-teal-600" /> Possible considerations
-              </p>
+              <div>
+                <p className="flex items-center gap-2 text-sm font-medium">
+                  <TrendingUp className="size-4 text-teal-600" /> Possible considerations
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Relative weight among listed considerations — not disease probability.
+                </p>
+              </div>
               <ul className="space-y-2.5">
                 {prediction.predicted_conditions.map((c, i) => {
                   const pct = Math.round(c.likelihood * 100);
@@ -61,7 +88,7 @@ export function PredictionResult({ prediction, degraded, bookHref }: Props) {
                       <Progress
                         value={pct}
                         aria-labelledby={`cond-${i}`}
-                        aria-valuetext={`${c.condition} ${pct} percent`}
+                        aria-valuetext={`${c.condition} relative weight ${pct} percent`}
                       />
                     </li>
                   );

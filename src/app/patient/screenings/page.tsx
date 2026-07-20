@@ -50,7 +50,8 @@ export default async function ScreeningsPage() {
                 predictionId={p.id}
                 specialtyId={p.recommended_specialty_id}
                 createdAt={p.created_at}
-                reviewed={p.status === "reviewed"}
+                status={p.status}
+                reviewNotes={p.review_notes}
               />
             ))}
           </div>

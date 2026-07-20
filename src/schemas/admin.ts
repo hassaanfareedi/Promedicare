@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { emailSchema, passwordSchema } from "@/schemas/auth";
 
 export const departmentSchema = z.object({
   name: z.string().trim().min(2, "Enter a department name").max(120),
@@ -16,6 +17,25 @@ export const doctorSchema = z.object({
   bio: z.string().trim().max(1000).optional().or(z.literal("")),
 });
 export type DoctorInput = z.infer<typeof doctorSchema>;
+
+/** Create a brand-new auth user + doctor profile for the hospital. */
+export const createDoctorAccountSchema = z
+  .object({
+    fullName: z.string().trim().min(2, "Enter the doctor's full name").max(120),
+    email: emailSchema,
+    password: passwordSchema,
+    confirmPassword: z.string(),
+    specialtyId: z.string().uuid().optional().or(z.literal("")),
+    departmentId: z.string().uuid().optional().or(z.literal("")),
+    licenseNumber: z.string().trim().max(80).optional().or(z.literal("")),
+    yearsExperience: z.coerce.number().int().min(0).max(70).optional(),
+    consultationFee: z.coerce.number().min(0).max(100000).optional(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+export type CreateDoctorAccountInput = z.infer<typeof createDoctorAccountSchema>;
 
 export const updateDoctorSchema = z.object({
   doctorId: z.string().uuid(),
