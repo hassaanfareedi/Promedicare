@@ -8,12 +8,21 @@ import { logAudit } from "@/lib/audit";
 import {
   hospitalSchema,
   specialtySchema,
+  updateSpecialtySchema,
   assignHospitalAdminSchema,
   type HospitalInput,
   type SpecialtyInput,
+  type UpdateSpecialtyInput,
   type AssignHospitalAdminInput,
 } from "@/schemas/platform";
 import type { MutationResult } from "@/features/patient/actions";
+
+function specialtyUniqueError(message: string): string {
+  if (/duplicate|unique|23505/i.test(message)) {
+    return "A specialty with this name or slug already exists.";
+  }
+  return message;
+}
 
 export async function createHospital(input: HospitalInput): Promise<MutationResult> {
   await requireRole(["super_admin"]);
@@ -68,8 +77,40 @@ export async function createSpecialty(input: SpecialtyInput): Promise<MutationRe
     .insert({ name: v.name, slug: v.slug, description: v.description || null })
     .select("id")
     .single();
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, error: specialtyUniqueError(error.message) };
   await logAudit({ action: "specialty.created", entityType: "specialty", entityId: data.id });
+  revalidatePath("/platform/specialties");
+  return { ok: true };
+}
+
+export async function updateSpecialty(input: UpdateSpecialtyInput): Promise<MutationResult> {
+  await requireRole(["super_admin"]);
+  const parsed = updateSpecialtySchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid" };
+  const v = parsed.data;
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("specialties")
+    .update({
+      name: v.name,
+      slug: v.slug,
+      description: v.description || null,
+    })
+    .eq("id", v.id);
+  if (error) return { ok: false, error: specialtyUniqueError(error.message) };
+  await logAudit({ action: "specialty.updated", entityType: "specialty", entityId: v.id });
+  revalidatePath("/platform/specialties");
+  return { ok: true };
+}
+
+export async function deleteSpecialty(id: string): Promise<MutationResult> {
+  await requireRole(["super_admin"]);
+  const parsed = z.string().uuid().safeParse(id);
+  if (!parsed.success) return { ok: false, error: "Invalid specialty reference." };
+  const supabase = await createClient();
+  const { error } = await supabase.from("specialties").delete().eq("id", parsed.data);
+  if (error) return { ok: false, error: error.message };
+  await logAudit({ action: "specialty.deleted", entityType: "specialty", entityId: parsed.data });
   revalidatePath("/platform/specialties");
   return { ok: true };
 }

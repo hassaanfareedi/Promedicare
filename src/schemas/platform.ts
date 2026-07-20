@@ -32,6 +32,11 @@ export const specialtySchema = z.object({
 });
 export type SpecialtyInput = z.infer<typeof specialtySchema>;
 
+export const updateSpecialtySchema = specialtySchema.extend({
+  id: z.string().uuid(),
+});
+export type UpdateSpecialtyInput = z.infer<typeof updateSpecialtySchema>;
+
 export const assignHospitalAdminSchema = z.object({
   profileId: z.string().uuid(),
   hospitalId: z.string().uuid(),
