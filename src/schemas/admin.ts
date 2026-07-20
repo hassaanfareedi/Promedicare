@@ -64,6 +64,21 @@ export const availabilitySchema = z
   });
 export type AvailabilityInput = z.infer<typeof availabilitySchema>;
 
+/** Apply the same hours to multiple weekdays (e.g. Mon–Fri). */
+export const availabilityBatchSchema = z
+  .object({
+    doctorId: z.string().uuid(),
+    weekdays: z.array(z.coerce.number().int().min(0).max(6)).min(1).max(7),
+    startTime: timeString,
+    endTime: timeString,
+    slotMinutes: z.coerce.number().int().min(5).max(240),
+  })
+  .refine((v) => v.startTime < v.endTime, {
+    message: "End time must be after start time",
+    path: ["endTime"],
+  });
+export type AvailabilityBatchInput = z.infer<typeof availabilityBatchSchema>;
+
 export const roleAssignSchema = z.object({
   profileId: z.string().uuid(),
   role: z.enum(["doctor", "receptionist"]),

@@ -48,11 +48,70 @@ type Props = {
 };
 
 export function DoctorManager({ doctors, candidates, specialties, departments }: Props) {
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+
+  const activeCount = doctors.filter((d) => d.is_active).length;
+  const noScheduleCount = doctors.filter((d) => d.availability.length === 0).length;
+
+  const filtered = doctors
+    .filter((d) => {
+      if (statusFilter === "active" && !d.is_active) return false;
+      if (statusFilter === "inactive" && d.is_active) return false;
+      const q = query.trim().toLowerCase();
+      if (!q) return true;
+      const name = (d.profile?.full_name ?? "").toLowerCase();
+      const email = (d.profile?.email ?? "").toLowerCase();
+      const specialty = (d.specialty?.name ?? "").toLowerCase();
+      return name.includes(q) || email.includes(q) || specialty.includes(q);
+    })
+    .sort((a, b) =>
+      doctorDisplayName(a).localeCompare(doctorDisplayName(b), undefined, { sensitivity: "base" }),
+    );
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">
+          {doctors.length} total · {activeCount} active · {noScheduleCount} without schedule
+        </p>
         <AddDoctorDialog candidates={candidates} specialties={specialties} departments={departments} />
       </div>
+
+      {doctors.length > 0 && (
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="min-w-[12rem] flex-1 space-y-1.5">
+            <Label htmlFor="doctor-search">Search</Label>
+            <Input
+              id="doctor-search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Name, email, or specialty"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Status</Label>
+            <Select
+              value={statusFilter}
+              onValueChange={(v) => setStatusFilter((v as typeof statusFilter) ?? "all")}
+              items={[
+                { value: "all", label: "All" },
+                { value: "active", label: "Active" },
+                { value: "inactive", label: "Inactive" },
+              ]}
+            >
+              <SelectTrigger className="w-36" aria-label="Status filter">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )}
 
       {doctors.length === 0 ? (
         <EmptyState
@@ -60,9 +119,15 @@ export function DoctorManager({ doctors, candidates, specialties, departments }:
           title="No doctors yet"
           description="Create a new doctor account or link an existing hospital user."
         />
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          icon={BriefcaseMedical}
+          title="No matches"
+          description="Try a different search or status filter."
+        />
       ) : (
         <div className="space-y-4">
-          {doctors.map((d) => (
+          {filtered.map((d) => (
             <DoctorCard
               key={d.id}
               doctor={d}
@@ -471,6 +536,15 @@ function doctorDisplayName(doctor: AdminDoctor): string {
   return "Doctor (name missing)";
 }
 
+function formatFee(fee: number | null): string | null {
+  if (fee == null) return null;
+  return new Intl.NumberFormat(undefined, {
+    style: "currency",
+    currency: "PKR",
+    maximumFractionDigits: 0,
+  }).format(fee);
+}
+
 function DoctorCard({
   doctor,
   specialties,
@@ -481,27 +555,50 @@ function DoctorCard({
   departments: Department[];
 }) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const [toggling, setToggling] = useState(false);
+  const [confirmOff, setConfirmOff] = useState(false);
   const nameMissing = !doctor.profile?.full_name?.trim();
+  const email = doctor.profile?.email?.trim() || null;
+  const feeLabel = formatFee(doctor.consultation_fee);
+  const dayCount = new Set(doctor.availability.map((a) => a.weekday)).size;
 
-  function toggle(active: boolean) {
-    startTransition(async () => {
-      const res = await setDoctorActive(doctor.id, active);
-      if (!res.ok) toast.error(res.error);
-      else router.refresh();
-    });
+  async function applyActive(active: boolean) {
+    setToggling(true);
+    const res = await setDoctorActive(doctor.id, active);
+    if (!res.ok) {
+      toast.error(res.error);
+    } else {
+      toast.success(active ? "Doctor activated" : "Doctor deactivated");
+      router.refresh();
+    }
+    setToggling(false);
+    setConfirmOff(false);
+  }
+
+  function onCheckedChange(active: boolean) {
+    if (!active) {
+      setConfirmOff(true);
+      return;
+    }
+    void applyActive(true);
   }
 
   return (
     <Card>
       <CardContent className="space-y-4 p-5">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="min-w-0">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0 space-y-1">
             <p className="truncate font-medium">{doctorDisplayName(doctor)}</p>
             <p className="truncate text-sm text-muted-foreground">{doctorSubtitle(doctor)}</p>
-            {nameMissing && doctor.profile?.email && (
-              <p className="mt-0.5 truncate text-xs text-amber-700 dark:text-amber-300">
-                Set a full name via Edit — account: {doctor.profile.email}
+            <p className="truncate text-xs text-muted-foreground">
+              {[email, feeLabel, `${dayCount} day${dayCount === 1 ? "" : "s"} scheduled`]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+            {nameMissing && (
+              <p className="text-xs text-amber-700 dark:text-amber-300">
+                Set a full name via Edit
+                {email ? ` — account: ${email}` : ""}.
               </p>
             )}
           </div>
@@ -511,15 +608,41 @@ function DoctorCard({
               specialties={specialties}
               departments={departments}
             />
-            <label className="flex items-center gap-2 text-sm text-muted-foreground">
-              {doctor.is_active ? "Active" : "Inactive"}
-              <Switch checked={doctor.is_active} onCheckedChange={toggle} disabled={pending} />
-            </label>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>{doctor.is_active ? "Active" : "Inactive"}</span>
+              <Switch
+                checked={doctor.is_active}
+                onCheckedChange={onCheckedChange}
+                disabled={toggling}
+                aria-label={doctor.is_active ? "Deactivate doctor" : "Activate doctor"}
+              />
+            </div>
           </div>
         </div>
 
         <AvailabilityEditor doctor={doctor} />
       </CardContent>
+
+      <Dialog open={confirmOff} onOpenChange={setConfirmOff}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Deactivate doctor?</DialogTitle>
+            <DialogDescription>
+              {doctorDisplayName(doctor)} will be hidden from the booking directory until activated
+              again. Existing appointments are unchanged.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" disabled={toggling} onClick={() => setConfirmOff(false)}>
+              Cancel
+            </Button>
+            <Button type="button" disabled={toggling} onClick={() => void applyActive(false)}>
+              {toggling && <Loader2 className="size-4 animate-spin" aria-hidden />}
+              Deactivate
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
@@ -578,127 +701,144 @@ function EditDoctorDialog({
   }
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        setOpen(next);
-        if (next) syncFromDoctor();
-      }}
-    >
-      <DialogTrigger
-        render={
-          <Button size="sm" variant="outline">
-            <Pencil className="size-4" /> Edit
-          </Button>
-        }
-      />
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Edit doctor</DialogTitle>
-          <DialogDescription>
-            Update this doctor&apos;s profile, specialty, department, and consultation fee.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4">
-          <div className="space-y-2">
-            <Label htmlFor={`name-${doctor.id}`}>Full name</Label>
-            <Input
-              id={`name-${doctor.id}`}
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="Dua Rahman"
-            />
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
+    <>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        onClick={() => {
+          syncFromDoctor();
+          setOpen(true);
+        }}
+      >
+        <Pencil className="size-4" aria-hidden /> Edit
+      </Button>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (next) syncFromDoctor();
+        }}
+      >
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit doctor</DialogTitle>
+            <DialogDescription>
+              Update this doctor&apos;s profile, specialty, department, and consultation fee.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4">
             <div className="space-y-2">
-              <Label>Specialty</Label>
-              <Select
-                value={specialtyId || null}
-                onValueChange={(v) => setSpecialtyId(v ?? "")}
-                items={[
-                  { value: null, label: "None" },
-                  ...specialties.map((s) => ({ value: s.id, label: s.name })),
-                ]}
-              >
-                <SelectTrigger aria-label="Specialty">
-                  <SelectValue placeholder="Optional" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={null}>None</SelectItem>
-                  {specialties.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Department</Label>
-              <Select
-                value={departmentId || null}
-                onValueChange={(v) => setDepartmentId(v ?? "")}
-                items={[
-                  { value: null, label: "None" },
-                  ...departments.map((dep) => ({ value: dep.id, label: dep.name })),
-                ]}
-              >
-                <SelectTrigger aria-label="Department">
-                  <SelectValue placeholder="Optional" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={null}>None</SelectItem>
-                  {departments.map((dep) => (
-                    <SelectItem key={dep.id} value={dep.id}>
-                      {dep.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="space-y-2">
-              <Label htmlFor={`license-${doctor.id}`}>License</Label>
+              <Label htmlFor={`name-${doctor.id}`}>Full name</Label>
               <Input
-                id={`license-${doctor.id}`}
-                value={license}
-                onChange={(e) => setLicense(e.target.value)}
+                id={`name-${doctor.id}`}
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Dua Rahman"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor={`years-${doctor.id}`}>Years exp.</Label>
-              <Input
-                id={`years-${doctor.id}`}
-                type="number"
-                min={0}
-                value={years}
-                onChange={(e) => setYears(e.target.value)}
-              />
+            {doctor.profile?.email && (
+              <div className="space-y-2">
+                <Label htmlFor={`email-${doctor.id}`}>Email</Label>
+                <Input
+                  id={`email-${doctor.id}`}
+                  value={doctor.profile.email}
+                  readOnly
+                  className="bg-muted"
+                />
+              </div>
+            )}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Specialty</Label>
+                <Select
+                  value={specialtyId || null}
+                  onValueChange={(v) => setSpecialtyId(v ?? "")}
+                  items={[
+                    { value: null, label: "None" },
+                    ...specialties.map((s) => ({ value: s.id, label: s.name })),
+                  ]}
+                >
+                  <SelectTrigger aria-label="Specialty">
+                    <SelectValue placeholder="Optional" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={null}>None</SelectItem>
+                    {specialties.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Department</Label>
+                <Select
+                  value={departmentId || null}
+                  onValueChange={(v) => setDepartmentId(v ?? "")}
+                  items={[
+                    { value: null, label: "None" },
+                    ...departments.map((dep) => ({ value: dep.id, label: dep.name })),
+                  ]}
+                >
+                  <SelectTrigger aria-label="Department">
+                    <SelectValue placeholder="Optional" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={null}>None</SelectItem>
+                    {departments.map((dep) => (
+                      <SelectItem key={dep.id} value={dep.id}>
+                        {dep.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor={`fee-${doctor.id}`}>Fee</Label>
-              <Input
-                id={`fee-${doctor.id}`}
-                type="number"
-                min={0}
-                value={fee}
-                onChange={(e) => setFee(e.target.value)}
-              />
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="space-y-2">
+                <Label htmlFor={`license-${doctor.id}`}>License</Label>
+                <Input
+                  id={`license-${doctor.id}`}
+                  value={license}
+                  onChange={(e) => setLicense(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={`years-${doctor.id}`}>Years exp.</Label>
+                <Input
+                  id={`years-${doctor.id}`}
+                  type="number"
+                  min={0}
+                  value={years}
+                  onChange={(e) => setYears(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={`fee-${doctor.id}`}>Fee</Label>
+                <Input
+                  id={`fee-${doctor.id}`}
+                  type="number"
+                  min={0}
+                  value={fee}
+                  onChange={(e) => setFee(e.target.value)}
+                />
+              </div>
             </div>
           </div>
-        </div>
-        <DialogFooter>
-          <Button type="button" variant="outline" disabled={pending} onClick={() => setOpen(false)}>
-            Cancel
-          </Button>
-          <Button type="button" disabled={pending || fullName.trim().length < 2} onClick={submit}>
-            {pending && <Loader2 className="size-4 animate-spin" />}
-            Save changes
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter>
+            <Button type="button" variant="outline" disabled={pending} onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="button" disabled={pending || fullName.trim().length < 2} onClick={submit}>
+              {pending && <Loader2 className="size-4 animate-spin" aria-hidden />}
+              Save changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

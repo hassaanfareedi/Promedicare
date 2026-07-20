@@ -13,6 +13,7 @@ import {
   createDoctorAccountSchema,
   updateDoctorSchema,
   availabilitySchema,
+  availabilityBatchSchema,
   roleAssignSchema,
   promoteStaffSchema,
   type DepartmentInput,
@@ -20,6 +21,7 @@ import {
   type CreateDoctorAccountInput,
   type UpdateDoctorInput,
   type AvailabilityInput,
+  type AvailabilityBatchInput,
   type RoleAssignInput,
   type PromoteStaffInput,
 } from "@/schemas/admin";
@@ -383,14 +385,44 @@ export async function updateDoctor(input: UpdateDoctorInput): Promise<MutationRe
     return { ok: false, error: "Doctor not found in your hospital." };
   }
 
-  const { error: profileErr } = await supabase
+  // Service role: repair orphan profiles (null hospital_id) that user RLS cannot update.
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Admin client is not configured.",
+    };
+  }
+
+  const { data: existingProfile, error: profileReadErr } = await admin
     .from("profiles")
-    .update({ full_name: v.fullName })
-    .eq("id", doctor.profile_id);
+    .select("id, role, email, hospital_id")
+    .eq("id", doctor.profile_id)
+    .maybeSingle();
+
+  if (profileReadErr) return { ok: false, error: profileReadErr.message };
+  if (!existingProfile) return { ok: false, error: "Doctor profile not found." };
+  if (existingProfile.role === "super_admin" || existingProfile.role === "hospital_admin") {
+    return { ok: false, error: "Admin accounts cannot be edited as doctors." };
+  }
+
+  const { data: profileRow, error: profileErr } = await admin
+    .from("profiles")
+    .update({
+      full_name: v.fullName,
+      hospital_id: hid,
+      role: "doctor",
+    })
+    .eq("id", doctor.profile_id)
+    .select("id")
+    .maybeSingle();
 
   if (profileErr) return { ok: false, error: profileErr.message };
+  if (!profileRow) return { ok: false, error: "Could not update the doctor's profile." };
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("doctors")
     .update({
       specialty_id: v.specialtyId || null,
@@ -399,9 +431,13 @@ export async function updateDoctor(input: UpdateDoctorInput): Promise<MutationRe
       years_experience: v.yearsExperience ?? null,
       consultation_fee: v.consultationFee ?? null,
     })
-    .eq("id", doctor.id);
+    .eq("id", doctor.id)
+    .eq("hospital_id", hid)
+    .select("id")
+    .maybeSingle();
 
   if (error) return { ok: false, error: error.message };
+  if (!updated) return { ok: false, error: "Could not update the doctor record." };
 
   await logAudit({
     action: "doctor.updated",
@@ -410,19 +446,26 @@ export async function updateDoctor(input: UpdateDoctorInput): Promise<MutationRe
     metadata: { fullName: v.fullName },
   });
   revalidatePath("/admin/doctors");
+  revalidatePath("/admin/staff");
   return { ok: true };
 }
 
 export async function setDoctorActive(id: string, isActive: boolean): Promise<MutationResult> {
-  await requireRole(["hospital_admin", "super_admin"]);
+  const hid = await hospitalId();
+  if (!hid) return { ok: false, error: "Your account is not linked to a hospital." };
   const parsed = uuidSchema.safeParse(id);
   if (!parsed.success) return { ok: false, error: "Invalid doctor reference." };
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("doctors")
     .update({ is_active: Boolean(isActive) })
-    .eq("id", parsed.data);
+    .eq("id", parsed.data)
+    .eq("hospital_id", hid)
+    .is("deleted_at", null)
+    .select("id")
+    .maybeSingle();
   if (error) return { ok: false, error: error.message };
+  if (!data) return { ok: false, error: "Doctor not found in your hospital." };
   await logAudit({
     action: "doctor.active_changed",
     entityType: "doctor",
@@ -459,6 +502,66 @@ export async function addAvailability(input: AvailabilityInput): Promise<Mutatio
   });
   revalidatePath("/admin/doctors");
   return { ok: true };
+}
+
+/** Add the same hours to multiple weekdays; skips days that already have a slot. */
+export async function addAvailabilityBatch(
+  input: AvailabilityBatchInput,
+): Promise<MutationResult<{ added: number; skipped: number }>> {
+  const hid = await hospitalId();
+  if (!hid) return { ok: false, error: "Your account is not linked to a hospital." };
+  const parsed = availabilityBatchSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid" };
+  const v = parsed.data;
+  const supabase = await createClient();
+
+  const { data: doctor, error: doctorErr } = await supabase
+    .from("doctors")
+    .select("id")
+    .eq("id", v.doctorId)
+    .eq("hospital_id", hid)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (doctorErr) return { ok: false, error: doctorErr.message };
+  if (!doctor) return { ok: false, error: "Doctor not found in your hospital." };
+
+  const { data: existing, error: existingErr } = await supabase
+    .from("doctor_availability")
+    .select("weekday")
+    .eq("doctor_id", v.doctorId);
+  if (existingErr) return { ok: false, error: existingErr.message };
+
+  const taken = new Set((existing ?? []).map((r) => r.weekday));
+  const uniqueDays = [...new Set(v.weekdays)];
+  const toAdd = uniqueDays.filter((d) => !taken.has(d));
+  const skipped = uniqueDays.length - toAdd.length;
+
+  if (toAdd.length === 0) {
+    return { ok: true, data: { added: 0, skipped } };
+  }
+
+  const rows = toAdd.map((weekday) => ({
+    doctor_id: v.doctorId,
+    weekday,
+    start_time: `${v.startTime}:00`,
+    end_time: `${v.endTime}:00`,
+    slot_minutes: v.slotMinutes,
+  }));
+
+  const { data: inserted, error } = await supabase
+    .from("doctor_availability")
+    .insert(rows)
+    .select("id");
+  if (error) return { ok: false, error: error.message };
+
+  await logAudit({
+    action: "availability.batch_added",
+    entityType: "doctor",
+    entityId: v.doctorId,
+    metadata: { weekdays: toAdd, added: inserted?.length ?? toAdd.length, skipped },
+  });
+  revalidatePath("/admin/doctors");
+  return { ok: true, data: { added: inserted?.length ?? toAdd.length, skipped } };
 }
 
 export async function removeAvailability(id: string): Promise<MutationResult> {

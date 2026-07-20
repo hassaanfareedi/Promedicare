@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Clock, Loader2, Plus, Trash2 } from "lucide-react";
-import { addAvailability, removeAvailability } from "@/features/admin/actions";
+import { addAvailability, addAvailabilityBatch, removeAvailability } from "@/features/admin/actions";
 import type { AdminDoctor } from "@/features/admin/data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -113,6 +113,35 @@ export function AvailabilityEditor({ doctor }: { doctor: AdminDoctor }) {
     });
   }
 
+  function applyWeekdays() {
+    startTransition(async () => {
+      const res = await addAvailabilityBatch({
+        doctorId: doctor.id,
+        weekdays: [1, 2, 3, 4, 5],
+        startTime: start,
+        endTime: end,
+        slotMinutes: Number(slot),
+      });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      const { added, skipped } = res.data ?? { added: 0, skipped: 0 };
+      if (added === 0) {
+        toast.message("Mon–Fri already scheduled", {
+          description: skipped ? `${skipped} day(s) already had a slot.` : undefined,
+        });
+      } else {
+        toast.success(
+          skipped > 0
+            ? `Added ${added} day(s); skipped ${skipped} already set`
+            : `Added Mon–Fri (${added} days)`,
+        );
+      }
+      router.refresh();
+    });
+  }
+
   function remove(id: string) {
     startTransition(async () => {
       const res = await removeAvailability(id);
@@ -198,6 +227,9 @@ export function AvailabilityEditor({ doctor }: { doctor: AdminDoctor }) {
         <Button size="sm" onClick={add} disabled={pending}>
           {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Plus className="size-4" aria-hidden />}
           Add
+        </Button>
+        <Button size="sm" variant="outline" onClick={applyWeekdays} disabled={pending}>
+          Apply Mon–Fri
         </Button>
       </div>
     </div>

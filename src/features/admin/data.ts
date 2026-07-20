@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentUser } from "@/lib/auth/session";
 import { dayBoundsInTimeZone } from "@/lib/datetime";
 import type {
@@ -29,6 +30,7 @@ export async function getMyHospital(): Promise<Hospital | null> {
 
 export type AdminDoctor = {
   id: string;
+  profile_id: string;
   is_active: boolean;
   license_number: string | null;
   years_experience: number | null;
@@ -91,11 +93,36 @@ export async function getDoctorsAdmin(): Promise<AdminDoctor[]> {
   const { data } = await supabase
     .from("doctors")
     .select(
-      "id, is_active, license_number, years_experience, consultation_fee, profile:profiles(id, full_name, email), specialty:specialties(id, name), department:departments(id, name), availability:doctor_availability(*)",
+      "id, profile_id, is_active, license_number, years_experience, consultation_fee, profile:profiles(id, full_name, email), specialty:specialties(id, name), department:departments(id, name), availability:doctor_availability(*)",
     )
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
-  return (data ?? []) as AdminDoctor[];
+
+  const rows = (data ?? []) as AdminDoctor[];
+  const missingIds = [
+    ...new Set(rows.filter((d) => !d.profile).map((d) => d.profile_id).filter(Boolean)),
+  ];
+  if (missingIds.length === 0) return rows;
+
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch {
+    return rows;
+  }
+
+  const { data: profiles } = await admin
+    .from("profiles")
+    .select("id, full_name, email")
+    .in("id", missingIds);
+
+  const byId = new Map((profiles ?? []).map((p) => [p.id, p]));
+  return rows.map((d) => {
+    if (d.profile) return d;
+    const p = byId.get(d.profile_id);
+    if (!p) return d;
+    return { ...d, profile: { id: p.id, full_name: p.full_name, email: p.email } };
+  });
 }
 
 const APPOINTMENT_STATUSES: AppointmentStatus[] = [
