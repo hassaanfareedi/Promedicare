@@ -11,19 +11,23 @@ import {
   departmentSchema,
   doctorSchema,
   createDoctorAccountSchema,
+  createReceptionistAccountSchema,
   updateDoctorSchema,
   availabilitySchema,
   availabilityBatchSchema,
   roleAssignSchema,
   promoteStaffSchema,
+  demoteStaffSchema,
   type DepartmentInput,
   type DoctorInput,
   type CreateDoctorAccountInput,
+  type CreateReceptionistAccountInput,
   type UpdateDoctorInput,
   type AvailabilityInput,
   type AvailabilityBatchInput,
   type RoleAssignInput,
   type PromoteStaffInput,
+  type DemoteStaffInput,
 } from "@/schemas/admin";
 import {
   updateHospitalSchema,
@@ -193,6 +197,160 @@ export async function promoteToStaff(input: PromoteStaffInput): Promise<Mutation
   revalidatePath("/admin/staff");
   revalidatePath("/admin/doctors");
   return { ok: true };
+}
+
+const OPEN_APPOINTMENT_STATUSES = ["pending", "confirmed", "checked_in", "in_progress"] as const;
+
+/** Demote a doctor/receptionist back to patient (keeps hospital link for re-promote). */
+export async function demoteToPatient(input: DemoteStaffInput): Promise<MutationResult> {
+  const hid = await hospitalId();
+  if (!hid) return { ok: false, error: "Your account is not linked to a hospital." };
+  const parsed = demoteStaffSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid" };
+  const supabase = await createClient();
+
+  const { data: profile, error: profileErr } = await supabase
+    .from("profiles")
+    .select("id, role, hospital_id")
+    .eq("id", parsed.data.profileId)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (profileErr) return { ok: false, error: profileErr.message };
+  if (!profile || profile.hospital_id !== hid) {
+    return { ok: false, error: "Staff member not found in your hospital." };
+  }
+  if (profile.role !== "doctor" && profile.role !== "receptionist") {
+    return { ok: false, error: "Only Doctor or Receptionist accounts can be demoted." };
+  }
+
+  const { data: doctorRow } = await supabase
+    .from("doctors")
+    .select("id")
+    .eq("profile_id", profile.id)
+    .eq("hospital_id", hid)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (doctorRow) {
+    const nowIso = new Date().toISOString();
+    const { count, error: apptErr } = await supabase
+      .from("appointments")
+      .select("id", { count: "exact", head: true })
+      .eq("doctor_id", doctorRow.id)
+      .is("deleted_at", null)
+      .in("status", [...OPEN_APPOINTMENT_STATUSES])
+      .gte("scheduled_start", nowIso);
+    if (apptErr) return { ok: false, error: apptErr.message };
+    if ((count ?? 0) > 0) {
+      return {
+        ok: false,
+        error: `Cannot demote: this doctor has ${count} open upcoming appointment${count === 1 ? "" : "s"}. Resolve or cancel them first.`,
+      };
+    }
+
+    const { error: softErr } = await supabase
+      .from("doctors")
+      .update({ deleted_at: nowIso, is_active: false })
+      .eq("id", doctorRow.id);
+    if (softErr) return { ok: false, error: softErr.message };
+  }
+
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Admin client is not configured.",
+    };
+  }
+
+  const { data: updated, error } = await admin
+    .from("profiles")
+    .update({ role: "patient", hospital_id: hid })
+    .eq("id", profile.id)
+    .select("id")
+    .maybeSingle();
+
+  if (error) return { ok: false, error: error.message };
+  if (!updated) return { ok: false, error: "Could not demote this account." };
+
+  await logAudit({
+    action: "staff.demoted",
+    entityType: "profile",
+    entityId: profile.id,
+    metadata: { from: profile.role, doctorId: doctorRow?.id ?? null },
+  });
+  revalidatePath("/admin/staff");
+  revalidatePath("/admin/doctors");
+  return { ok: true };
+}
+
+/** Create a brand-new receptionist account for this hospital. */
+export async function createReceptionistAccount(
+  input: CreateReceptionistAccountInput,
+): Promise<MutationResult<{ profileId: string }>> {
+  const hid = await hospitalId();
+  if (!hid) return { ok: false, error: "Your account is not linked to a hospital." };
+  const parsed = createReceptionistAccountSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid details" };
+  }
+  const v = parsed.data;
+
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Admin client is not configured.",
+    };
+  }
+
+  const { data: created, error: createErr } = await admin.auth.admin.createUser({
+    email: v.email,
+    password: v.password,
+    email_confirm: true,
+    user_metadata: { full_name: v.fullName },
+  });
+
+  if (createErr || !created.user) {
+    const msg = createErr?.message ?? "Could not create the account.";
+    if (/already|registered|exists/i.test(msg)) {
+      return { ok: false, error: "An account with this email already exists." };
+    }
+    return { ok: false, error: msg };
+  }
+
+  const userId = created.user.id;
+
+  const { error: profileErr } = await admin.from("profiles").upsert(
+    {
+      id: userId,
+      role: "receptionist",
+      hospital_id: hid,
+      full_name: v.fullName,
+      email: v.email,
+      onboarding_completed: true,
+    },
+    { onConflict: "id" },
+  );
+
+  if (profileErr) {
+    await admin.auth.admin.deleteUser(userId);
+    return { ok: false, error: profileErr.message };
+  }
+
+  await logAudit({
+    action: "staff.receptionist_created",
+    entityType: "profile",
+    entityId: userId,
+    metadata: { email: v.email, via: "create_account" },
+  });
+  revalidatePath("/admin/staff");
+  return { ok: true, data: { profileId: userId } };
 }
 
 export async function addDoctor(input: DoctorInput): Promise<MutationResult> {

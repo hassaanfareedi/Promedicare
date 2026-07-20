@@ -91,3 +91,22 @@ export const promoteStaffSchema = z.object({
   role: z.enum(["doctor", "receptionist"]),
 });
 export type PromoteStaffInput = z.infer<typeof promoteStaffSchema>;
+
+export const demoteStaffSchema = z.object({
+  profileId: z.string().uuid(),
+});
+export type DemoteStaffInput = z.infer<typeof demoteStaffSchema>;
+
+/** Create a brand-new auth user as receptionist for the hospital. */
+export const createReceptionistAccountSchema = z
+  .object({
+    fullName: z.string().trim().min(2, "Enter the receptionist's full name").max(120),
+    email: emailSchema,
+    password: passwordSchema,
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+export type CreateReceptionistAccountInput = z.infer<typeof createReceptionistAccountSchema>;

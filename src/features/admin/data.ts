@@ -63,28 +63,65 @@ export async function getSpecialties(): Promise<Specialty[]> {
 
 const STAFF_ROLES = ["doctor", "receptionist", "hospital_admin"] as const;
 
-/** Hospital staff profiles only (excludes patients). RLS-scoped. */
-export async function getStaff(): Promise<Profile[]> {
+export type AdminStaffMember = Profile & {
+  hasDoctorProfile: boolean;
+};
+
+/** Hospital staff profiles only (excludes patients). Scoped to the admin's hospital. */
+export async function getStaff(): Promise<AdminStaffMember[]> {
+  const user = await getCurrentUser();
+  const hid = user?.profile.hospital_id;
   const supabase = await createClient();
-  const { data } = await supabase
+
+  let query = supabase
     .from("profiles")
     .select("*")
     .in("role", [...STAFF_ROLES])
     .is("deleted_at", null)
     .order("full_name");
-  return data ?? [];
+
+  if (user?.profile.role !== "super_admin") {
+    if (!hid) return [];
+    query = query.eq("hospital_id", hid);
+  }
+
+  const { data } = await query;
+  const profiles = data ?? [];
+  if (profiles.length === 0) return [];
+
+  const profileIds = profiles.map((p) => p.id);
+  const { data: doctorRows } = await supabase
+    .from("doctors")
+    .select("profile_id")
+    .in("profile_id", profileIds)
+    .is("deleted_at", null);
+
+  const withClinical = new Set((doctorRows ?? []).map((d) => d.profile_id));
+  return profiles.map((p) => ({
+    ...p,
+    hasDoctorProfile: withClinical.has(p.id),
+  }));
 }
 
 /** Patient accounts that can be promoted into hospital staff. */
 export async function getPromotableProfiles(): Promise<Profile[]> {
+  const user = await getCurrentUser();
+  const hid = user?.profile.hospital_id;
   const supabase = await createClient();
-  const { data } = await supabase
+  let query = supabase
     .from("profiles")
     .select("*")
     .eq("role", "patient")
     .is("deleted_at", null)
     .order("full_name")
     .limit(100);
+
+  if (user?.profile.role !== "super_admin") {
+    if (!hid) return [];
+    query = query.eq("hospital_id", hid);
+  }
+
+  const { data } = await query;
   return data ?? [];
 }
 
