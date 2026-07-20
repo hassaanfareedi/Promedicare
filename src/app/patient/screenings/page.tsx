@@ -15,7 +15,7 @@ export default async function ScreeningsPage() {
   const screenings = await getMyScreenings();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader
         title="Your screenings"
         description="A history of your AI symptom checks and their risk assessments."

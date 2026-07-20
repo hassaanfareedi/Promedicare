@@ -42,7 +42,7 @@ export function MobileNav({
           </SheetTitle>
         </SheetHeader>
         <div className="flex-1 overflow-y-auto py-4">
-          <p className="px-6 pb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          <p className="px-6 pb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
             {ROLE_LABEL[role]}
           </p>
           <SidebarNav

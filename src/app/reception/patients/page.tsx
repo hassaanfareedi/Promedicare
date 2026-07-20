@@ -23,7 +23,7 @@ export default async function ReceptionPatientsPage() {
   const [patients, doctors] = await Promise.all([getHospitalPatients(), getWalkInDoctors()]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader
         title="Patients"
         description="Registered patients at your hospital."

@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Hospitals" };
 export default async function PlatformHospitalsPage() {
   const [hospitals, profiles] = await Promise.all([getHospitals(), getAllProfiles()]);
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader title="Hospitals" description="Create hospitals and assign their administrators." />
       <HospitalManager hospitals={hospitals} profiles={profiles} />
     </div>

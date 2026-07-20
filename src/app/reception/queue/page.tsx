@@ -12,7 +12,7 @@ export default async function QueuePage() {
   const [today, doctors] = await Promise.all([getTodayAppointments(), getWalkInDoctors()]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader
         title="Today's queue"
         description="Check patients in and out as they arrive."

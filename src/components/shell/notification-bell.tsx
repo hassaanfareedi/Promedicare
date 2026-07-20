@@ -179,7 +179,7 @@ export function NotificationBell({ role }: { role: UserRole }) {
               type="button"
               disabled={marking}
               onClick={() => void markAllRead()}
-              className="rounded-sm text-xs text-teal-600 hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:text-teal-400"
+              className="rounded-sm text-xs text-brand hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
             >
               Mark all read
             </button>

@@ -17,7 +17,7 @@ export default async function AdminDoctorsPage() {
   const candidates = staff.filter((p) => !existingProfileIds.has(p.id) && p.role === "doctor");
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader title="Doctors" description="Manage doctors and their weekly availability." />
       <DoctorManager
         doctors={doctors}

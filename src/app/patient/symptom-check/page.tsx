@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Symptom check" };
 
 export default function SymptomCheckPage() {
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-2xl space-y-8">
       <PageHeader
         title="AI symptom check"
         description="Select how you feel, then get a quick risk guide and specialist suggestion. This is not a diagnosis."

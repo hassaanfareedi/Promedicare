@@ -13,6 +13,7 @@ import { RescheduleDialog } from "@/features/appointments/components/reschedule-
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
+import { SectionLink } from "@/components/shared/section-link";
 import { AiDisclaimer } from "@/components/shared/ai-disclaimer";
 import { RiskBadge } from "@/components/shared/risk-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,7 +34,7 @@ export default async function PatientDashboard() {
   const canManageNext = nextVisit && CANCELLABLE.has(nextVisit.status);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader
         hero
         title={`Welcome back, ${firstName}`}
@@ -43,26 +44,27 @@ export default async function PatientDashboard() {
             : "Start with a symptom check or book a visit with a specialist."
         }
         actions={
-          <Link href={primaryHref} className={cn(buttonVariants({ size: "default" }), "gap-2")}>
+          <Link href={primaryHref} className={cn(buttonVariants(), "gap-2")}>
             <PrimaryIcon className="size-4" aria-hidden />
             {primaryLabel}
           </Link>
         }
       />
 
-      {nextVisit ? (
-        <section aria-labelledby="next-visit-heading" className="space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <h2 id="next-visit-heading" className="sr-only">
-              Next appointment
-            </h2>
-            <Link
-              href="/patient/appointments"
-              className="ml-auto text-sm font-medium text-teal-700 underline-offset-4 hover:underline dark:text-teal-400"
-            >
-              View all appointments
-            </Link>
-          </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard label="Upcoming" value={stats.upcomingCount} icon={CalendarDays} />
+        <StatCard label="Total visits" value={stats.totalAppointments} icon={Stethoscope} />
+        <StatCard label="Screenings" value={stats.screeningCount} icon={Activity} />
+      </div>
+
+      <section aria-labelledby="next-visit-heading" className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <h2 id="next-visit-heading" className="font-heading text-base font-medium">
+            Next appointment
+          </h2>
+          <SectionLink href="/patient/appointments">View all</SectionLink>
+        </div>
+        {nextVisit ? (
           <PatientAppointmentCard
             appointment={nextVisit}
             featured
@@ -75,30 +77,19 @@ export default async function PatientDashboard() {
               ) : undefined
             }
           />
-        </section>
-      ) : (
-        <EmptyState
-          icon={CalendarDays}
-          title="No upcoming appointments"
-          description="Use Book a visit above when you are ready, or run a symptom check first."
-        />
-      )}
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Upcoming" value={stats.upcomingCount} icon={CalendarDays} />
-        <StatCard label="Total visits" value={stats.totalAppointments} icon={Stethoscope} />
-        <StatCard label="Screenings" value={stats.screeningCount} icon={Activity} />
-      </div>
+        ) : (
+          <EmptyState
+            icon={CalendarDays}
+            title="No upcoming appointments"
+            description="Use Book a visit above when you are ready, or run a symptom check first."
+          />
+        )}
+      </section>
 
       <Card>
         <CardHeader className="flex-row items-center justify-between space-y-0">
           <CardTitle className="text-base">Recent screenings</CardTitle>
-          <Link
-            href="/patient/screenings"
-            className="text-sm font-medium text-teal-700 underline-offset-4 hover:underline dark:text-teal-400"
-          >
-            View all
-          </Link>
+          <SectionLink href="/patient/screenings">View all</SectionLink>
         </CardHeader>
         <CardContent>
           {recentScreenings.length === 0 ? (
@@ -118,17 +109,19 @@ export default async function PatientDashboard() {
                 <li key={p.id}>
                   <Link
                     href="/patient/screenings"
-                    className="flex min-h-11 items-center justify-between gap-3 py-3 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="flex min-h-11 items-center justify-between gap-3 py-3 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
                   >
                     <div className="min-w-0">
                       <p className="truncate font-medium">
                         {p.recommended_specialty_label ?? "Screening"}
                       </p>
-                      <p className="truncate text-sm text-foreground/65">{formatDate(p.created_at)}</p>
+                      <p className="truncate text-sm text-muted-foreground">
+                        {formatDate(p.created_at)}
+                      </p>
                     </div>
                     <span className="flex shrink-0 items-center gap-2">
                       <RiskBadge level={p.risk_level as RiskLevel} />
-                      <ArrowRight className="size-4 text-foreground/40" aria-hidden />
+                      <ArrowRight className="size-4 text-muted-foreground/60" aria-hidden />
                     </span>
                   </Link>
                 </li>

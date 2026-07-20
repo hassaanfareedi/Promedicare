@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Departments" };
 export default async function AdminDepartmentsPage() {
   const departments = await getDepartments();
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader title="Departments" description="Organise your hospital into departments." />
       <DepartmentManager departments={departments} />
     </div>

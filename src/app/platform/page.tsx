@@ -1,23 +1,34 @@
 import Link from "next/link";
-import { Building2, Users, BriefcaseMedical, CalendarDays, Activity, Stethoscope } from "lucide-react";
+import {
+  Building2,
+  Users,
+  BriefcaseMedical,
+  CalendarDays,
+  Activity,
+  Stethoscope,
+  ScrollText,
+} from "lucide-react";
 import { getPlatformOverview } from "@/features/platform/data";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
-import { Card, CardContent } from "@/components/ui/card";
-
-const LINKS = [
-  { href: "/platform/hospitals", label: "Hospitals", icon: Building2 },
-  { href: "/platform/specialties", label: "Specialties", icon: Stethoscope },
-  { href: "/platform/analytics", label: "Analytics", icon: Activity },
-  { href: "/platform/audit", label: "Audit logs", icon: CalendarDays },
-];
+import { QuickLink } from "@/components/shared/quick-link";
+import { buttonVariants } from "@/components/ui/button";
 
 export default async function PlatformDashboard() {
   const o = await getPlatformOverview();
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="Platform overview" description="System-wide view across all hospitals." />
+    <div className="space-y-8">
+      <PageHeader
+        hero
+        title="Platform overview"
+        description="System-wide view across all hospitals."
+        actions={
+          <Link href="/platform/hospitals" className={buttonVariants()}>
+            <Building2 className="size-4" aria-hidden /> Manage hospitals
+          </Link>
+        }
+      />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard label="Hospitals" value={o.hospitals} icon={Building2} />
@@ -28,22 +39,32 @@ export default async function PlatformDashboard() {
         <StatCard label="AI screenings" value={o.predictions} icon={Activity} />
       </div>
 
-      <Card>
-        <CardContent className="grid gap-3 p-5 sm:grid-cols-2">
-          {LINKS.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className="flex items-center gap-3 rounded-xl border p-4 transition-colors hover:border-teal-500 hover:bg-accent"
-            >
-              <span className="grid size-10 place-items-center rounded-lg bg-teal-50 text-teal-600 dark:bg-teal-950/50">
-                <l.icon className="size-5" />
-              </span>
-              <span className="font-medium">{l.label}</span>
-            </Link>
-          ))}
-        </CardContent>
-      </Card>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <QuickLink
+          href="/platform/hospitals"
+          title="Hospitals"
+          description="Onboard and activate sites"
+          icon={Building2}
+        />
+        <QuickLink
+          href="/platform/specialties"
+          title="Specialties"
+          description="Clinical specialty catalog"
+          icon={Stethoscope}
+        />
+        <QuickLink
+          href="/platform/analytics"
+          title="Analytics"
+          description="Cross-hospital metrics"
+          icon={Activity}
+        />
+        <QuickLink
+          href="/platform/audit"
+          title="Audit logs"
+          description="Security and change trail"
+          icon={ScrollText}
+        />
+      </div>
     </div>
   );
 }

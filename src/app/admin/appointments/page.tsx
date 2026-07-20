@@ -14,7 +14,7 @@ export default async function AdminAppointmentsPage() {
   const appointments = sortAppointmentsPendingFirst(await getHospitalAppointments());
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader
         title="Appointments"
         description="All appointments across your hospital. Pending requests first, then by time."

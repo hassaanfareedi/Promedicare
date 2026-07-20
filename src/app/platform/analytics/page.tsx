@@ -20,7 +20,7 @@ export const metadata: Metadata = { title: "Platform analytics" };
 export default async function PlatformAnalyticsPage() {
   const analytics = await getPlatformAnalytics();
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader title="Platform analytics" description="Activity across every hospital on ProMediCare AI." />
       <PlatformAnalyticsView analytics={analytics} />
     </div>

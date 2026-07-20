@@ -22,15 +22,15 @@ export function PageHeader({ title, description, actions, className, hero = fals
         <span
           aria-hidden
           className={cn(
-            "w-1 shrink-0 rounded-full bg-gradient-to-b from-teal-500 to-emerald-600",
-            hero ? "mt-1" : "mt-0.5",
+            "w-1 shrink-0 rounded-full bg-gradient-to-b from-brand to-[oklch(0.55_0.12_165)]",
+            hero ? "mt-1 min-h-10" : "mt-0.5 min-h-7",
           )}
         />
         <div className="space-y-1">
           <h1
             className={cn(
-              "font-semibold tracking-tight text-balance",
-              hero ? "font-heading text-3xl" : "text-2xl",
+              "font-heading font-semibold tracking-tight text-balance",
+              hero ? "text-3xl" : "text-2xl",
             )}
           >
             {title}
@@ -48,7 +48,12 @@ export function PageHeader({ title, description, actions, className, hero = fals
         </div>
       </div>
       {actions && (
-        <div className={cn("flex items-center gap-2", hero && "shrink-0 self-start sm:self-auto")}>
+        <div
+          className={cn(
+            "flex flex-wrap items-center gap-2",
+            hero && "shrink-0 self-start sm:self-auto",
+          )}
+        >
           {actions}
         </div>
       )}

@@ -31,17 +31,17 @@ export function AppShell({
   const reduce = useReducedMotion();
 
   return (
-    <div className="flex min-h-svh">
+    <div className="flex min-h-svh bg-background">
       <PointerEventsGuard />
       {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-svh w-64 shrink-0 flex-col border-r bg-card lg:flex">
-        <div className="flex h-16 items-center border-b px-5">
-          <Link href={ROLE_HOME[role]}>
+      <aside className="sticky top-0 hidden h-svh w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
+        <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-5">
+          <Link href={ROLE_HOME[role]} className="min-w-0">
             <Logo size="sm" />
           </Link>
         </div>
         <div className="flex-1 overflow-y-auto py-4">
-          <p className="px-6 pb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          <p className="px-6 pb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
             {ROLE_LABEL[role]}
           </p>
           <SidebarNav
@@ -50,9 +50,9 @@ export function AppShell({
             pendingAppointmentsHref={pendingAppointmentsHref}
           />
         </div>
-        <div className="border-t p-3">
-          <div className="mb-2 px-2">
-            <p className="truncate text-sm font-medium">
+        <div className="border-t border-sidebar-border p-3">
+          <div className="mb-2 rounded-xl bg-brand-muted/50 px-3 py-2.5">
+            <p className="truncate text-sm font-medium text-sidebar-foreground">
               {user.profile.full_name ?? user.email ?? "Account"}
             </p>
             {user.email && (
@@ -63,8 +63,13 @@ export function AppShell({
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b bg-background/80 px-4 backdrop-blur-sm md:px-6">
+      <div className="relative flex min-w-0 flex-1 flex-col">
+        {/* Shared atmospheric wash for all portals */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 -z-0 h-72 bg-[radial-gradient(ellipse_at_top,_var(--brand-wash)_0%,_transparent_70%)]"
+        />
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b bg-background/75 px-4 backdrop-blur-md md:px-6">
           <MobileNav
             items={items}
             role={role}
@@ -80,7 +85,7 @@ export function AppShell({
             <UserMenu fullName={user.profile.full_name} email={user.email} role={role} />
           </div>
         </header>
-        <main id="main-content" className="flex-1 px-4 py-6 md:px-6 lg:px-8">
+        <main id="main-content" className="relative z-10 flex-1 px-4 py-6 md:px-6 lg:px-8">
           <div
             className={cn(
               "mx-auto w-full max-w-6xl",

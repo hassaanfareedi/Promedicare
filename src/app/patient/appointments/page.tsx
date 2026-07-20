@@ -41,7 +41,7 @@ export default async function AppointmentsPage() {
   const past = all.filter((a) => !(new Date(a.scheduled_start) >= now && ACTIVE.has(a.status)));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader
         title="Appointments"
         description="See what is coming up, what the clinic confirmed, and manage your bookings."

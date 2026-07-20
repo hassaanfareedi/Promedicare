@@ -45,7 +45,7 @@ export default async function DoctorReviewsPage() {
   const pending = all.filter((p) => p.status === "pending_review");
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader title="AI reviews" description="Review AI symptom screenings for your patients." />
 
       <Tabs defaultValue="pending">

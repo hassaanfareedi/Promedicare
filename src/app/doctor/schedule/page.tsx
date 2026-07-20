@@ -29,7 +29,7 @@ export default async function DoctorSchedulePage() {
   const doctorName = user?.profile.full_name ?? "Doctor";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader title="Schedule" description="Your upcoming appointments." />
 
       {groups.length === 0 ? (

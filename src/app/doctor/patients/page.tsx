@@ -21,7 +21,7 @@ export default async function DoctorPatientsPage() {
   const patients = await getDoctorPatients();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader
         title="Patients"
         description="All patients registered at your hospital. Open a row to view their medical file."
@@ -52,7 +52,7 @@ export default async function DoctorPatientsPage() {
                     <TableCell className="font-medium">
                       <Link
                         href={`/doctor/patients/${p.id}`}
-                        className="text-teal-700 hover:underline dark:text-teal-400"
+                        className="text-brand hover:underline"
                       >
                         {p.full_name}
                       </Link>

@@ -20,14 +20,18 @@ export function StatCard({ label, value, icon: Icon, hint, className }: StatCard
     >
       <CardContent className="flex items-center gap-4 p-5">
         {Icon && (
-          <div className="grid size-11 shrink-0 place-items-center rounded-lg bg-teal-50 text-teal-600 transition-transform duration-300 group-hover:scale-105 dark:bg-teal-950/50 dark:text-teal-400">
+          <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-brand-muted text-brand transition-transform duration-300 group-hover:scale-105">
             <Icon className="size-5" aria-hidden />
           </div>
         )}
         <div className="min-w-0">
-          <p className="truncate text-sm text-muted-foreground">{label}</p>
-          <p className="text-2xl font-semibold tracking-tight">{value}</p>
-          {hint && <p className="truncate text-xs text-muted-foreground">{hint}</p>}
+          <p className="truncate text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {label}
+          </p>
+          <p className="mt-0.5 font-heading text-2xl font-semibold tracking-tight tabular-nums">
+            {value}
+          </p>
+          {hint && <p className="mt-0.5 truncate text-xs text-muted-foreground">{hint}</p>}
         </div>
       </CardContent>
     </Card>
