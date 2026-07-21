@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import {
   getDoctorsAdmin,
   getStaff,
@@ -9,9 +10,13 @@ import {
 import { PageHeader } from "@/components/shared/page-header";
 import { DoctorManager } from "@/features/admin/components/doctor-manager";
 
-export const metadata: Metadata = { title: "Doctors" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("admin");
+  return { title: t("doctorsTitle") };
+}
 
 export default async function AdminDoctorsPage() {
+  const t = await getTranslations("admin");
   const [doctors, staff, specialties, departments, promotable] = await Promise.all([
     getDoctorsAdmin(),
     getStaff(),
@@ -42,7 +47,7 @@ export default async function AdminDoctorsPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title="Doctors" description="Manage doctors and their weekly availability." />
+      <PageHeader title={t("doctorsTitle")} description={t("doctorsDesc")} />
       <DoctorManager
         doctors={doctors}
         candidates={candidates}

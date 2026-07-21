@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Settings } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SignOutButton } from "@/components/shell/sign-out-button";
-import { ROLE_LABEL, ROLE_SETTINGS } from "@/lib/constants";
+import { ROLE_SETTINGS } from "@/lib/constants";
 import type { UserRole } from "@/types";
 
 function initials(name: string | null, email: string | null): string {
@@ -32,14 +33,20 @@ export function UserMenu({
   email: string | null;
   role: UserRole;
 }) {
+  const t = useTranslations("common");
+  const tRoles = useTranslations("roles");
+  const tNav = useTranslations("nav");
+  const accountLabel = fullName ?? email ?? t("account");
+  const settingsLabel = role === "patient" ? tNav("patient.profile") : t("settings");
+
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger
         render={
           <Button
             variant="ghost"
-            className="h-9 gap-2 pl-1.5 pr-2.5"
-            aria-label="Account menu"
+            className="h-9 gap-2 ps-1.5 pe-2.5"
+            aria-label={t("accountMenu")}
           />
         }
       >
@@ -49,16 +56,16 @@ export function UserMenu({
           </AvatarFallback>
         </Avatar>
         <span className="hidden max-w-32 truncate text-sm font-medium sm:inline">
-          {fullName ?? email ?? "Account"}
+          {accountLabel}
         </span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuGroup>
           <DropdownMenuLabel className="flex flex-col gap-0.5">
-            <span className="truncate text-sm text-foreground">{fullName ?? "Account"}</span>
+            <span className="truncate text-sm text-foreground">{fullName ?? t("account")}</span>
             <span className="truncate text-xs font-normal text-muted-foreground">{email}</span>
             <span className="mt-1 text-xs font-normal text-teal-600 dark:text-teal-400">
-              {ROLE_LABEL[role]}
+              {tRoles(role)}
             </span>
           </DropdownMenuLabel>
         </DropdownMenuGroup>
@@ -66,7 +73,7 @@ export function UserMenu({
         <DropdownMenuGroup>
           <DropdownMenuItem render={<Link href={ROLE_SETTINGS[role]} />}>
             <Settings className="size-4" aria-hidden />
-            {role === "patient" ? "Profile" : "Settings"}
+            {settingsLabel}
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

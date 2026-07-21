@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CalendarDays, Stethoscope, Users, Clock, ClipboardList } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { getDoctorOverview } from "@/features/doctor/data";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
@@ -13,19 +14,22 @@ import { buttonVariants } from "@/components/ui/button";
 import { formatTime } from "@/lib/format";
 import { AppointmentStatusControl } from "@/features/doctor/components/appointment-status-control";
 
-export const metadata: Metadata = { title: "Doctor dashboard" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("doctor");
+  return { title: t("dashboardTitle") };
+}
 
 export default async function DoctorDashboard() {
+  const t = await getTranslations("doctor");
   const { today, pendingReviews, patientCount, displayName } = await getDoctorOverview();
   const doctorName = displayName ?? "Doctor";
-  const firstName = displayName?.split(" ")[0] ?? "Doctor";
 
   return (
     <div className="space-y-8">
       <PageHeader
         hero
-        title={`Good day, ${firstName}`}
-        description="Your schedule and reviews for today."
+        title={t("dashboardTitle")}
+        description={t("dashboardDesc")}
         actions={
           <Link href="/doctor/schedule" className={buttonVariants()}>
             <CalendarDays className="size-4" aria-hidden /> Open schedule

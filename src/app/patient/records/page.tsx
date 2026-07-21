@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { FolderOpen } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/session";
 import { getPatientMedicalFile } from "@/features/clinical/data";
@@ -9,10 +10,14 @@ import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
 
-export const metadata: Metadata = { title: "Medical records" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("patient");
+  return { title: t("recordsTitle") };
+}
 
 export default async function PatientRecordsPage() {
   await requireRole(["patient"]);
+  const t = await getTranslations("patient");
   const supabase = await createClient();
   const {
     data: { user },
@@ -29,7 +34,7 @@ export default async function PatientRecordsPage() {
   if (!me) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Medical records" description="Your visit history and prescriptions." />
+        <PageHeader title={t("recordsTitle")} description={t("recordsDesc")} />
         <EmptyState
           icon={FolderOpen}
           title="No patient profile"
@@ -43,7 +48,7 @@ export default async function PatientRecordsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Medical records" description="Your visit history and prescriptions." />
+      <PageHeader title={t("recordsTitle")} description={t("recordsDesc")} />
 
       {!patient || visits.length === 0 ? (
         <EmptyState

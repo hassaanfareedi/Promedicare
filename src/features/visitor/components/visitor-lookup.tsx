@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
+import { useTranslations } from "next-intl";
 import { Loader2, Search, ShieldCheck, CalendarClock, History, ArrowLeft } from "lucide-react";
 import { visitorLookupSchema, type VisitorLookupInput } from "@/schemas/visitor";
 import { lookupRecord } from "@/features/visitor/actions";
@@ -32,6 +33,7 @@ function safeDate(value: string | null | undefined, withTime = false): string {
 }
 
 export function VisitorLookup() {
+  const t = useTranslations("visitor");
   const [record, setRecord] = useState<VisitorRecord | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [factor, setFactor] = useState<"dob" | "phone">("dob");
@@ -49,7 +51,7 @@ export function VisitorLookup() {
         : { ...values, dob: "" };
     const res = await lookupRecord(payload);
     if (!res.ok) {
-      setError(res.error);
+      setError(res.error || t("notFound"));
       setRecord(null);
       return;
     }
@@ -141,7 +143,7 @@ export function VisitorLookup() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Search className="size-5 text-teal-600" /> Look up your record
+          <Search className="size-5 text-teal-600" /> {t("title")}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -152,7 +154,7 @@ export function VisitorLookup() {
               name="patientCode"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Patient ID</FormLabel>
+                  <FormLabel>{t("code")}</FormLabel>
                   <FormControl>
                     <Input placeholder="PMC-123456" autoComplete="off" {...field} />
                   </FormControl>
@@ -165,7 +167,7 @@ export function VisitorLookup() {
             <Tabs value={factor} onValueChange={(v) => setFactor(v as "dob" | "phone")}>
               <FormLabel className="mb-1 block">Verify it&apos;s you</FormLabel>
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="dob">Date of birth</TabsTrigger>
+                <TabsTrigger value="dob">{t("dob")}</TabsTrigger>
                 <TabsTrigger value="phone">Registered phone</TabsTrigger>
               </TabsList>
               <TabsContent value="dob" className="mt-3">
@@ -174,7 +176,7 @@ export function VisitorLookup() {
                   name="dob"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Date of birth</FormLabel>
+                      <FormLabel>{t("dob")}</FormLabel>
                       <FormControl>
                         <Input type="date" {...field} />
                       </FormControl>
@@ -208,10 +210,10 @@ export function VisitorLookup() {
 
             <Button type="submit" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Search className="size-4" />}
-              Find my record
+              {t("lookup")}
             </Button>
             <p className="text-center text-xs text-muted-foreground">
-              For your privacy, we require your Patient ID plus one verification detail.
+              {t("subtitle")}
             </p>
           </form>
         </Form>

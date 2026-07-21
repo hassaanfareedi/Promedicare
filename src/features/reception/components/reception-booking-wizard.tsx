@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   Loader2,
@@ -36,13 +37,6 @@ import {
 import { cn } from "@/lib/utils";
 import { formatDateTime, formatDoctorName } from "@/lib/format";
 
-const STEPS = [
-  { id: "patient", label: "Patient" },
-  { id: "doctor", label: "Doctor" },
-  { id: "time", label: "Time" },
-  { id: "confirm", label: "Confirm" },
-];
-
 type Gender = "male" | "female" | "other" | "prefer_not_to_say";
 
 type NewPatient = {
@@ -71,8 +65,18 @@ type Props = {
 
 export function ReceptionBookingWizard({ patients, doctors, initialPatientId }: Props) {
   const router = useRouter();
+  const tAppt = useTranslations("appointments");
+  const tPatient = useTranslations("patient");
+  const tRoles = useTranslations("roles");
   const [pending, startTransition] = useTransition();
   const [step, setStep] = useState(0);
+
+  const STEPS = [
+    { id: "patient", label: tRoles("patient") },
+    { id: "doctor", label: tAppt("doctor") },
+    { id: "time", label: tAppt("time") },
+    { id: "confirm", label: tAppt("confirm") },
+  ];
 
   const [patientMode, setPatientMode] = useState<"existing" | "new">("existing");
   const [existingPatientId, setExistingPatientId] = useState<string | null>(
@@ -173,7 +177,7 @@ export function ReceptionBookingWizard({ patients, doctors, initialPatientId }: 
         }
         return;
       }
-      toast.success("Appointment booked");
+      toast.success(tAppt("booked"));
       router.push("/reception/appointments");
       router.refresh();
     });
@@ -371,7 +375,7 @@ export function ReceptionBookingWizard({ patients, doctors, initialPatientId }: 
       {step === 2 && (
         <div className="space-y-4">
           <Button variant="ghost" size="sm" onClick={() => setStep(1)}>
-            <ArrowLeft className="size-4" /> Change doctor
+            <ArrowLeft className="size-4" /> {tPatient("changeDoctor")}
           </Button>
           {loadingSlots ? (
             <div className="flex items-center justify-center py-10 text-muted-foreground">
@@ -379,7 +383,7 @@ export function ReceptionBookingWizard({ patients, doctors, initialPatientId }: 
             </div>
           ) : slots.length === 0 ? (
             <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-              {formatDoctorName(doctor?.full_name)} has no available slots in the next two weeks.
+              {tPatient("noSlots", { doctor: formatDoctorName(doctor?.full_name) })}
             </p>
           ) : (
             <div className="space-y-4">

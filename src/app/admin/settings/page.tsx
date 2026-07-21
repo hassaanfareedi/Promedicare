@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Building2 } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { requireRole } from "@/lib/auth/session";
 import { getMyHospital } from "@/features/admin/data";
 import { PageHeader } from "@/components/shared/page-header";
@@ -8,18 +9,19 @@ import { HospitalSettingsForm } from "@/features/admin/components/hospital-setti
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/shared/empty-state";
 
-export const metadata: Metadata = { title: "Settings" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("admin");
+  return { title: t("settingsTitle") };
+}
 
 export default async function AdminSettingsPage() {
   await requireRole(["hospital_admin"]);
   const hospital = await getMyHospital();
+  const t = await getTranslations("admin");
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <PageHeader
-        title="Settings"
-        description="Manage your account, password, and hospital details."
-      />
+      <PageHeader title={t("settingsTitle")} description={t("settingsDesc")} />
 
       <AccountSettingsSections />
 

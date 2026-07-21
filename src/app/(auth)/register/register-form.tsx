@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { CheckCircle2 } from "lucide-react";
 import { register, type ActionResult } from "@/lib/auth/actions";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { SubmitButton, GoogleButton } from "@/components/auth/auth-buttons";
 
 export function RegisterForm() {
+  const t = useTranslations("auth");
   const [state, formAction] = useActionState<ActionResult | null, FormData>(register, null);
   const [confirmSent, setConfirmSent] = useState(false);
   const error = state && "error" in state ? state.error : null;
@@ -22,11 +24,8 @@ export function RegisterForm() {
     return (
       <Alert tabIndex={-1} autoFocus>
         <CheckCircle2 className="text-emerald-600" aria-hidden />
-        <AlertTitle>Confirm your email</AlertTitle>
-        <AlertDescription>
-          We&apos;ve sent a confirmation link to your inbox. Click it to activate your account, then
-          sign in.
-        </AlertDescription>
+        <AlertTitle>{t("confirmEmailTitle")}</AlertTitle>
+        <AlertDescription>{t("confirmEmailBody")}</AlertDescription>
       </Alert>
     );
   }
@@ -37,7 +36,7 @@ export function RegisterForm() {
       <div className="relative text-center text-sm">
         <Separator />
         <span className="absolute inset-0 -top-2.5 mx-auto w-fit bg-background px-2 text-muted-foreground">
-          or sign up with email
+          {t("orSignUpEmail")}
         </span>
       </div>
       <form action={formAction} className="grid gap-4">
@@ -51,7 +50,7 @@ export function RegisterForm() {
           </p>
         )}
         <div className="grid gap-2">
-          <Label htmlFor="fullName">Full name</Label>
+          <Label htmlFor="fullName">{t("fullName")}</Label>
           <Input
             id="fullName"
             name="fullName"
@@ -63,7 +62,7 @@ export function RegisterForm() {
           />
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{t("email")}</Label>
           <Input
             id="email"
             name="email"
@@ -76,7 +75,7 @@ export function RegisterForm() {
           />
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">{t("password")}</Label>
           <Input
             id="password"
             name="password"
@@ -87,11 +86,11 @@ export function RegisterForm() {
             aria-describedby={error ? "register-error" : "password-hint"}
           />
           <p id="password-hint" className="text-xs text-muted-foreground">
-            At least 8 characters with upper, lower and a number.
+            {t("passwordMin")}
           </p>
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="confirmPassword">Confirm password</Label>
+          <Label htmlFor="confirmPassword">{t("confirmPassword")}</Label>
           <Input
             id="confirmPassword"
             name="confirmPassword"
@@ -102,7 +101,7 @@ export function RegisterForm() {
             aria-describedby={error ? "register-error" : undefined}
           />
         </div>
-        <SubmitButton className="w-full">Create account</SubmitButton>
+        <SubmitButton className="w-full">{t("signUp")}</SubmitButton>
       </form>
     </div>
   );

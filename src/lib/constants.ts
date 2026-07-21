@@ -1,7 +1,9 @@
+/** Tone/class metadata only — display labels come from next-intl (`risk`, `status`, `roles`). */
 import type { RiskLevel, UserRole, AppointmentStatus } from "@/types";
 
 export const APP_NAME = "ProMediCare AI";
 
+/** @deprecated Prefer t('ai.disclaimer') — kept for non-React call sites during migration. */
 export const AI_DISCLAIMER =
   "ProMediCare AI provides decision support only and is not a medical diagnosis. It does not replace consultation with a licensed medical professional. In an emergency, contact your local emergency services immediately.";
 
@@ -32,6 +34,7 @@ export const ROLE_PREFIX: Record<UserRole, string> = {
   super_admin: "/platform",
 };
 
+/** English fallbacks for server code that cannot call useTranslations. */
 export const ROLE_LABEL: Record<UserRole, string> = {
   patient: "Patient",
   doctor: "Doctor",
@@ -135,4 +138,13 @@ export function getRiskMeta(level: string | null | undefined) {
 /** Appointment-status meta with a safe fallback for unexpected DB values. */
 export function getAppointmentStatusMeta(status: string | null | undefined) {
   return (status && APPOINTMENT_STATUS_META[status as AppointmentStatus]) || APPOINTMENT_STATUS_META_FALLBACK;
+}
+
+/** Tone-only helpers for components that translate labels separately. */
+export function getRiskTone(level: string | null | undefined) {
+  return getRiskMeta(level).tone;
+}
+
+export function getAppointmentStatusTone(status: string | null | undefined) {
+  return getAppointmentStatusMeta(status).tone;
 }

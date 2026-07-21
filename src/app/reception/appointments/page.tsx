@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CalendarDays, CalendarPlus } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import {
   getHospitalAppointments,
   sortAppointmentsPendingFirst,
@@ -10,16 +11,20 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { buttonVariants } from "@/components/ui/button";
 import { StaffAppointmentRow } from "@/features/reception/components/staff-appointment-row";
 
-export const metadata: Metadata = { title: "Appointments" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("reception");
+  return { title: t("appointmentsTitle") };
+}
 
 export default async function ReceptionAppointmentsPage() {
+  const t = await getTranslations("reception");
   const appointments = sortAppointmentsPendingFirst(await getHospitalAppointments());
 
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Appointments"
-        description="Pending requests first, then by time across your hospital."
+        title={t("appointmentsTitle")}
+        description={t("appointmentsDesc")}
         actions={
           <Link
             href="/reception/appointments/new"

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import dynamic from "next/dynamic";
+import { getTranslations } from "next-intl/server";
 import { CalendarDays, Users, BriefcaseMedical, Wallet } from "lucide-react";
 import { getAdminAnalytics, getAdminOverview } from "@/features/admin/data";
 import { PageHeader } from "@/components/shared/page-header";
@@ -17,14 +18,18 @@ const AnalyticsCharts = dynamic(
   },
 );
 
-export const metadata: Metadata = { title: "Analytics" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("admin");
+  return { title: t("analyticsTitle") };
+}
 
 export default async function AdminAnalyticsPage() {
+  const t = await getTranslations("admin");
   const [overview, analytics] = await Promise.all([getAdminOverview(), getAdminAnalytics()]);
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Analytics" description="Insights across your hospital's activity." />
+      <PageHeader title={t("analyticsTitle")} description={t("analyticsDesc")} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total appointments" value={analytics.totalAppointments} icon={CalendarDays} />

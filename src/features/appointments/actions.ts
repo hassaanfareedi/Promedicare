@@ -24,11 +24,15 @@ export async function getDoctorSlots(doctorId: string): Promise<SlotGroup[]> {
   const id = z.string().uuid().safeParse(doctorId);
   if (!id.success) return [];
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("doctor_availability")
     .select("*")
     .eq("doctor_id", id.data)
     .eq("is_active", true);
+  if (error) {
+    console.error("[getDoctorSlots]", error.message, { doctorId: id.data });
+    return [];
+  }
   return buildSlots(data ?? []);
 }
 

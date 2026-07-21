@@ -850,6 +850,7 @@ export type Database = {
           id: string
           onboarding_completed: boolean
           phone: string | null
+          preferred_locale: string
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
         }
@@ -863,6 +864,7 @@ export type Database = {
           id: string
           onboarding_completed?: boolean
           phone?: string | null
+          preferred_locale?: string
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
@@ -876,6 +878,7 @@ export type Database = {
           id?: string
           onboarding_completed?: boolean
           phone?: string | null
+          preferred_locale?: string
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }

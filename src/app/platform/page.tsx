@@ -9,23 +9,28 @@ import {
   Stethoscope,
   ScrollText,
 } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { getPlatformOverview } from "@/features/platform/data";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
 import { QuickLink } from "@/components/shared/quick-link";
 import { buttonVariants } from "@/components/ui/button";
 
-export const metadata: Metadata = { title: "Platform" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("platform");
+  return { title: t("dashboardTitle") };
+}
 
 export default async function PlatformDashboard() {
+  const t = await getTranslations("platform");
   const o = await getPlatformOverview();
 
   return (
     <div className="space-y-8">
       <PageHeader
         hero
-        title="Platform overview"
-        description="System-wide view across all hospitals."
+        title={t("dashboardTitle")}
+        description={t("dashboardDesc")}
         actions={
           <Link href="/platform/hospitals" className={buttonVariants()}>
             <Building2 className="size-4" aria-hidden /> Manage hospitals

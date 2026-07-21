@@ -1,6 +1,7 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
+import { useTranslations } from "next-intl";
 import { LogOut, Loader2 } from "lucide-react";
 import { logout } from "@/lib/auth/actions";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { cn } from "@/lib/utils";
 
 function SignOutInner({ className }: { className?: string }) {
   const { pending } = useFormStatus();
+  const t = useTranslations("common");
   return (
     <Button
       type="submit"
@@ -24,13 +26,14 @@ function SignOutInner({ className }: { className?: string }) {
       ) : (
         <LogOut className="size-4" aria-hidden />
       )}
-      {pending ? "Signing out…" : "Sign out"}
+      {pending ? t("loading") : t("signOut")}
     </Button>
   );
 }
 
 function SignOutMenuInner() {
   const { pending } = useFormStatus();
+  const t = useTranslations("common");
   return (
     <DropdownMenuItem
       variant="destructive"
@@ -43,7 +46,7 @@ function SignOutMenuInner() {
       ) : (
         <LogOut className="size-4" aria-hidden />
       )}
-      {pending ? "Signing out…" : "Sign out"}
+      {pending ? t("loading") : t("signOut")}
     </DropdownMenuItem>
   );
 }

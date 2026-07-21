@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { NavItem } from "@/components/shell/nav-config";
 import { fetchPendingAppointmentNavBadge } from "@/features/appointments/nav-badges";
 import { scheduleStalledNavGuard } from "@/lib/nav/nav-fallback";
@@ -11,11 +12,8 @@ import { cn } from "@/lib/utils";
 type Props = {
   items: NavItem[];
   onNavigate?: () => void;
-  /** Initial badge counts keyed by href (e.g. `/admin/appointments`). */
   initialBadges?: Record<string, number>;
-  /** When set, poll pending appointment count into this href every 30s. */
   pendingAppointmentsHref?: string;
-  /** Disable polling (e.g. mobile nav shares desktop poller). */
   pollBadges?: boolean;
 };
 
@@ -28,6 +26,8 @@ export function SidebarNav({
 }: Props) {
   const pathname = usePathname();
   const router = useRouter();
+  const t = useTranslations("nav");
+  const tCommon = useTranslations("common");
   const pathnameRef = useRef(pathname);
   const latestHrefRef = useRef<string | null>(null);
   const [badges, setBadges] = useState<Record<string, number>>(initialBadges);
@@ -67,9 +67,6 @@ export function SidebarNav({
     latestHrefRef.current = href;
     router.push(href);
 
-    // Soft App Router navigations can silently no-op after a poisoned RSC
-    // flight (and a loading.tsx boundary can hide that stall behind a skeleton
-    // that never resolves). Force a full load if either failure mode persists.
     scheduleStalledNavGuard(
       href,
       () => pathnameRef.current === href,
@@ -80,7 +77,6 @@ export function SidebarNav({
   return (
     <nav className="grid gap-1 px-3">
       {items.map((item) => {
-        // Exact match when this href is a parent of other nav items (e.g. /patient).
         const hasNestedNavChildren = items.some(
           (other) => other.href !== item.href && other.href.startsWith(`${item.href}/`),
         );
@@ -91,8 +87,11 @@ export function SidebarNav({
             pathname.startsWith(`${item.href}/`));
         const Icon = item.icon;
         const badge = badges[item.href] ?? 0;
-        const label =
-          badge > 0 ? `${item.label}, ${badge} pending request${badge === 1 ? "" : "s"}` : undefined;
+        const labelText = t(item.labelKey);
+        const ariaLabel =
+          badge > 0
+            ? `${labelText}, ${tCommon("pendingRequests", { count: badge })}`
+            : undefined;
         return (
           <Link
             key={item.href}
@@ -100,7 +99,7 @@ export function SidebarNav({
             prefetch={false}
             onClick={() => handleNavClick(item.href)}
             aria-current={active ? "page" : undefined}
-            aria-label={label}
+            aria-label={ariaLabel}
             className={cn(
               "group relative flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
               active
@@ -111,7 +110,7 @@ export function SidebarNav({
             <span
               aria-hidden
               className={cn(
-                "absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-gradient-to-b from-brand to-[oklch(0.55_0.12_165)] transition-opacity",
+                "absolute start-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-e-full bg-gradient-to-b from-brand to-[oklch(0.55_0.12_165)] transition-opacity",
                 active ? "opacity-100" : "opacity-0",
               )}
             />
@@ -122,7 +121,7 @@ export function SidebarNav({
               )}
               aria-hidden
             />
-            <span className="min-w-0 flex-1 truncate">{item.label}</span>
+            <span className="min-w-0 flex-1 truncate">{labelText}</span>
             {badge > 0 ? (
               <span
                 className="inline-flex min-w-5 items-center justify-center rounded-md bg-amber-500 px-1.5 py-0.5 text-[10px] font-semibold text-white tabular-nums"

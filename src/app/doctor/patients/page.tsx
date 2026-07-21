@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Users } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { getDoctorPatients } from "@/features/doctor/data";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -15,17 +16,18 @@ import {
 } from "@/components/ui/table";
 import { formatDate } from "@/lib/format";
 
-export const metadata: Metadata = { title: "Patients" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("doctor");
+  return { title: t("patientsTitle") };
+}
 
 export default async function DoctorPatientsPage() {
+  const t = await getTranslations("doctor");
   const patients = await getDoctorPatients();
 
   return (
     <div className="space-y-8">
-      <PageHeader
-        title="Patients"
-        description="All patients registered at your hospital. Open a row to view their medical file."
-      />
+      <PageHeader title={t("patientsTitle")} description={t("patientsDesc")} />
 
       {patients.length === 0 ? (
         <EmptyState

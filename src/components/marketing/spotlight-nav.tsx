@@ -2,18 +2,12 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { buttonVariants } from "@/components/ui/button";
-
-type Section = { label: string; href: string };
-
-const SECTIONS: Section[] = [
-  { label: "How it works", href: "#how" },
-  { label: "Features", href: "#features" },
-  { label: "Record lookup", href: "#lookup" },
-];
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 
 /**
  * Marketing header with a Vengeance-UI-style hover "spotlight" that glides
@@ -24,6 +18,14 @@ export function SpotlightNav({ isAuthed, homeHref }: { isAuthed: boolean; homeHr
   const [hovered, setHovered] = useState<number | null>(null);
   const [open, setOpen] = useState(false);
   const listRef = useRef<HTMLUListElement>(null);
+  const t = useTranslations("auth");
+  const tLanding = useTranslations("landing");
+
+  const sections = [
+    { label: t("howItWorks"), href: "#how" },
+    { label: t("features"), href: "#features" },
+    { label: t("recordLookup"), href: "#lookup" },
+  ];
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/70 backdrop-blur-xl">
@@ -38,7 +40,7 @@ export function SpotlightNav({ isAuthed, homeHref }: { isAuthed: boolean; homeHr
             onMouseLeave={() => setHovered(null)}
             className="relative flex items-center gap-1 text-sm font-medium"
           >
-            {SECTIONS.map((s, i) => (
+            {sections.map((s, i) => (
               <li key={s.href} className="relative">
                 <a
                   href={s.href}
@@ -62,9 +64,10 @@ export function SpotlightNav({ isAuthed, homeHref }: { isAuthed: boolean; homeHr
         </nav>
 
         <div className="flex items-center gap-2">
+          <LanguageSwitcher className="hidden sm:inline-flex" />
           {isAuthed ? (
             <Link href={homeHref} className={buttonVariants({ size: "sm" })}>
-              Go to dashboard
+              {t("goToDashboard")}
             </Link>
           ) : (
             <>
@@ -72,10 +75,10 @@ export function SpotlightNav({ isAuthed, homeHref }: { isAuthed: boolean; homeHr
                 href="/login"
                 className={buttonVariants({ variant: "ghost", size: "sm", className: "hidden sm:inline-flex" })}
               >
-                Sign in
+                {tLanding("navSignIn")}
               </Link>
               <Link href="/register" className={buttonVariants({ size: "sm" })}>
-                Get started
+                {t("getStarted")}
               </Link>
             </>
           )}
@@ -102,7 +105,10 @@ export function SpotlightNav({ isAuthed, homeHref }: { isAuthed: boolean; homeHr
             aria-label="Primary mobile"
           >
             <ul className="space-y-1 px-4 py-3 text-sm font-medium">
-              {SECTIONS.map((s) => (
+              <li className="pb-2">
+                <LanguageSwitcher />
+              </li>
+              {sections.map((s) => (
                 <li key={s.href}>
                   <a
                     href={s.href}
@@ -120,7 +126,7 @@ export function SpotlightNav({ isAuthed, homeHref }: { isAuthed: boolean; homeHr
                     onClick={() => setOpen(false)}
                     className={buttonVariants({ size: "sm", className: "w-full" })}
                   >
-                    Go to dashboard
+                    {t("goToDashboard")}
                   </Link>
                 </li>
               ) : (
@@ -131,7 +137,7 @@ export function SpotlightNav({ isAuthed, homeHref }: { isAuthed: boolean; homeHr
                       onClick={() => setOpen(false)}
                       className="block rounded-lg px-3 py-2 text-muted-foreground hover:bg-accent hover:text-foreground"
                     >
-                      Sign in
+                      {tLanding("navSignIn")}
                     </Link>
                   </li>
                   <li className="pt-1">
@@ -140,7 +146,7 @@ export function SpotlightNav({ isAuthed, homeHref }: { isAuthed: boolean; homeHr
                       onClick={() => setOpen(false)}
                       className={buttonVariants({ size: "sm", className: "w-full" })}
                     >
-                      Get started
+                      {t("getStarted")}
                     </Link>
                   </li>
                 </>

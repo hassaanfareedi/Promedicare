@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CalendarDays, Users, UserCheck, Clock, CalendarPlus } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { getReceptionOverview, getWalkInDoctors } from "@/features/reception/data";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
@@ -12,9 +13,13 @@ import { buttonVariants } from "@/components/ui/button";
 import { StaffAppointmentRow } from "@/features/reception/components/staff-appointment-row";
 import { WalkInDialog } from "@/features/reception/components/walk-in-dialog";
 
-export const metadata: Metadata = { title: "Reception" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("reception");
+  return { title: t("dashboardTitle") };
+}
 
 export default async function ReceptionDashboard() {
+  const t = await getTranslations("reception");
   const [{ today, waiting, patientCount }, doctors] = await Promise.all([
     getReceptionOverview(),
     getWalkInDoctors(),
@@ -24,8 +29,8 @@ export default async function ReceptionDashboard() {
     <div className="space-y-8">
       <PageHeader
         hero
-        title="Front desk"
-        description="Manage today's queue and patient registrations."
+        title={t("dashboardTitle")}
+        description={t("dashboardDesc")}
         actions={
           <>
             <Link

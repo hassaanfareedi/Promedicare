@@ -1,12 +1,16 @@
+"use client";
+
 import { ShieldAlert } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
-import { AI_DISCLAIMER } from "@/lib/constants";
 
 /**
  * Persistent AI disclaimer. Rendered by the UI layer wherever AI output is
  * shown — never relying on the model to self-disclaim.
  */
 export function AiDisclaimer({ className, compact = false }: { className?: string; compact?: boolean }) {
+  const tAi = useTranslations("ai");
+  const tPatient = useTranslations("patient");
   return (
     <div
       role="note"
@@ -17,9 +21,7 @@ export function AiDisclaimer({ className, compact = false }: { className?: strin
     >
       <ShieldAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
       <p className={cn("text-amber-900/90 dark:text-amber-200/90", compact ? "text-xs" : "text-sm")}>
-        {compact
-          ? "Decision support only — not a medical diagnosis. Consult a licensed professional."
-          : AI_DISCLAIMER}
+        {compact ? tPatient("decisionSupportOnly") : tAi("disclaimer")}
       </p>
     </div>
   );

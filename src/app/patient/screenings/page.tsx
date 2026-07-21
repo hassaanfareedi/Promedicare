@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ClipboardList, Activity } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { getMyScreenings } from "@/features/patient/data";
 import { toAiPrediction } from "@/features/patient/prediction-mapper";
 import { PageHeader } from "@/components/shared/page-header";
@@ -9,19 +10,23 @@ import { AiDisclaimer } from "@/components/shared/ai-disclaimer";
 import { buttonVariants } from "@/components/ui/button";
 import { ScreeningCard } from "@/features/patient/components/screening-card";
 
-export const metadata: Metadata = { title: "Screenings" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("patient");
+  return { title: t("screeningsTitle") };
+}
 
 export default async function ScreeningsPage() {
+  const t = await getTranslations("patient");
   const screenings = await getMyScreenings();
 
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Your screenings"
-        description="A history of your AI symptom checks and their risk assessments."
+        title={t("screeningsTitle")}
+        description={t("screeningsDesc")}
         actions={
           <Link href="/patient/symptom-check" className={buttonVariants({ size: "sm" })}>
-            <Activity className="size-4" /> New check
+            <Activity className="size-4" /> {t("runAnother")}
           </Link>
         }
       />
@@ -30,11 +35,11 @@ export default async function ScreeningsPage() {
         <>
           <EmptyState
             icon={ClipboardList}
-            title="No screenings yet"
-            description="Run your first AI symptom check to get a risk assessment and specialist recommendation."
+            title={t("screeningsTitle")}
+            description={t("screeningsDesc")}
             action={
               <Link href="/patient/symptom-check" className={buttonVariants({ size: "sm" })}>
-                <Activity className="size-4" aria-hidden /> Start symptom check
+                <Activity className="size-4" aria-hidden /> {t("runScreening")}
               </Link>
             }
           />

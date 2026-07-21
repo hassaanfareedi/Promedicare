@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { Stethoscope } from "lucide-react";
 import { getReviewablePredictions } from "@/features/doctor/data";
 import { toAiPrediction } from "@/features/patient/prediction-mapper";
@@ -15,7 +16,10 @@ import { ReviewDialog } from "@/features/doctor/components/review-dialog";
 import type { PredictionWithPatient } from "@/features/doctor/data";
 import type { RiskLevel } from "@/types";
 
-export const metadata: Metadata = { title: "AI reviews" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("doctor");
+  return { title: t("reviewsTitle") };
+}
 
 function parseBrief(raw: string | null | undefined): ClinicalBrief | null {
   if (!raw?.trim()) return null;
@@ -62,12 +66,13 @@ function ReviewRow({ p }: { p: PredictionWithPatient }) {
 }
 
 export default async function DoctorReviewsPage() {
+  const t = await getTranslations("doctor");
   const all = await getReviewablePredictions(false);
   const pending = all.filter((p) => p.status === "pending_review");
 
   return (
     <div className="space-y-8">
-      <PageHeader title="AI reviews" description="Review AI symptom screenings for your patients." />
+      <PageHeader title={t("reviewsTitle")} description={t("reviewsDesc")} />
 
       <Tabs defaultValue="pending">
         <TabsList>

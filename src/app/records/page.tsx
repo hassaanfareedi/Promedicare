@@ -1,17 +1,20 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowLeft } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { Logo } from "@/components/brand/logo";
 import { VisitorLookup } from "@/features/visitor/components/visitor-lookup";
 import { AiDisclaimer } from "@/components/shared/ai-disclaimer";
 import { PageHeader } from "@/components/shared/page-header";
 
-export const metadata: Metadata = {
-  title: "Look up your record",
-  description: "Securely view your appointment status and basic history with your Patient ID.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("visitor");
+  return { title: t("title") };
+}
 
-export default function RecordsPage() {
+export default async function RecordsPage() {
+  const t = await getTranslations("visitor");
+
   return (
     <div className="min-h-svh bg-muted/30">
       <header className="border-b bg-background">
@@ -28,8 +31,8 @@ export default function RecordsPage() {
         <PageHeader
           hero
           className="mb-6"
-          title="Patient record lookup"
-          description="Check your appointment status and recent visit history without signing in."
+          title={t("title")}
+          description={t("subtitle")}
         />
         <VisitorLookup />
         <AiDisclaimer className="mt-6" compact />

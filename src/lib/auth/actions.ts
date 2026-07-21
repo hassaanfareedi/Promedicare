@@ -57,6 +57,19 @@ export async function login(_prev: ActionResult | null, formData: FormData): Pro
 
   const user = await getCurrentUser();
   if (!user) redirect("/");
+
+  // Sync stored language preference into the locale cookie for this session.
+  const preferred = (user.profile as { preferred_locale?: string }).preferred_locale;
+  if (preferred === "en" || preferred === "ur") {
+    const { cookies } = await import("next/headers");
+    const { LOCALE_COOKIE } = await import("@/i18n/config");
+    (await cookies()).set(LOCALE_COOKIE, preferred, {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: "lax",
+    });
+  }
+
   const requested = (formData.get("redirectTo") as string) || "";
   const allowedPrefix = ROLE_PREFIX[user.profile.role];
   const redirectTo =

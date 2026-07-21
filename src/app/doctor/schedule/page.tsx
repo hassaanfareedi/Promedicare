@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { CalendarDays } from "lucide-react";
 import { getMyDoctor, getDoctorAppointments, type DoctorAppointment } from "@/features/doctor/data";
 import { PageHeader } from "@/components/shared/page-header";
@@ -9,7 +10,10 @@ import { formatDateTime } from "@/lib/format";
 import { AppointmentStatusControl } from "@/features/doctor/components/appointment-status-control";
 import { getCurrentUser } from "@/lib/auth/session";
 
-export const metadata: Metadata = { title: "Schedule" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("doctor");
+  return { title: t("scheduleTitle") };
+}
 
 function groupByDay(rows: DoctorAppointment[]): [string, DoctorAppointment[]][] {
   const map = new Map<string, DoctorAppointment[]>();
@@ -21,6 +25,7 @@ function groupByDay(rows: DoctorAppointment[]): [string, DoctorAppointment[]][] 
 }
 
 export default async function DoctorSchedulePage() {
+  const t = await getTranslations("doctor");
   const [doctor, user] = await Promise.all([getMyDoctor(), getCurrentUser()]);
   const appointments = doctor
     ? await getDoctorAppointments(doctor.id, "upcoming", doctor.hospital_id)
@@ -30,7 +35,7 @@ export default async function DoctorSchedulePage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title="Schedule" description="Your upcoming appointments." />
+      <PageHeader title={t("scheduleTitle")} description={t("scheduleDesc")} />
 
       {groups.length === 0 ? (
         <EmptyState icon={CalendarDays} title="No upcoming appointments" description="New bookings will appear here." />

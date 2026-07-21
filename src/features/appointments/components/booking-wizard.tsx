@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Loader2, Building2, Stethoscope, Clock, CheckCircle2, ArrowLeft, ArrowRight, Star } from "lucide-react";
 import { bookAppointment, getDoctorSlots } from "@/features/appointments/actions";
@@ -16,13 +17,6 @@ import { Stepper } from "@/components/ui/stepper";
 import { cn } from "@/lib/utils";
 import { formatDateTime, formatDoctorName } from "@/lib/format";
 
-const STEPS = [
-  { id: "hospital", label: "Hospital" },
-  { id: "doctor", label: "Doctor" },
-  { id: "time", label: "Time" },
-  { id: "confirm", label: "Confirm" },
-];
-
 type Props = {
   hospitals: BookingHospital[];
   doctors: DoctorDirectory[];
@@ -32,8 +26,17 @@ type Props = {
 
 export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, predictionId }: Props) {
   const router = useRouter();
+  const tAppt = useTranslations("appointments");
+  const tPatient = useTranslations("patient");
   const [pending, startTransition] = useTransition();
   const [step, setStep] = useState(0);
+
+  const STEPS = [
+    { id: "hospital", label: tAppt("hospital") },
+    { id: "doctor", label: tAppt("doctor") },
+    { id: "time", label: tAppt("time") },
+    { id: "confirm", label: tAppt("confirm") },
+  ];
 
   const [hospitalId, setHospitalId] = useState<string | null>(null);
   const [doctor, setDoctor] = useState<DoctorDirectory | null>(null);
@@ -42,7 +45,6 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
   const [slot, setSlot] = useState<string | null>(null);
   const [slotTaken, setSlotTaken] = useState(false);
   const [reason, setReason] = useState("");
-  // Guards against out-of-order slot responses when switching doctors quickly.
   const slotRequestId = useRef(0);
 
   const recommendedSpecialtyName = useMemo(() => {
@@ -137,7 +139,7 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
         }
         return;
       }
-      toast.success("Appointment booked");
+      toast.success(tAppt("booked"));
       router.push("/patient/appointments");
       router.refresh();
     });
@@ -149,8 +151,9 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
 
       {recommendedSpecialtyId && (
         <div className="rounded-lg border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-900 dark:border-teal-900 dark:bg-teal-950/40 dark:text-teal-100">
-          From your symptom check — recommended:{" "}
-          <span className="font-medium">{recommendedSpecialtyName ?? "matching specialty"}</span>
+          {tPatient("fromSymptomCheck", {
+            specialty: recommendedSpecialtyName ?? tPatient("matchingSpecialty"),
+          })}
         </div>
       )}
 
@@ -202,7 +205,7 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
       {step === 1 && (
         <div className="space-y-3">
           <Button variant="ghost" size="sm" onClick={() => setStep(0)} className="-ml-2">
-            <ArrowLeft className="size-4" /> Change hospital
+            <ArrowLeft className="size-4" /> {tPatient("changeHospital")}
           </Button>
           {recommendedSpecialtyId && !hasRecommendedAtHospital && hospitalDoctors.length > 0 && (
             <p className="rounded-lg border border-dashed px-3 py-2 text-sm text-muted-foreground">
@@ -250,7 +253,7 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
       {step === 2 && (
         <div className="space-y-4">
           <Button variant="ghost" size="sm" onClick={() => setStep(1)} className="-ml-2">
-            <ArrowLeft className="size-4" /> Change doctor
+            <ArrowLeft className="size-4" /> {tPatient("changeDoctor")}
           </Button>
           {loadingSlots ? (
             <div className="flex items-center justify-center py-10 text-muted-foreground">
@@ -258,7 +261,7 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
             </div>
           ) : slots.length === 0 ? (
             <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-              {formatDoctorName(doctor?.full_name)} has no available slots in the next two weeks.
+              {tPatient("noSlots", { doctor: formatDoctorName(doctor?.full_name) })}
             </p>
           ) : (
             <div className="space-y-4">
@@ -314,20 +317,19 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
               </p>
             )}
             <div className="grid gap-3 rounded-lg bg-muted/50 p-4 text-sm">
-              <Row label="Hospital" value={hospitals.find((h) => h.id === hospitalId)?.name ?? "—"} />
-              <Row label="Doctor" value={formatDoctorName(doctor.full_name)} />
-              <Row label="Specialty" value={doctor.specialty_name ?? "General"} />
-              <Row label="When" value={formatDateTime(slot)} />
+              <Row label={tAppt("hospital")} value={hospitals.find((h) => h.id === hospitalId)?.name ?? "—"} />
+              <Row label={tAppt("doctor")} value={formatDoctorName(doctor.full_name)} />
+              <Row label={tAppt("time")} value={formatDateTime(slot)} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="reason">Reason for visit (optional)</Label>
+              <Label htmlFor="reason">{tPatient("reason")}</Label>
               <Textarea
                 id="reason"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 rows={3}
                 maxLength={500}
-                placeholder="Briefly describe your reason for the appointment"
+                placeholder={tPatient("reason")}
               />
             </div>
             <div className="flex justify-end gap-2">
@@ -337,7 +339,7 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
                 ) : (
                   <CheckCircle2 className="size-4" />
                 )}
-                Confirm booking <ArrowRight className="size-4" />
+                {tPatient("confirmBooking")} <ArrowRight className="size-4" />
               </Button>
             </div>
           </CardContent>

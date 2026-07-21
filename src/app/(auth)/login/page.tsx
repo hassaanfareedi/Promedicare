@@ -1,9 +1,13 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { getTranslations } from "next-intl/server";
 import { LoginForm } from "./login-form";
 
-export const metadata: Metadata = { title: "Sign in" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("auth");
+  return { title: t("loginTitle") };
+}
 
 function LoginFormFallback() {
   return (
@@ -16,22 +20,21 @@ function LoginFormFallback() {
   );
 }
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const t = await getTranslations("auth");
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
-        <p className="text-sm text-muted-foreground">
-          Sign in to your ProMediCare AI account
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("loginTitle")}</h1>
+        <p className="text-sm text-muted-foreground">{t("loginSubtitle")}</p>
       </div>
       <Suspense fallback={<LoginFormFallback />}>
         <LoginForm />
       </Suspense>
       <p className="text-center text-sm text-muted-foreground">
-        Don&apos;t have an account?{" "}
+        {t("noAccount")}{" "}
         <Link href="/register" className="font-medium text-foreground underline underline-offset-4">
-          Create one
+          {t("signUp")}
         </Link>
       </p>
     </div>

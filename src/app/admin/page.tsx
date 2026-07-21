@@ -10,6 +10,7 @@ import {
   CalendarCheck,
   BarChart3,
 } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { getAdminOverview } from "@/features/admin/data";
 import {
   getPendingHospitalAppointments,
@@ -26,9 +27,13 @@ import { buttonVariants } from "@/components/ui/button";
 import { StaffAppointmentRow } from "@/features/reception/components/staff-appointment-row";
 import { APPOINTMENT_STATUS_META } from "@/lib/constants";
 
-export const metadata: Metadata = { title: "Admin dashboard" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("admin");
+  return { title: t("dashboardTitle") };
+}
 
 export default async function AdminDashboard() {
+  const t = await getTranslations("admin");
   const [o, pendingList, confirmedList] = await Promise.all([
     getAdminOverview(),
     getPendingHospitalAppointments(5),
@@ -39,8 +44,8 @@ export default async function AdminDashboard() {
     <div className="space-y-8">
       <PageHeader
         hero
-        title="Hospital administration"
-        description="Staff, doctors, and operations for your hospital."
+        title={t("dashboardTitle")}
+        description={t("dashboardDesc")}
         actions={
           <Link href="/admin/analytics" className={buttonVariants({ variant: "outline" })}>
             <BarChart3 className="size-4" aria-hidden /> Analytics

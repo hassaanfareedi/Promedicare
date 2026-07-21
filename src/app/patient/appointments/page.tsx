@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { CalendarDays, CalendarPlus } from "lucide-react";
 import { getMyAppointments, type AppointmentView } from "@/features/patient/data";
 import { PatientAppointmentCard } from "@/features/patient/components/patient-appointment-card";
@@ -10,7 +11,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CancelAppointmentButton } from "@/features/appointments/components/cancel-appointment-button";
 import { RescheduleDialog } from "@/features/appointments/components/reschedule-dialog";
 
-export const metadata: Metadata = { title: "Appointments" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("patient");
+  return { title: t("appointmentsTitle") };
+}
 
 const CANCELLABLE = new Set(["pending", "confirmed"]);
 const ACTIVE = new Set(["pending", "confirmed", "checked_in", "in_progress"]);
@@ -33,6 +37,7 @@ function AppointmentRow({ a }: { a: AppointmentView }) {
 }
 
 export default async function AppointmentsPage() {
+  const t = await getTranslations("patient");
   const all = await getMyAppointments();
   const now = new Date();
   const upcoming = all
@@ -43,30 +48,34 @@ export default async function AppointmentsPage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Appointments"
-        description="See what is coming up, what the clinic confirmed, and manage your bookings."
+        title={t("appointmentsTitle")}
+        description={t("appointmentsDesc")}
         actions={
           <Link href="/patient/appointments/new" className={buttonVariants({ size: "default" })}>
-            <CalendarPlus className="size-4" aria-hidden /> Book appointment
+            <CalendarPlus className="size-4" aria-hidden /> {t("bookCta")}
           </Link>
         }
       />
 
       <Tabs defaultValue="upcoming">
         <TabsList>
-          <TabsTrigger value="upcoming">Upcoming ({upcoming.length})</TabsTrigger>
-          <TabsTrigger value="past">Past &amp; other ({past.length})</TabsTrigger>
+          <TabsTrigger value="upcoming">
+            {t("upcoming")} ({upcoming.length})
+          </TabsTrigger>
+          <TabsTrigger value="past">
+            {t("past")} ({past.length})
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="upcoming" className="mt-4 space-y-3">
           {upcoming.length === 0 ? (
             <EmptyState
               icon={CalendarDays}
-              title="No upcoming appointments"
-              description="Book a visit with a specialist when you are ready."
+              title={t("noAppointments")}
+              description={t("appointmentsDesc")}
               action={
                 <Link href="/patient/appointments/new" className={buttonVariants({ size: "default" })}>
-                  <CalendarPlus className="size-4" aria-hidden /> Book appointment
+                  <CalendarPlus className="size-4" aria-hidden /> {t("bookCta")}
                 </Link>
               }
             />

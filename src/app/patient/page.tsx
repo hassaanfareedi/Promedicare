@@ -7,6 +7,7 @@ import {
   ArrowRight,
   Stethoscope,
 } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { getPatientOverview } from "@/features/patient/data";
 import { PatientAppointmentCard } from "@/features/patient/components/patient-appointment-card";
 import { CancelAppointmentButton } from "@/features/appointments/components/cancel-appointment-button";
@@ -25,14 +26,17 @@ import type { RiskLevel } from "@/types";
 
 const CANCELLABLE = new Set(["pending", "confirmed"]);
 
-export const metadata: Metadata = { title: "Patient dashboard" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("patient");
+  return { title: t("dashboardTitle") };
+}
 
 export default async function PatientDashboard() {
-  const { displayName, upcoming, recentScreenings, stats } = await getPatientOverview();
-  const firstName = displayName?.split(" ")[0] ?? "there";
+  const t = await getTranslations("patient");
+  const { upcoming, recentScreenings, stats } = await getPatientOverview();
   const nextVisit = upcoming[0] ?? null;
   const primaryHref = nextVisit ? "/patient/symptom-check" : "/patient/appointments/new";
-  const primaryLabel = nextVisit ? "Check symptoms" : "Book a visit";
+  const primaryLabel = nextVisit ? t("runScreening") : t("bookCta");
   const PrimaryIcon = nextVisit ? Activity : CalendarPlus;
   const canManageNext = nextVisit && CANCELLABLE.has(nextVisit.status);
 
@@ -40,12 +44,8 @@ export default async function PatientDashboard() {
     <div className="space-y-8">
       <PageHeader
         hero
-        title={`Welcome back, ${firstName}`}
-        description={
-          nextVisit
-            ? "Your next visit is below. Check symptoms anytime if you need guidance before you go."
-            : "Start with a symptom check or book a visit with a specialist."
-        }
+        title={t("dashboardTitle")}
+        description={t("dashboardDesc")}
         actions={
           <Link href={primaryHref} className={cn(buttonVariants(), "gap-2")}>
             <PrimaryIcon className="size-4" aria-hidden />

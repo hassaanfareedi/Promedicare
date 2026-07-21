@@ -1,18 +1,23 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { ScrollText } from "lucide-react";
 import { getAuditLogs } from "@/features/platform/data";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { AuditTable } from "@/features/platform/components/audit-table";
 
-export const metadata: Metadata = { title: "Audit logs" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("platform");
+  return { title: t("auditTitle") };
+}
 
 export default async function PlatformAuditPage() {
   const entries = await getAuditLogs(200);
+  const t = await getTranslations("platform");
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Audit logs" description="A tamper-evident record of key actions across the platform." />
+      <PageHeader title={t("auditTitle")} description={t("auditDesc")} />
       {entries.length === 0 ? (
         <EmptyState icon={ScrollText} title="No activity yet" description="Audited actions will appear here." />
       ) : (

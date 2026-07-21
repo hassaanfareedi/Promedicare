@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Users, CalendarPlus } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { getHospitalPatients, getWalkInDoctors } from "@/features/reception/data";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -17,16 +18,20 @@ import {
 import { formatDate } from "@/lib/format";
 import { WalkInDialog } from "@/features/reception/components/walk-in-dialog";
 
-export const metadata: Metadata = { title: "Patients" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("reception");
+  return { title: t("patientsTitle") };
+}
 
 export default async function ReceptionPatientsPage() {
+  const t = await getTranslations("reception");
   const [patients, doctors] = await Promise.all([getHospitalPatients(), getWalkInDoctors()]);
 
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Patients"
-        description="Registered patients at your hospital."
+        title={t("patientsTitle")}
+        description={t("patientsDesc")}
         actions={
           <>
             <Link

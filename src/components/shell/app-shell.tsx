@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useReducedMotion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { Logo } from "@/components/brand/logo";
 import { SidebarNav } from "@/components/shell/sidebar-nav";
 import { MobileNav } from "@/components/shell/mobile-nav";
@@ -10,8 +11,9 @@ import { NotificationBell } from "@/components/shell/notification-bell";
 import { PointerEventsGuard } from "@/components/shell/pointer-events-guard";
 import { SignOutButton } from "@/components/shell/sign-out-button";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { NAV_BY_ROLE } from "@/components/shell/nav-config";
-import { ROLE_HOME, ROLE_LABEL } from "@/lib/constants";
+import { ROLE_HOME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type { SessionUser } from "@/lib/auth/session";
 
@@ -29,12 +31,13 @@ export function AppShell({
   const role = user.profile.role;
   const items = NAV_BY_ROLE[role];
   const reduce = useReducedMotion();
+  const tRoles = useTranslations("roles");
+  const tCommon = useTranslations("common");
 
   return (
     <div className="flex min-h-svh bg-background">
       <PointerEventsGuard />
-      {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-svh w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
+      <aside className="sticky top-0 hidden h-svh w-64 shrink-0 flex-col border-e border-sidebar-border bg-sidebar lg:flex">
         <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-5">
           <Link href={ROLE_HOME[role]} className="min-w-0">
             <Logo size="sm" />
@@ -42,7 +45,7 @@ export function AppShell({
         </div>
         <div className="flex-1 overflow-y-auto py-4">
           <p className="px-6 pb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-            {ROLE_LABEL[role]}
+            {tRoles(role)}
           </p>
           <SidebarNav
             items={items}
@@ -53,7 +56,7 @@ export function AppShell({
         <div className="border-t border-sidebar-border p-3">
           <div className="mb-2 rounded-xl bg-brand-muted/50 px-3 py-2.5">
             <p className="truncate text-sm font-medium text-sidebar-foreground">
-              {user.profile.full_name ?? user.email ?? "Account"}
+              {user.profile.full_name ?? user.email ?? tCommon("account")}
             </p>
             {user.email && (
               <p className="truncate text-xs text-muted-foreground">{user.email}</p>
@@ -64,7 +67,6 @@ export function AppShell({
       </aside>
 
       <div className="relative flex min-w-0 flex-1 flex-col">
-        {/* Shared atmospheric wash for all portals */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-x-0 top-0 -z-0 h-72 bg-[radial-gradient(ellipse_at_top,_var(--brand-wash)_0%,_transparent_70%)]"
@@ -76,10 +78,11 @@ export function AppShell({
             initialBadges={navBadges}
             pendingAppointmentsHref={pendingAppointmentsHref}
           />
-          <Link href={ROLE_HOME[role]} className="lg:hidden" aria-label="Home">
+          <Link href={ROLE_HOME[role]} className="lg:hidden" aria-label={tCommon("home")}>
             <Logo size="sm" iconOnly />
           </Link>
-          <div className="ml-auto flex items-center gap-1">
+          <div className="ms-auto flex items-center gap-1">
+            <LanguageSwitcher className="hidden sm:inline-flex" />
             <NotificationBell role={role} />
             <ThemeToggle />
             <UserMenu fullName={user.profile.full_name} email={user.email} role={role} />

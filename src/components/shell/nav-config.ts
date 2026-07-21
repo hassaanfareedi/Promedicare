@@ -18,50 +18,51 @@ import {
 import type { UserRole } from "@/types";
 
 export type NavItem = {
-  label: string;
+  /** Message key under `nav.*` */
+  labelKey: string;
   href: string;
   icon: LucideIcon;
 };
 
 export const NAV_BY_ROLE: Record<UserRole, NavItem[]> = {
   patient: [
-    { label: "Dashboard", href: "/patient", icon: LayoutDashboard },
-    { label: "Symptom Check", href: "/patient/symptom-check", icon: Activity },
-    { label: "Appointments", href: "/patient/appointments", icon: CalendarDays },
-    { label: "Records", href: "/patient/records", icon: FolderOpen },
-    { label: "Screenings", href: "/patient/screenings", icon: ClipboardList },
-    { label: "Profile", href: "/patient/profile", icon: UserCog },
+    { labelKey: "patient.dashboard", href: "/patient", icon: LayoutDashboard },
+    { labelKey: "patient.symptomCheck", href: "/patient/symptom-check", icon: Activity },
+    { labelKey: "patient.appointments", href: "/patient/appointments", icon: CalendarDays },
+    { labelKey: "patient.records", href: "/patient/records", icon: FolderOpen },
+    { labelKey: "patient.screenings", href: "/patient/screenings", icon: ClipboardList },
+    { labelKey: "patient.profile", href: "/patient/profile", icon: UserCog },
   ],
   doctor: [
-    { label: "Dashboard", href: "/doctor", icon: LayoutDashboard },
-    { label: "Schedule", href: "/doctor/schedule", icon: CalendarDays },
-    { label: "Patients", href: "/doctor/patients", icon: Users },
-    { label: "AI Reviews", href: "/doctor/reviews", icon: Stethoscope },
-    { label: "Settings", href: "/doctor/settings", icon: Settings },
+    { labelKey: "doctor.dashboard", href: "/doctor", icon: LayoutDashboard },
+    { labelKey: "doctor.schedule", href: "/doctor/schedule", icon: CalendarDays },
+    { labelKey: "doctor.patients", href: "/doctor/patients", icon: Users },
+    { labelKey: "doctor.reviews", href: "/doctor/reviews", icon: Stethoscope },
+    { labelKey: "doctor.settings", href: "/doctor/settings", icon: Settings },
   ],
   receptionist: [
-    { label: "Dashboard", href: "/reception", icon: LayoutDashboard },
-    { label: "Queue", href: "/reception/queue", icon: ListChecks },
-    { label: "Appointments", href: "/reception/appointments", icon: CalendarDays },
-    { label: "Patients", href: "/reception/patients", icon: Users },
-    { label: "Settings", href: "/reception/settings", icon: Settings },
+    { labelKey: "reception.dashboard", href: "/reception", icon: LayoutDashboard },
+    { labelKey: "reception.queue", href: "/reception/queue", icon: ListChecks },
+    { labelKey: "reception.appointments", href: "/reception/appointments", icon: CalendarDays },
+    { labelKey: "reception.patients", href: "/reception/patients", icon: Users },
+    { labelKey: "reception.settings", href: "/reception/settings", icon: Settings },
   ],
   hospital_admin: [
-    { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
-    { label: "Doctors", href: "/admin/doctors", icon: BriefcaseMedical },
-    { label: "Staff", href: "/admin/staff", icon: UserCog },
-    { label: "Departments", href: "/admin/departments", icon: Building2 },
-    { label: "Appointments", href: "/admin/appointments", icon: CalendarDays },
-    { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
-    { label: "Settings", href: "/admin/settings", icon: Settings },
+    { labelKey: "admin.dashboard", href: "/admin", icon: LayoutDashboard },
+    { labelKey: "admin.doctors", href: "/admin/doctors", icon: BriefcaseMedical },
+    { labelKey: "admin.staff", href: "/admin/staff", icon: UserCog },
+    { labelKey: "admin.departments", href: "/admin/departments", icon: Building2 },
+    { labelKey: "admin.appointments", href: "/admin/appointments", icon: CalendarDays },
+    { labelKey: "admin.analytics", href: "/admin/analytics", icon: BarChart3 },
+    { labelKey: "admin.settings", href: "/admin/settings", icon: Settings },
   ],
   super_admin: [
-    { label: "Dashboard", href: "/platform", icon: LayoutDashboard },
-    { label: "Hospitals", href: "/platform/hospitals", icon: Building2 },
-    { label: "Doctors", href: "/platform/doctors", icon: BriefcaseMedical },
-    { label: "Specialties", href: "/platform/specialties", icon: Stethoscope },
-    { label: "Analytics", href: "/platform/analytics", icon: BarChart3 },
-    { label: "Audit Logs", href: "/platform/audit", icon: ScrollText },
-    { label: "Settings", href: "/platform/settings", icon: Settings },
+    { labelKey: "platform.dashboard", href: "/platform", icon: LayoutDashboard },
+    { labelKey: "platform.hospitals", href: "/platform/hospitals", icon: Building2 },
+    { labelKey: "platform.doctors", href: "/platform/doctors", icon: BriefcaseMedical },
+    { labelKey: "platform.specialties", href: "/platform/specialties", icon: Stethoscope },
+    { labelKey: "platform.analytics", href: "/platform/analytics", icon: BarChart3 },
+    { labelKey: "platform.audit", href: "/platform/audit", icon: ScrollText },
+    { labelKey: "platform.settings", href: "/platform/settings", icon: Settings },
   ],
 };

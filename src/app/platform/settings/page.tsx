@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { CheckCircle2, XCircle, Sparkles, ShieldCheck } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { isGroqConfigured } from "@/lib/ai/groq-client";
 import { APP_NAME } from "@/lib/constants";
 import { requireRole } from "@/lib/auth/session";
@@ -7,15 +8,19 @@ import { PageHeader } from "@/components/shared/page-header";
 import { AccountSettingsSections } from "@/features/account/components/account-settings-sections";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export const metadata: Metadata = { title: "Settings" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("platform");
+  return { title: t("settingsTitle") };
+}
 
 export default async function PlatformSettingsPage() {
   await requireRole(["super_admin"]);
   const aiReady = isGroqConfigured();
+  const t = await getTranslations("platform");
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <PageHeader title="Platform settings" description="Your account and system status." />
+      <PageHeader title={t("settingsTitle")} description={t("settingsDesc")} />
 
       <AccountSettingsSections />
 
