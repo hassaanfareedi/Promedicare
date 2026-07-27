@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -11,7 +10,9 @@ import type { AdminStaffMember } from "@/features/admin/data";
 import type { UserRole } from "@/types";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import { LinkButton } from "@/components/shared/link-button";
+import { ReliableNavLink } from "@/components/shared/reliable-nav-link";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -134,12 +135,12 @@ function StaffCard({ member }: { member: AdminStaffMember }) {
                   <>
                     <AlertCircle className="size-3.5 text-amber-600" aria-hidden />
                     {t("needsDoctorsSetup")}{" "}
-                    <Link
+                    <ReliableNavLink
                       href="/admin/doctors"
                       className="font-medium text-teal-700 underline-offset-2 hover:underline dark:text-teal-300"
                     >
                       {t("openDoctors")}
-                    </Link>
+                    </ReliableNavLink>
                   </>
                 )}
               </p>
@@ -316,9 +317,9 @@ export function StaffManager({
       {staff.some((s) => s.role === "doctor" && !s.hasDoctorProfile) && (
         <p className="text-center text-sm text-muted-foreground">
           {t("someDoctorsNeedProfile")}{" "}
-          <Link href="/admin/doctors" className={buttonVariants({ variant: "link", size: "sm" })}>
+          <LinkButton href="/admin/doctors" variant="link" size="sm">
             {t("manageOnDoctors")}
-          </Link>
+          </LinkButton>
         </p>
       )}
     </div>

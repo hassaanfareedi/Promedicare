@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Settings } from "lucide-react";
+import { ReliableNavLink } from "@/components/shared/reliable-nav-link";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -71,7 +71,7 @@ export function UserMenu({
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem render={<Link href={ROLE_SETTINGS[role]} />}>
+          <DropdownMenuItem render={<ReliableNavLink href={ROLE_SETTINGS[role]} />}>
             <Settings className="size-4" aria-hidden />
             {settingsLabel}
           </DropdownMenuItem>

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { CalendarDays, Stethoscope, Users, Clock, ClipboardList } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { getDoctorOverview } from "@/features/doctor/data";
@@ -8,9 +7,9 @@ import { StatCard } from "@/components/shared/stat-card";
 import { EmptyState } from "@/components/shared/empty-state";
 import { SectionLink } from "@/components/shared/section-link";
 import { QuickLink } from "@/components/shared/quick-link";
+import { LinkButton } from "@/components/shared/link-button";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { buttonVariants } from "@/components/ui/button";
 import { formatTime } from "@/lib/format";
 import { AppointmentStatusControl } from "@/features/doctor/components/appointment-status-control";
 
@@ -31,9 +30,9 @@ export default async function DoctorDashboard() {
         title={t("dashboardTitle")}
         description={t("dashboardDesc")}
         actions={
-          <Link href="/doctor/schedule" className={buttonVariants()}>
+          <LinkButton href="/doctor/schedule">
             <CalendarDays className="size-4" aria-hidden /> {t("openSchedule")}
-          </Link>
+          </LinkButton>
         }
       />
 

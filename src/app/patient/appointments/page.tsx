@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { CalendarDays, CalendarPlus } from "lucide-react";
@@ -6,7 +5,7 @@ import { getMyAppointments, type AppointmentView } from "@/features/patient/data
 import { PatientAppointmentCard } from "@/features/patient/components/patient-appointment-card";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
-import { buttonVariants } from "@/components/ui/button";
+import { LinkButton } from "@/components/shared/link-button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CancelAppointmentButton } from "@/features/appointments/components/cancel-appointment-button";
 import { RescheduleDialog } from "@/features/appointments/components/reschedule-dialog";
@@ -51,9 +50,9 @@ export default async function AppointmentsPage() {
         title={t("appointmentsTitle")}
         description={t("appointmentsDesc")}
         actions={
-          <Link href="/patient/appointments/new" className={buttonVariants({ size: "default" })}>
+          <LinkButton href="/patient/appointments/new">
             <CalendarPlus className="size-4" aria-hidden /> {t("bookCta")}
-          </Link>
+          </LinkButton>
         }
       />
 
@@ -74,9 +73,9 @@ export default async function AppointmentsPage() {
               title={t("noAppointments")}
               description={t("appointmentsDesc")}
               action={
-                <Link href="/patient/appointments/new" className={buttonVariants({ size: "default" })}>
+                <LinkButton href="/patient/appointments/new">
                   <CalendarPlus className="size-4" aria-hidden /> {t("bookCta")}
-                </Link>
+                </LinkButton>
               }
             />
           ) : (

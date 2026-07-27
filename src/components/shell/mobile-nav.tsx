@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { ReliableNavLink } from "@/components/shared/reliable-nav-link";
 import { Logo } from "@/components/brand/logo";
 import { SidebarNav } from "@/components/shell/sidebar-nav";
 import { SignOutButton } from "@/components/shell/sign-out-button";
@@ -39,9 +39,9 @@ export function MobileNav({
       <SheetContent side="left" className="flex w-72 flex-col p-0">
         <SheetHeader className="border-b">
           <SheetTitle className="flex items-center">
-            <Link href={ROLE_HOME[role]} onClick={() => setOpen(false)} aria-label={tCommon("home")}>
+            <ReliableNavLink href={ROLE_HOME[role]} onClick={() => setOpen(false)} aria-label={tCommon("home")}>
               <Logo size="sm" />
-            </Link>
+            </ReliableNavLink>
           </SheetTitle>
         </SheetHeader>
         <div className="flex-1 overflow-y-auto py-4">

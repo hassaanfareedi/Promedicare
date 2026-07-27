@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { CalendarDays, Users, UserCheck, Clock, CalendarPlus } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { getReceptionOverview, getWalkInDoctors } from "@/features/reception/data";
@@ -8,8 +7,8 @@ import { StatCard } from "@/components/shared/stat-card";
 import { EmptyState } from "@/components/shared/empty-state";
 import { SectionLink } from "@/components/shared/section-link";
 import { QuickLink } from "@/components/shared/quick-link";
+import { LinkButton } from "@/components/shared/link-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { buttonVariants } from "@/components/ui/button";
 import { StaffAppointmentRow } from "@/features/reception/components/staff-appointment-row";
 import { WalkInDialog } from "@/features/reception/components/walk-in-dialog";
 
@@ -33,12 +32,9 @@ export default async function ReceptionDashboard() {
         description={t("dashboardDesc")}
         actions={
           <>
-            <Link
-              href="/reception/appointments/new"
-              className={buttonVariants({ variant: "outline" })}
-            >
+            <LinkButton href="/reception/appointments/new" variant="outline">
               <CalendarPlus className="size-4" aria-hidden /> {t("bookAppointment")}
-            </Link>
+            </LinkButton>
             <WalkInDialog doctors={doctors} />
           </>
         }

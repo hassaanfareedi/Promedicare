@@ -1,8 +1,8 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 import { Users } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { getDoctorPatients } from "@/features/doctor/data";
+import { ReliableNavLink } from "@/components/shared/reliable-nav-link";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
@@ -52,12 +52,12 @@ export default async function DoctorPatientsPage() {
                 {patients.map((p) => (
                   <TableRow key={p.id}>
                     <TableCell className="font-medium">
-                      <Link
+                      <ReliableNavLink
                         href={`/doctor/patients/${p.id}`}
                         className="text-brand hover:underline"
                       >
                         {p.full_name}
-                      </Link>
+                      </ReliableNavLink>
                     </TableCell>
                     <TableCell className="font-mono text-sm">{p.patient_code}</TableCell>
                     <TableCell className="hidden capitalize sm:table-cell">

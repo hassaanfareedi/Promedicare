@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Users, CalendarPlus } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { getHospitalPatients, getWalkInDoctors } from "@/features/reception/data";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
+import { LinkButton } from "@/components/shared/link-button";
 import { Card, CardContent } from "@/components/ui/card";
-import { buttonVariants } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -34,12 +33,9 @@ export default async function ReceptionPatientsPage() {
         description={t("patientsDesc")}
         actions={
           <>
-            <Link
-              href="/reception/appointments/new"
-              className={buttonVariants({ variant: "outline", size: "sm" })}
-            >
+            <LinkButton href="/reception/appointments/new" variant="outline" size="sm">
               <CalendarPlus className="size-4" aria-hidden /> {t("bookAppointment")}
-            </Link>
+            </LinkButton>
             <WalkInDialog doctors={doctors} />
           </>
         }
@@ -69,12 +65,13 @@ export default async function ReceptionPatientsPage() {
                     <TableCell className="hidden md:table-cell">{formatDate(p.dob)}</TableCell>
                     <TableCell className="hidden md:table-cell">{formatDate(p.created_at)}</TableCell>
                     <TableCell className="text-right">
-                      <Link
+                      <LinkButton
                         href={`/reception/appointments/new?patient=${p.id}`}
-                        className={buttonVariants({ variant: "outline", size: "sm" })}
+                        variant="outline"
+                        size="sm"
                       >
                         <CalendarPlus className="size-4" aria-hidden /> {t("book")}
-                      </Link>
+                      </LinkButton>
                     </TableCell>
                   </TableRow>
                 ))}

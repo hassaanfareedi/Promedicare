@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, type ComponentProps, type MouseEvent } from "react";
+import { forwardRef, useRef, type ComponentProps, type MouseEvent } from "react";
 import { scheduleStalledNavGuard } from "@/lib/nav/nav-fallback";
 
 type Props = Omit<ComponentProps<typeof Link>, "prefetch" | "onClick"> & {
@@ -22,7 +22,10 @@ function targetMatches(href: string): boolean {
  * silently no-op after server actions / poisoned RSC flights; if the URL has not
  * changed after a short delay, force a full load (path + query aware).
  */
-export function ReliableNavLink({ href, onClick, children, ...props }: Props) {
+export const ReliableNavLink = forwardRef<HTMLAnchorElement, Props>(function ReliableNavLink(
+  { href, onClick, children, ...props },
+  ref,
+) {
   const router = useRouter();
   const latestHrefRef = useRef<string | null>(null);
   const hrefString = typeof href === "string" ? href : href.pathname ?? String(href);
@@ -47,8 +50,8 @@ export function ReliableNavLink({ href, onClick, children, ...props }: Props) {
   }
 
   return (
-    <Link href={href} prefetch={false} onClick={handleClick} {...props}>
+    <Link ref={ref} href={href} prefetch={false} onClick={handleClick} {...props}>
       {children}
     </Link>
   );
-}
+});

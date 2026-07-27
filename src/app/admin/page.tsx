@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import {
   BriefcaseMedical,
   UserCog,
@@ -22,8 +21,8 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/shared/empty-state";
 import { SectionLink } from "@/components/shared/section-link";
 import { QuickLink } from "@/components/shared/quick-link";
+import { LinkButton } from "@/components/shared/link-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { buttonVariants } from "@/components/ui/button";
 import { StaffAppointmentRow } from "@/features/reception/components/staff-appointment-row";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -47,9 +46,9 @@ export default async function AdminDashboard() {
         title={t("dashboardTitle")}
         description={t("dashboardDesc")}
         actions={
-          <Link href="/admin/analytics" className={buttonVariants({ variant: "outline" })}>
+          <LinkButton href="/admin/analytics" variant="outline">
             <BarChart3 className="size-4" aria-hidden /> {t("analyticsTitle")}
-          </Link>
+          </LinkButton>
         }
       />
 
@@ -93,12 +92,9 @@ export default async function AdminDashboard() {
             <p className="text-sm text-muted-foreground">
               {t("awaitingConfirmation", { status: ts("pending") })}
             </p>
-            <Link
-              href="/admin/appointments"
-              className={buttonVariants({ variant: "outline", size: "sm" })}
-            >
+            <LinkButton href="/admin/appointments" variant="outline" size="sm">
               {t("review")}
-            </Link>
+            </LinkButton>
           </CardContent>
         </Card>
 
@@ -114,12 +110,9 @@ export default async function AdminDashboard() {
             <p className="text-sm text-muted-foreground">
               {t("scheduledFromNow", { status: ts("confirmed") })}
             </p>
-            <Link
-              href="/admin/appointments"
-              className={buttonVariants({ variant: "outline", size: "sm" })}
-            >
+            <LinkButton href="/admin/appointments" variant="outline" size="sm">
               {t("view")}
-            </Link>
+            </LinkButton>
           </CardContent>
         </Card>
       </div>

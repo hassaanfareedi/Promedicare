@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
@@ -7,8 +6,8 @@ import { getPatientMedicalFile } from "@/features/clinical/data";
 import { MedicalFileTable } from "@/features/clinical/components/medical-file-table";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
+import { LinkButton } from "@/components/shared/link-button";
 import { Card, CardContent } from "@/components/ui/card";
-import { buttonVariants } from "@/components/ui/button";
 import { requireRole } from "@/lib/auth/session";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -33,9 +32,9 @@ export default async function DoctorPatientFilePage({
         title={patient.full_name}
         description={t("medicalFileDesc", { code: patient.patient_code })}
         actions={
-          <Link href="/doctor/patients" className={buttonVariants({ variant: "outline", size: "sm" })}>
+          <LinkButton href="/doctor/patients" variant="outline" size="sm">
             <ArrowLeft className="size-4" /> {t("backToPatients")}
-          </Link>
+          </LinkButton>
         }
       />
 

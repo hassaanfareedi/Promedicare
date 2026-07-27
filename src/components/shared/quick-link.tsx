@@ -1,6 +1,6 @@
-import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { ArrowRight } from "lucide-react";
+import { ReliableNavLink } from "@/components/shared/reliable-nav-link";
 import { cn } from "@/lib/utils";
 
 type QuickLinkProps = {
@@ -14,7 +14,7 @@ type QuickLinkProps = {
 /** Dashboard quick-nav tile used across admin / platform / staff homes. */
 export function QuickLink({ href, title, description, icon: Icon, className }: QuickLinkProps) {
   return (
-    <Link
+    <ReliableNavLink
       href={href}
       className={cn(
         "group flex items-start gap-3 rounded-2xl border bg-card p-4 ring-1 ring-foreground/5 transition-all hover:border-brand/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
@@ -36,6 +36,6 @@ export function QuickLink({ href, title, description, icon: Icon, className }: Q
           <span className="mt-0.5 block text-sm text-muted-foreground">{description}</span>
         )}
       </span>
-    </Link>
+    </ReliableNavLink>
   );
 }

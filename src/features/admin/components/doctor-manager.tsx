@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -11,7 +10,8 @@ import type { AdminDoctor } from "@/features/admin/data";
 import { AvailabilityEditor } from "@/features/admin/components/availability-editor";
 import type { Department, Profile, Specialty } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import { LinkButton } from "@/components/shared/link-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -465,13 +465,14 @@ function AddDoctorDialog({
                   <Button type="button" size="sm" variant="outline" onClick={() => setMode("new")}>
                     {t("createNewDoctor")}
                   </Button>
-                  <Link
+                  <LinkButton
                     href="/admin/staff"
-                    className={buttonVariants({ variant: "outline", size: "sm" })}
+                    variant="outline"
+                    size="sm"
                     onClick={() => setOpen(false)}
                   >
                     {t("openStaff")}
-                  </Link>
+                  </LinkButton>
                 </div>
               </div>
             ) : (

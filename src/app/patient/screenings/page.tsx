@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 import { ClipboardList, Activity } from "lucide-react";
 import { getTranslations } from "next-intl/server";
@@ -7,7 +6,7 @@ import { toAiPrediction } from "@/features/patient/prediction-mapper";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { AiDisclaimer } from "@/components/shared/ai-disclaimer";
-import { buttonVariants } from "@/components/ui/button";
+import { LinkButton } from "@/components/shared/link-button";
 import { ScreeningCard } from "@/features/patient/components/screening-card";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -25,9 +24,9 @@ export default async function ScreeningsPage() {
         title={t("screeningsTitle")}
         description={t("screeningsDesc")}
         actions={
-          <Link href="/patient/symptom-check" className={buttonVariants({ size: "sm" })}>
+          <LinkButton href="/patient/symptom-check" size="sm">
             <Activity className="size-4" /> {t("runAnother")}
-          </Link>
+          </LinkButton>
         }
       />
 
@@ -38,9 +37,9 @@ export default async function ScreeningsPage() {
             title={t("screeningsTitle")}
             description={t("screeningsDesc")}
             action={
-              <Link href="/patient/symptom-check" className={buttonVariants({ size: "sm" })}>
+              <LinkButton href="/patient/symptom-check" size="sm">
                 <Activity className="size-4" aria-hidden /> {t("runScreening")}
-              </Link>
+              </LinkButton>
             }
           />
           <AiDisclaimer />

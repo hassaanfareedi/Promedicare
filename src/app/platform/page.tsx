@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import {
   Building2,
   Users,
@@ -14,7 +13,7 @@ import { getPlatformOverview } from "@/features/platform/data";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
 import { QuickLink } from "@/components/shared/quick-link";
-import { buttonVariants } from "@/components/ui/button";
+import { LinkButton } from "@/components/shared/link-button";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("platform");
@@ -32,9 +31,9 @@ export default async function PlatformDashboard() {
         title={t("dashboardTitle")}
         description={t("dashboardDesc")}
         actions={
-          <Link href="/platform/hospitals" className={buttonVariants()}>
+          <LinkButton href="/platform/hospitals">
             <Building2 className="size-4" aria-hidden /> {t("manageHospitals")}
-          </Link>
+          </LinkButton>
         }
       />
 

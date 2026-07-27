@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { CalendarDays, CalendarPlus } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import {
@@ -8,7 +7,7 @@ import {
 } from "@/features/reception/data";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
-import { buttonVariants } from "@/components/ui/button";
+import { LinkButton } from "@/components/shared/link-button";
 import { StaffAppointmentRow } from "@/features/reception/components/staff-appointment-row";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -26,12 +25,9 @@ export default async function ReceptionAppointmentsPage() {
         title={t("appointmentsTitle")}
         description={t("appointmentsDesc")}
         actions={
-          <Link
-            href="/reception/appointments/new"
-            className={buttonVariants({ size: "sm" })}
-          >
+          <LinkButton href="/reception/appointments/new" size="sm">
             <CalendarPlus className="size-4" aria-hidden /> {t("bookAppointment")}
-          </Link>
+          </LinkButton>
         }
       />
       {appointments.length === 0 ? (

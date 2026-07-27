@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import {
   Activity,
   CalendarDays,
@@ -16,12 +15,12 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
 import { SectionLink } from "@/components/shared/section-link";
+import { LinkButton } from "@/components/shared/link-button";
+import { ReliableNavLink } from "@/components/shared/reliable-nav-link";
 import { AiDisclaimer } from "@/components/shared/ai-disclaimer";
 import { RiskBadge } from "@/components/shared/risk-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { buttonVariants } from "@/components/ui/button";
 import { formatDate } from "@/lib/format";
-import { cn } from "@/lib/utils";
 import type { RiskLevel } from "@/types";
 
 const CANCELLABLE = new Set(["pending", "confirmed"]);
@@ -47,10 +46,10 @@ export default async function PatientDashboard() {
         title={t("dashboardTitle")}
         description={t("dashboardDesc")}
         actions={
-          <Link href={primaryHref} className={cn(buttonVariants(), "gap-2")}>
+          <LinkButton href={primaryHref} className="gap-2">
             <PrimaryIcon className="size-4" aria-hidden />
             {primaryLabel}
-          </Link>
+          </LinkButton>
         }
       />
 
@@ -101,16 +100,16 @@ export default async function PatientDashboard() {
               title={t("noScreeningsTitle")}
               description={t("noScreeningsDesc")}
               action={
-                <Link href="/patient/symptom-check" className={buttonVariants({ size: "sm" })}>
+                <LinkButton href="/patient/symptom-check" size="sm">
                   <Activity className="size-4" aria-hidden /> {t("startNow")}
-                </Link>
+                </LinkButton>
               }
             />
           ) : (
             <ul className="divide-y">
               {recentScreenings.map((p) => (
                 <li key={p.id}>
-                  <Link
+                  <ReliableNavLink
                     href="/patient/screenings"
                     className="flex min-h-11 items-center justify-between gap-3 py-3 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
                   >
@@ -126,7 +125,7 @@ export default async function PatientDashboard() {
                       <RiskBadge level={p.risk_level as RiskLevel} />
                       <ArrowRight className="size-4 text-muted-foreground/60" aria-hidden />
                     </span>
-                  </Link>
+                  </ReliableNavLink>
                 </li>
               ))}
             </ul>

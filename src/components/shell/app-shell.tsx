@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useReducedMotion } from "framer-motion";
 import { useTranslations } from "next-intl";
+import { ReliableNavLink } from "@/components/shared/reliable-nav-link";
 import { Logo } from "@/components/brand/logo";
 import { SidebarNav } from "@/components/shell/sidebar-nav";
 import { MobileNav } from "@/components/shell/mobile-nav";
@@ -39,9 +39,9 @@ export function AppShell({
       <PointerEventsGuard />
       <aside className="sticky top-0 hidden h-svh w-64 shrink-0 flex-col border-e border-sidebar-border bg-sidebar lg:flex">
         <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-5">
-          <Link href={ROLE_HOME[role]} className="min-w-0">
+          <ReliableNavLink href={ROLE_HOME[role]} className="min-w-0">
             <Logo size="sm" />
-          </Link>
+          </ReliableNavLink>
         </div>
         <div className="flex-1 overflow-y-auto py-4">
           <p className="px-6 pb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
@@ -78,9 +78,9 @@ export function AppShell({
             initialBadges={navBadges}
             pendingAppointmentsHref={pendingAppointmentsHref}
           />
-          <Link href={ROLE_HOME[role]} className="lg:hidden" aria-label={tCommon("home")}>
+          <ReliableNavLink href={ROLE_HOME[role]} className="lg:hidden" aria-label={tCommon("home")}>
             <Logo size="sm" iconOnly />
-          </Link>
+          </ReliableNavLink>
           <div className="ms-auto flex items-center gap-1">
             <LanguageSwitcher className="hidden sm:inline-flex" />
             <NotificationBell role={role} />

@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Bell } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -10,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollableList } from "@/components/shared/scrollable-list";
+import { ReliableNavLink } from "@/components/shared/reliable-nav-link";
 import { ROLE_HOME } from "@/lib/constants";
 import type { Notification, UserRole } from "@/types";
 
@@ -213,7 +213,7 @@ export function NotificationBell({ role }: { role: UserRole }) {
           {items.map((n) => {
             const title = localizedTitle(t, n);
             return (
-              <Link
+              <ReliableNavLink
                 key={n.id}
                 href={notificationHref(role, n)}
                 onClick={() => void openNotification(n)}
@@ -227,7 +227,7 @@ export function NotificationBell({ role }: { role: UserRole }) {
                 <p className="mt-1 text-[11px] text-muted-foreground">
                   {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
                 </p>
-              </Link>
+              </ReliableNavLink>
             );
           })}
         </ScrollableList>
