@@ -30,7 +30,7 @@ export default async function ProfilePage() {
             <IdCard className="size-5" />
           </span>
           <div>
-            <p className="text-sm text-muted-foreground">Your Patient ID</p>
+            <p className="text-sm text-muted-foreground">{t("patientId")}</p>
             <p className="font-mono text-lg font-semibold">{patient.patient_code}</p>
           </div>
         </CardContent>
@@ -40,7 +40,7 @@ export default async function ProfilePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Health profile</CardTitle>
+          <CardTitle className="text-base">{t("healthProfile")}</CardTitle>
         </CardHeader>
         <CardContent>
           <ProfileForm patient={patient} />

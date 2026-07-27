@@ -33,7 +33,26 @@ export async function getDoctorSlots(doctorId: string): Promise<SlotGroup[]> {
     console.error("[getDoctorSlots]", error.message, { doctorId: id.data });
     return [];
   }
-  return buildSlots(data ?? []);
+
+  // Resolve the doctor's hospital timezone so candidate slots match the
+  // hospital's local day (the server may run in UTC on Vercel). Patients can
+  // read the doctor_directory view and active hospitals.
+  let timeZone = "Asia/Karachi";
+  const { data: dir } = await supabase
+    .from("doctor_directory")
+    .select("hospital_id")
+    .eq("id", id.data)
+    .maybeSingle();
+  if (dir?.hospital_id) {
+    const { data: hospital } = await supabase
+      .from("hospitals")
+      .select("timezone")
+      .eq("id", dir.hospital_id)
+      .maybeSingle();
+    if (hospital?.timezone?.trim()) timeZone = hospital.timezone.trim();
+  }
+
+  return buildSlots(data ?? [], { timeZone });
 }
 
 /** Books an appointment through the transactional, conflict-safe DB function. */

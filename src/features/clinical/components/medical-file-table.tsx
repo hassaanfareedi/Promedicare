@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { FileText, Printer } from "lucide-react";
 import type { MedicalVisit } from "@/features/clinical/data";
 import { AttachmentLink } from "@/features/clinical/components/attachment-link";
@@ -36,17 +37,18 @@ export function MedicalFileTable({
   patientCode?: string | null;
 }) {
   const [rx, setRx] = useState<MedicalVisit | null>(null);
+  const t = useTranslations("doctor");
 
   return (
     <>
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Date</TableHead>
-            <TableHead>Diagnosis</TableHead>
-            <TableHead className="hidden md:table-cell">Summary</TableHead>
-            <TableHead>Rx</TableHead>
-            <TableHead>Files</TableHead>
+            <TableHead>{t("colDate")}</TableHead>
+            <TableHead>{t("colDiagnosis")}</TableHead>
+            <TableHead className="hidden md:table-cell">{t("colSummary")}</TableHead>
+            <TableHead>{t("colRx")}</TableHead>
+            <TableHead>{t("colFiles")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -72,7 +74,7 @@ export function MedicalFileTable({
               <TableCell>
                 {v.prescription || v.medications.length > 0 ? (
                   <Button type="button" size="sm" variant="outline" onClick={() => setRx(v)}>
-                    <FileText className="size-3.5" aria-hidden /> View
+                    <FileText className="size-3.5" aria-hidden /> {t("view")}
                   </Button>
                 ) : (
                   <span className="text-sm text-muted-foreground">—</span>
@@ -99,14 +101,14 @@ export function MedicalFileTable({
       <Dialog open={Boolean(rx)} onOpenChange={(o) => !o && setRx(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto overscroll-contain sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Prescription</DialogTitle>
-            <DialogDescription>View or print this visit&apos;s prescription.</DialogDescription>
+            <DialogTitle>{t("prescription")}</DialogTitle>
+            <DialogDescription>{t("prescriptionDesc")}</DialogDescription>
           </DialogHeader>
           {rx && (
             <PrescriptionPrintView
               patientName={patientName}
               patientCode={patientCode}
-              doctorName={rx.doctorName ?? "Doctor"}
+              doctorName={rx.doctorName ?? t("doctorFallback")}
               diagnosis={rx.diagnosis ?? "—"}
               prescription={rx.prescription ?? ""}
               medications={rx.medications}
@@ -115,7 +117,7 @@ export function MedicalFileTable({
           )}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => window.print()}>
-              <Printer className="size-4" /> Print
+              <Printer className="size-4" /> {t("print")}
             </Button>
           </DialogFooter>
         </DialogContent>

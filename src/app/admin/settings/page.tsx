@@ -28,7 +28,7 @@ export default async function AdminSettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Building2 className="size-4 text-teal-600" /> Hospital details
+            <Building2 className="size-4 text-teal-600" /> {t("hospitalDetails")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -37,8 +37,8 @@ export default async function AdminSettingsPage() {
           ) : (
             <EmptyState
               icon={Building2}
-              title="No hospital linked"
-              description="Your admin account is not linked to a hospital."
+              title={t("noHospitalLinked")}
+              description={t("noHospitalLinkedDesc")}
             />
           )}
         </CardContent>

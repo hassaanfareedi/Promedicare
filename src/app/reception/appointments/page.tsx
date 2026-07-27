@@ -30,12 +30,12 @@ export default async function ReceptionAppointmentsPage() {
             href="/reception/appointments/new"
             className={buttonVariants({ size: "sm" })}
           >
-            <CalendarPlus className="size-4" aria-hidden /> Book appointment
+            <CalendarPlus className="size-4" aria-hidden /> {t("bookAppointment")}
           </Link>
         }
       />
       {appointments.length === 0 ? (
-        <EmptyState icon={CalendarDays} title="No appointments" description="Appointments will appear here." />
+        <EmptyState icon={CalendarDays} title={t("noAppointments")} description={t("appointmentsEmptyDesc")} />
       ) : (
         <div className="space-y-3">
           {appointments.map((a) => (

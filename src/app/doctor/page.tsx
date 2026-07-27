@@ -20,9 +20,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function DoctorDashboard() {
-  const t = await getTranslations("doctor");
+  const [t, tr] = await Promise.all([getTranslations("doctor"), getTranslations("roles")]);
   const { today, pendingReviews, patientCount, displayName } = await getDoctorOverview();
-  const doctorName = displayName ?? "Doctor";
+  const doctorName = displayName ?? tr("doctor");
 
   return (
     <div className="space-y-8">
@@ -32,28 +32,28 @@ export default async function DoctorDashboard() {
         description={t("dashboardDesc")}
         actions={
           <Link href="/doctor/schedule" className={buttonVariants()}>
-            <CalendarDays className="size-4" aria-hidden /> Open schedule
+            <CalendarDays className="size-4" aria-hidden /> {t("openSchedule")}
           </Link>
         }
       />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Today's appointments" value={today.length} icon={CalendarDays} />
-        <StatCard label="Pending AI reviews" value={pendingReviews} icon={Stethoscope} />
-        <StatCard label="Patients" value={patientCount} icon={Users} />
+        <StatCard label={t("todaysAppointments")} value={today.length} icon={CalendarDays} />
+        <StatCard label={t("pendingAiReviews")} value={pendingReviews} icon={Stethoscope} />
+        <StatCard label={t("patientsTitle")} value={patientCount} icon={Users} />
       </div>
 
       <Card>
         <CardHeader className="flex-row items-center justify-between space-y-0">
-          <CardTitle className="text-base">Today&apos;s schedule</CardTitle>
-          <SectionLink href="/doctor/schedule">Full schedule</SectionLink>
+          <CardTitle className="text-base">{t("todaysSchedule")}</CardTitle>
+          <SectionLink href="/doctor/schedule">{t("fullSchedule")}</SectionLink>
         </CardHeader>
         <CardContent>
           {today.length === 0 ? (
             <EmptyState
               icon={Clock}
-              title="No appointments today"
-              description="Enjoy the quieter day — reviews may still be waiting."
+              title={t("noAppointmentsTodayTitle")}
+              description={t("noAppointmentsTodayDesc")}
             />
           ) : (
             <ul className="divide-y">
@@ -64,7 +64,7 @@ export default async function DoctorDashboard() {
                       {formatTime(a.scheduled_start)}
                     </span>
                     <div className="min-w-0">
-                      <p className="truncate font-medium">{a.patient?.full_name ?? "Patient"}</p>
+                      <p className="truncate font-medium">{a.patient?.full_name ?? tr("patient")}</p>
                       <p className="truncate text-xs text-muted-foreground">
                         {a.patient?.patient_code}
                       </p>
@@ -77,7 +77,7 @@ export default async function DoctorDashboard() {
                       appointmentId={a.id}
                       status={a.status}
                       patientId={a.patient?.id ?? a.patient_id}
-                      patientName={a.patient?.full_name ?? "Patient"}
+                      patientName={a.patient?.full_name ?? tr("patient")}
                       patientCode={a.patient?.patient_code}
                       doctorName={doctorName}
                     />
@@ -92,14 +92,14 @@ export default async function DoctorDashboard() {
       <div className="grid gap-3 sm:grid-cols-2">
         <QuickLink
           href="/doctor/reviews"
-          title="AI reviews"
-          description={`${pendingReviews} pending screening${pendingReviews === 1 ? "" : "s"}`}
+          title={t("reviewsTitle")}
+          description={t("pendingScreenings", { count: pendingReviews })}
           icon={ClipboardList}
         />
         <QuickLink
           href="/doctor/patients"
-          title="Patients"
-          description="Browse patients assigned to you"
+          title={t("patientsTitle")}
+          description={t("browsePatients")}
           icon={Users}
         />
       </div>

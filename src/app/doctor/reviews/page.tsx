@@ -31,7 +31,8 @@ function parseBrief(raw: string | null | undefined): ClinicalBrief | null {
   }
 }
 
-function ReviewRow({ p }: { p: PredictionWithPatient }) {
+async function ReviewRow({ p }: { p: PredictionWithPatient }) {
+  const [t, tr] = await Promise.all([getTranslations("doctor"), getTranslations("roles")]);
   const reviewed = p.status !== "pending_review";
   const intake = parseScreeningIntake(p.input_symptoms, p.input_text);
   return (
@@ -39,11 +40,11 @@ function ReviewRow({ p }: { p: PredictionWithPatient }) {
       <CardContent className="flex flex-wrap items-center justify-between gap-4 p-4">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <p className="font-medium">{p.patient?.full_name ?? "Patient"}</p>
+            <p className="font-medium">{p.patient?.full_name ?? tr("patient")}</p>
             <RiskBadge level={p.risk_level as RiskLevel} />
           </div>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            {p.recommended_specialty_label ?? "Screening"} · {formatDateTime(p.created_at)}
+            {p.recommended_specialty_label ?? t("screening")} · {formatDateTime(p.created_at)}
           </p>
           {intake.symptoms.length > 0 && (
             <p className="mt-1 truncate text-xs text-muted-foreground">
@@ -56,7 +57,7 @@ function ReviewRow({ p }: { p: PredictionWithPatient }) {
           predictionId={p.id}
           prediction={toAiPrediction(p)}
           intake={intake}
-          patientName={p.patient?.full_name ?? "Patient"}
+          patientName={p.patient?.full_name ?? tr("patient")}
           alreadyReviewed={reviewed}
           initialBrief={parseBrief(p.clinical_summary)}
         />
@@ -76,13 +77,13 @@ export default async function DoctorReviewsPage() {
 
       <Tabs defaultValue="pending">
         <TabsList>
-          <TabsTrigger value="pending">Pending ({pending.length})</TabsTrigger>
-          <TabsTrigger value="all">All ({all.length})</TabsTrigger>
+          <TabsTrigger value="pending">{t("tabPending", { count: pending.length })}</TabsTrigger>
+          <TabsTrigger value="all">{t("tabAll", { count: all.length })}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="pending" className="mt-4 space-y-3">
           {pending.length === 0 ? (
-            <EmptyState icon={Stethoscope} title="All caught up" description="No screenings are waiting for review." />
+            <EmptyState icon={Stethoscope} title={t("allCaughtUpTitle")} description={t("allCaughtUpDesc")} />
           ) : (
             pending.map((p) => <ReviewRow key={p.id} p={p} />)
           )}
@@ -90,7 +91,7 @@ export default async function DoctorReviewsPage() {
 
         <TabsContent value="all" className="mt-4 space-y-3">
           {all.length === 0 ? (
-            <EmptyState icon={Stethoscope} title="No screenings yet" description="Patient screenings will appear here." />
+            <EmptyState icon={Stethoscope} title={t("noScreeningsTitle")} description={t("noScreeningsDesc")} />
           ) : (
             all.map((p) => <ReviewRow key={p.id} p={p} />)
           )}

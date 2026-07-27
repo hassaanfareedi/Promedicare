@@ -19,7 +19,7 @@ export default async function PlatformAuditPage() {
     <div className="space-y-6">
       <PageHeader title={t("auditTitle")} description={t("auditDesc")} />
       {entries.length === 0 ? (
-        <EmptyState icon={ScrollText} title="No activity yet" description="Audited actions will appear here." />
+        <EmptyState icon={ScrollText} title={t("auditEmptyTitle")} description={t("auditEmptyDesc")} />
       ) : (
         <AuditTable entries={entries} />
       )}

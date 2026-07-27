@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Loader2, Stethoscope, CheckCircle2, XCircle, RefreshCw } from "lucide-react";
 import type { AiPrediction, ClinicalBrief } from "@/schemas/prediction";
@@ -42,15 +43,17 @@ function ClinicalBriefPanel({
   error: string | null;
   onRetry: () => void;
 }) {
+  const t = useTranslations("doctor");
+  const tc = useTranslations("common");
   return (
     <div className="rounded-lg border border-teal-200/80 bg-teal-50/50 p-3 dark:border-teal-900/50 dark:bg-teal-950/30">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-medium uppercase tracking-wide text-teal-800 dark:text-teal-300">
-          AI clinical brief
+          {t("aiClinicalBrief")}
         </p>
         {error && (
           <Button type="button" size="sm" variant="ghost" onClick={onRetry}>
-            <RefreshCw className="size-3.5" aria-hidden /> Retry
+            <RefreshCw className="size-3.5" aria-hidden /> {tc("retry")}
           </Button>
         )}
       </div>
@@ -67,16 +70,16 @@ function ClinicalBriefPanel({
       {brief && (
         <dl className="mt-2 space-y-2 text-sm">
           <div>
-            <dt className="font-medium">Chief symptoms</dt>
+            <dt className="font-medium">{t("chiefSymptoms")}</dt>
             <dd className="text-muted-foreground">{brief.chief_symptoms}</dd>
           </div>
           <div>
-            <dt className="font-medium">Risk rationale</dt>
+            <dt className="font-medium">{t("riskRationale")}</dt>
             <dd className="text-muted-foreground">{brief.risk_rationale}</dd>
           </div>
           {brief.red_flags.length > 0 && (
             <div>
-              <dt className="font-medium">Red flags</dt>
+              <dt className="font-medium">{t("redFlags")}</dt>
               <dd>
                 <ul className="list-inside list-disc text-muted-foreground">
                   {brief.red_flags.map((f, i) => (
@@ -87,7 +90,7 @@ function ClinicalBriefPanel({
             </div>
           )}
           <div>
-            <dt className="font-medium">Suggested focus</dt>
+            <dt className="font-medium">{t("suggestedFocus")}</dt>
             <dd className="text-muted-foreground">{brief.suggested_focus}</dd>
           </div>
         </dl>
@@ -105,6 +108,7 @@ export function ReviewDialog({
   initialBrief = null,
 }: Props) {
   const router = useRouter();
+  const t = useTranslations("doctor");
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [decision, setDecision] = useState<"reviewed" | "dismissed">("reviewed");
@@ -158,7 +162,7 @@ export function ReviewDialog({
         toast.error(res.error);
         return;
       }
-      toast.success("Review saved");
+      toast.success(t("reviewSaved"));
       setOpen(false);
       router.refresh();
     });
@@ -169,17 +173,17 @@ export function ReviewDialog({
       <DialogTrigger
         render={
           <Button size="sm" variant={alreadyReviewed ? "outline" : "default"}>
-            <Stethoscope className="size-4" /> {alreadyReviewed ? "View" : "Review"}
+            <Stethoscope className="size-4" /> {alreadyReviewed ? t("view") : t("review")}
           </Button>
         }
       />
       <DialogContent className="max-h-[88vh] overflow-y-auto overscroll-contain sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Screening — {patientName}</DialogTitle>
+          <DialogTitle>{t("screeningTitle", { name: patientName })}</DialogTitle>
           <DialogDescription>
             {alreadyReviewed
-              ? "View this AI screening result."
-              : "Review the AI screening and record your clinical decision."}
+              ? t("viewScreeningDesc")
+              : t("reviewScreeningDesc")}
           </DialogDescription>
         </DialogHeader>
 
@@ -194,7 +198,7 @@ export function ReviewDialog({
 
         {!alreadyReviewed && (
           <div className="space-y-3 border-t pt-4">
-            <Label>Decision</Label>
+            <Label>{t("decision")}</Label>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -207,7 +211,7 @@ export function ReviewDialog({
                     : "border-input hover:bg-accent",
                 )}
               >
-                <CheckCircle2 className="size-4" aria-hidden /> Acknowledge
+                <CheckCircle2 className="size-4" aria-hidden /> {t("acknowledge")}
               </button>
               <button
                 type="button"
@@ -220,11 +224,11 @@ export function ReviewDialog({
                     : "border-input hover:bg-accent",
                 )}
               >
-                <XCircle className="size-4" aria-hidden /> Dismiss
+                <XCircle className="size-4" aria-hidden /> {t("dismiss")}
               </button>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="review-notes">Notes (optional)</Label>
+              <Label htmlFor="review-notes">{t("notesOptional")}</Label>
               <Textarea
                 id="review-notes"
                 value={notes}
@@ -237,7 +241,7 @@ export function ReviewDialog({
             <div className="flex justify-end">
               <Button onClick={submit} disabled={pending}>
                 {pending ? <Loader2 className="animate-spin" /> : null}
-                Save review
+                {t("saveReview")}
               </Button>
             </div>
           </div>

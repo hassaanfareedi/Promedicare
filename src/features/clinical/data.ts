@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { logDbError } from "@/lib/supabase/log";
 import type { ConsultationNote, MedicationLine } from "@/types";
 import type { Json } from "@/types/database";
 
@@ -51,33 +52,42 @@ export async function getPatientMedicalFile(patientId: string): Promise<{
 }> {
   const supabase = await createClient();
 
-  const [{ data: patient }, { data: appointments }, { data: notes }, { data: attachments }] =
-    await Promise.all([
-      supabase
-        .from("patients")
-        .select("id, full_name, patient_code")
-        .eq("id", patientId)
-        .is("deleted_at", null)
-        .maybeSingle(),
-      supabase
-        .from("appointments")
-        .select("id, scheduled_start, status, doctor_id")
-        .eq("patient_id", patientId)
-        .is("deleted_at", null)
-        .order("scheduled_start", { ascending: false })
-        .limit(50),
-      supabase
-        .from("consultation_notes")
-        .select("*")
-        .eq("patient_id", patientId)
-        .is("deleted_at", null),
-      supabase
-        .from("medical_attachments")
-        .select("id, appointment_id, file_name, kind, mime_type, created_at")
-        .eq("patient_id", patientId)
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false }),
-    ]);
+  const [patientRes, appointmentsRes, notesRes, attachmentsRes] = await Promise.all([
+    supabase
+      .from("patients")
+      .select("id, full_name, patient_code")
+      .eq("id", patientId)
+      .is("deleted_at", null)
+      .maybeSingle(),
+    supabase
+      .from("appointments")
+      .select("id, scheduled_start, status, doctor_id")
+      .eq("patient_id", patientId)
+      .is("deleted_at", null)
+      .order("scheduled_start", { ascending: false })
+      .limit(50),
+    supabase
+      .from("consultation_notes")
+      .select("*")
+      .eq("patient_id", patientId)
+      .is("deleted_at", null),
+    supabase
+      .from("medical_attachments")
+      .select("id, appointment_id, file_name, kind, mime_type, created_at")
+      .eq("patient_id", patientId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false }),
+  ]);
+
+  logDbError("getPatientMedicalFile.patient", patientRes.error, { patientId });
+  logDbError("getPatientMedicalFile.appointments", appointmentsRes.error, { patientId });
+  logDbError("getPatientMedicalFile.notes", notesRes.error, { patientId });
+  logDbError("getPatientMedicalFile.attachments", attachmentsRes.error, { patientId });
+
+  const { data: patient } = patientRes;
+  const { data: appointments } = appointmentsRes;
+  const { data: notes } = notesRes;
+  const { data: attachments } = attachmentsRes;
 
   if (!patient) return { patient: null, visits: [] };
 

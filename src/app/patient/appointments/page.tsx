@@ -88,8 +88,8 @@ export default async function AppointmentsPage() {
           {past.length === 0 ? (
             <EmptyState
               icon={CalendarDays}
-              title="Nothing here yet"
-              description="Completed and cancelled visits will show up here."
+              title={t("pastEmptyTitle")}
+              description={t("pastEmptyDesc")}
             />
           ) : (
             past.map((a) => <AppointmentRow key={a.id} a={a} />)

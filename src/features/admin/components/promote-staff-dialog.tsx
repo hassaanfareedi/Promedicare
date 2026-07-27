@@ -2,11 +2,11 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Loader2, UserPlus } from "lucide-react";
 import { createReceptionistAccount, promoteToStaff } from "@/features/admin/actions";
 import type { Profile, UserRole } from "@/types";
-import { ROLE_LABEL } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +30,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 const ROLES: UserRole[] = ["doctor", "receptionist"];
 
 export function PromoteStaffDialog({ candidates }: { candidates: Profile[] }) {
+  const t = useTranslations("admin");
+  const tRoles = useTranslations("roles");
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -57,9 +59,9 @@ export function PromoteStaffDialog({ candidates }: { candidates: Profile[] }) {
     () =>
       filteredCandidates.map((p) => ({
         value: p.id,
-        label: `${p.full_name ?? "Unnamed"} · ${p.email ?? p.id}`,
+        label: `${p.full_name ?? t("unnamed")} · ${p.email ?? p.id}`,
       })),
-    [filteredCandidates],
+    [filteredCandidates, t],
   );
 
   function resetForm() {
@@ -80,7 +82,7 @@ export function PromoteStaffDialog({ candidates }: { candidates: Profile[] }) {
         toast.error(res.error);
         return;
       }
-      toast.success(`Promoted to ${ROLE_LABEL[role]}`);
+      toast.success(t("promotedTo", { role: tRoles(role) }));
       setOpen(false);
       resetForm();
       router.refresh();
@@ -99,7 +101,7 @@ export function PromoteStaffDialog({ candidates }: { candidates: Profile[] }) {
         toast.error(res.error);
         return;
       }
-      toast.success("Receptionist account created");
+      toast.success(t("receptionistAccountCreated"));
       setOpen(false);
       resetForm();
       router.refresh();
@@ -117,16 +119,14 @@ export function PromoteStaffDialog({ candidates }: { candidates: Profile[] }) {
       <DialogTrigger
         render={
           <Button size="sm">
-            <UserPlus className="size-4" aria-hidden /> Add staff
+            <UserPlus className="size-4" aria-hidden /> {t("addStaff")}
           </Button>
         }
       />
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Add staff</DialogTitle>
-          <DialogDescription>
-            Promote an existing patient, or create a new receptionist login for this hospital.
-          </DialogDescription>
+          <DialogTitle>{t("addStaff")}</DialogTitle>
+          <DialogDescription>{t("addStaffDesc")}</DialogDescription>
         </DialogHeader>
 
         <Tabs
@@ -135,20 +135,17 @@ export function PromoteStaffDialog({ candidates }: { candidates: Profile[] }) {
           className="gap-4"
         >
           <TabsList className="w-full">
-            <TabsTrigger value="promote">Promote existing</TabsTrigger>
-            <TabsTrigger value="new">New receptionist</TabsTrigger>
+            <TabsTrigger value="promote">{t("promoteExisting")}</TabsTrigger>
+            <TabsTrigger value="new">{t("newReceptionist")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="promote" className="grid gap-4">
             {candidates.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No patient accounts available to promote. Create a receptionist account instead, or
-                register a patient first.
-              </p>
+              <p className="text-sm text-muted-foreground">{t("noPatientsToPromote")}</p>
             ) : (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="promote-search">Search patients</Label>
+                  <Label htmlFor="promote-search">{t("searchPatients")}</Label>
                   <Input
                     id="promote-search"
                     value={candidateQuery}
@@ -157,22 +154,22 @@ export function PromoteStaffDialog({ candidates }: { candidates: Profile[] }) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="promote-user">User</Label>
+                  <Label htmlFor="promote-user">{t("user")}</Label>
                   {filteredCandidates.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No matches for that search.</p>
+                    <p className="text-sm text-muted-foreground">{t("noMatchesSearch")}</p>
                   ) : (
                     <Select
                       value={profileId || null}
                       onValueChange={(v) => setProfileId(v ?? "")}
-                      items={[{ value: null, label: "Select a user…" }, ...items]}
+                      items={[{ value: null, label: t("selectUser") }, ...items]}
                     >
-                      <SelectTrigger id="promote-user" aria-label="User">
+                      <SelectTrigger id="promote-user" aria-label={t("user")}>
                         <SelectValue placeholder="Select a user" />
                       </SelectTrigger>
                       <SelectContent>
                         {filteredCandidates.map((p) => (
                           <SelectItem key={p.id} value={p.id}>
-                            {p.full_name ?? "Unnamed"} · {p.email ?? p.id}
+                            {p.full_name ?? t("unnamed")} · {p.email ?? p.id}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -180,21 +177,21 @@ export function PromoteStaffDialog({ candidates }: { candidates: Profile[] }) {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="promote-role">Role</Label>
+                  <Label htmlFor="promote-role">{t("role")}</Label>
                   <Select
                     value={role}
                     onValueChange={(v) => {
                       if (v === "doctor" || v === "receptionist") setRole(v);
                     }}
-                    items={ROLES.map((r) => ({ value: r, label: ROLE_LABEL[r] }))}
+                    items={ROLES.map((r) => ({ value: r, label: tRoles(r) }))}
                   >
-                    <SelectTrigger id="promote-role" aria-label="Role">
+                    <SelectTrigger id="promote-role" aria-label={t("role")}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {ROLES.map((r) => (
                         <SelectItem key={r} value={r}>
-                          {ROLE_LABEL[r]}
+                          {tRoles(r)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -206,7 +203,7 @@ export function PromoteStaffDialog({ candidates }: { candidates: Profile[] }) {
                   onClick={submitPromote}
                 >
                   {pending && <Loader2 className="animate-spin" aria-hidden />}
-                  Confirm promotion
+                  {t("confirmPromotion")}
                 </Button>
               </>
             )}
@@ -214,7 +211,7 @@ export function PromoteStaffDialog({ candidates }: { candidates: Profile[] }) {
 
           <TabsContent value="new" className="grid gap-4">
             <div className="space-y-2">
-              <Label htmlFor="new-rec-name">Full name</Label>
+              <Label htmlFor="new-rec-name">{t("fullName")}</Label>
               <Input
                 id="new-rec-name"
                 value={fullName}
@@ -224,7 +221,7 @@ export function PromoteStaffDialog({ candidates }: { candidates: Profile[] }) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new-rec-email">Email</Label>
+              <Label htmlFor="new-rec-email">{t("email")}</Label>
               <Input
                 id="new-rec-email"
                 type="email"
@@ -236,7 +233,7 @@ export function PromoteStaffDialog({ candidates }: { candidates: Profile[] }) {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="new-rec-password">Temporary password</Label>
+                <Label htmlFor="new-rec-password">{t("temporaryPassword")}</Label>
                 <Input
                   id="new-rec-password"
                   type="password"
@@ -246,7 +243,7 @@ export function PromoteStaffDialog({ candidates }: { candidates: Profile[] }) {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="new-rec-confirm">Confirm password</Label>
+                <Label htmlFor="new-rec-confirm">{t("confirmPassword")}</Label>
                 <Input
                   id="new-rec-confirm"
                   type="password"
@@ -256,10 +253,7 @@ export function PromoteStaffDialog({ candidates }: { candidates: Profile[] }) {
                 />
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">
-              At least 8 characters, with uppercase, lowercase, and a number. Share the email and
-              temporary password with the receptionist — they can change it via Forgot password.
-            </p>
+            <p className="text-xs text-muted-foreground">{t("receptionistPasswordHint")}</p>
             <Button
               className="w-full"
               disabled={
@@ -268,7 +262,7 @@ export function PromoteStaffDialog({ candidates }: { candidates: Profile[] }) {
               onClick={submitNew}
             >
               {pending && <Loader2 className="animate-spin" aria-hidden />}
-              Create receptionist
+              {t("createReceptionist")}
             </Button>
           </TabsContent>
         </Tabs>

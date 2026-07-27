@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Download } from "lucide-react";
 import type { AuditEntry } from "@/features/platform/data";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,6 +17,7 @@ import { formatDateTime } from "@/lib/format";
 import { downloadCsv } from "@/lib/csv";
 
 export function AuditTable({ entries }: { entries: AuditEntry[] }) {
+  const t = useTranslations("platform");
   function exportCsv() {
     downloadCsv(
       `promedicare-audit-${new Date().toISOString().slice(0, 10)}`,
@@ -33,7 +35,7 @@ export function AuditTable({ entries }: { entries: AuditEntry[] }) {
     <div className="space-y-4">
       <div className="flex justify-end">
         <Button variant="outline" size="sm" onClick={exportCsv} disabled={entries.length === 0}>
-          <Download className="size-4" /> Export CSV
+          <Download className="size-4" /> {t("exportCsv")}
         </Button>
       </div>
       <Card>
@@ -41,10 +43,10 @@ export function AuditTable({ entries }: { entries: AuditEntry[] }) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Time</TableHead>
-                <TableHead>Action</TableHead>
-                <TableHead className="hidden sm:table-cell">Entity</TableHead>
-                <TableHead className="hidden md:table-cell">Actor</TableHead>
+                <TableHead>{t("colTime")}</TableHead>
+                <TableHead>{t("colAction")}</TableHead>
+                <TableHead className="hidden sm:table-cell">{t("colEntity")}</TableHead>
+                <TableHead className="hidden md:table-cell">{t("colActor")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -56,7 +58,7 @@ export function AuditTable({ entries }: { entries: AuditEntry[] }) {
                   <TableCell className="font-mono text-sm">{e.action}</TableCell>
                   <TableCell className="hidden text-sm sm:table-cell">{e.entity_type ?? "—"}</TableCell>
                   <TableCell className="hidden text-sm md:table-cell">
-                    {e.actor?.full_name ?? e.actor?.email ?? "system"}
+                    {e.actor?.full_name ?? e.actor?.email ?? t("systemActor")}
                   </TableCell>
                 </TableRow>
               ))}

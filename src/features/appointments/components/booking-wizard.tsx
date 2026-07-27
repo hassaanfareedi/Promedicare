@@ -99,7 +99,7 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
       setSlots(groups);
     } catch {
       if (reqId === slotRequestId.current) {
-        toast.error("Couldn't load available times. Please try again.");
+        toast.error(tAppt("loadTimesError"));
       }
     } finally {
       if (reqId === slotRequestId.current) setLoadingSlots(false);
@@ -187,7 +187,7 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
                     <span className="font-medium">{h.name}</span>
                     {hasRecommended && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-2 py-0.5 text-[11px] font-medium text-white">
-                        <Star className="size-3" /> Has recommended specialty
+                        <Star className="size-3" /> {tAppt("hasRecommendedSpecialty")}
                       </span>
                     )}
                   </span>
@@ -197,7 +197,7 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
             );
           })}
           {sortedHospitals.length === 0 && (
-            <p className="text-sm text-muted-foreground">No hospitals are available right now.</p>
+            <p className="text-sm text-muted-foreground">{tAppt("noHospitals")}</p>
           )}
         </div>
       )}
@@ -209,8 +209,9 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
           </Button>
           {recommendedSpecialtyId && !hasRecommendedAtHospital && hospitalDoctors.length > 0 && (
             <p className="rounded-lg border border-dashed px-3 py-2 text-sm text-muted-foreground">
-              No {recommendedSpecialtyName ?? "recommended"} doctor at this hospital — pick another
-              hospital or choose a different specialty.
+              {tAppt("noRecommendedDoctor", {
+                specialty: recommendedSpecialtyName ?? tAppt("recommendedFallback"),
+              })}
             </p>
           )}
           <div className="grid gap-3">
@@ -230,14 +231,16 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
                     <div>
                       <p className="font-medium">{formatDoctorName(d.full_name)}</p>
                       <p className="text-sm text-muted-foreground">
-                        {d.specialty_name ?? "General"}
-                        {d.years_experience ? ` · ${d.years_experience} yrs exp` : ""}
+                        {d.specialty_name ?? tAppt("generalSpecialty")}
+                        {d.years_experience
+                          ? ` · ${tAppt("yearsExperience", { years: d.years_experience })}`
+                          : ""}
                       </p>
                     </div>
                   </div>
                   {recommended && (
                     <span className="inline-flex items-center gap-1 rounded-full bg-teal-600 px-2 py-0.5 text-xs font-medium text-white">
-                      <Star className="size-3" /> Recommended
+                      <Star className="size-3" /> {tAppt("recommended")}
                     </span>
                   )}
                 </button>
@@ -257,7 +260,7 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
           </Button>
           {loadingSlots ? (
             <div className="flex items-center justify-center py-10 text-muted-foreground">
-              <Loader2 className="mr-2 size-5 animate-spin" /> Loading available times…
+              <Loader2 className="mr-2 size-5 animate-spin" /> {tAppt("loadingTimes")}
             </div>
           ) : slots.length === 0 ? (
             <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
@@ -308,12 +311,13 @@ export function BookingWizard({ hospitals, doctors, recommendedSpecialtyId, pred
               }}
               className="-ml-2"
             >
-              <ArrowLeft className="size-4" /> Change time
+              <ArrowLeft className="size-4" /> {tAppt("changeTime")}
             </Button>
             {slotTaken && (
               <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
-                That time was just taken. Tap <span className="font-medium">Change time</span> to
-                pick from the updated slots.
+                {tAppt.rich("slotTakenNotice", {
+                  action: (chunks) => <span className="font-medium">{chunks}</span>,
+                })}
               </p>
             )}
             <div className="grid gap-3 rounded-lg bg-muted/50 p-4 text-sm">

@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { useMemo, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Loader2, UserCog, UserMinus, Stethoscope, AlertCircle } from "lucide-react";
 import { assignRole, demoteToPatient } from "@/features/admin/actions";
 import type { AdminStaffMember } from "@/features/admin/data";
 import type { UserRole } from "@/types";
-import { ROLE_LABEL } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -45,6 +45,7 @@ function initials(name: string | null, email: string | null): string {
 }
 
 function RoleBadge({ role }: { role: UserRole }) {
+  const tRoles = useTranslations("roles");
   return (
     <span
       className={cn(
@@ -59,19 +60,22 @@ function RoleBadge({ role }: { role: UserRole }) {
         role === "patient" && "border-border bg-muted text-muted-foreground",
       )}
     >
-      {ROLE_LABEL[role]}
+      {tRoles(role)}
     </span>
   );
 }
 
 function StaffCard({ member }: { member: AdminStaffMember }) {
+  const t = useTranslations("admin");
+  const tc = useTranslations("common");
+  const tRoles = useTranslations("roles");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [role, setRole] = useState<string>(member.role);
   const [demoteOpen, setDemoteOpen] = useState(false);
   const [demoting, setDemoting] = useState(false);
   const locked = member.role === "hospital_admin" || member.role === "super_admin";
-  const name = member.full_name?.trim() || "Unnamed";
+  const name = member.full_name?.trim() || t("unnamed");
   const email = member.email?.trim() || null;
 
   function save() {
@@ -84,7 +88,7 @@ function StaffCard({ member }: { member: AdminStaffMember }) {
         toast.error(res.error);
         return;
       }
-      toast.success("Role updated");
+      toast.success(t("roleUpdated"));
       router.refresh();
     });
   }
@@ -97,7 +101,7 @@ function StaffCard({ member }: { member: AdminStaffMember }) {
       setDemoting(false);
       return;
     }
-    toast.success("Demoted to patient");
+    toast.success(t("demotedToPatient"));
     setDemoteOpen(false);
     setDemoting(false);
     router.refresh();
@@ -124,17 +128,17 @@ function StaffCard({ member }: { member: AdminStaffMember }) {
                 {member.hasDoctorProfile ? (
                   <>
                     <Stethoscope className="size-3.5 text-teal-600" aria-hidden />
-                    Clinical profile linked
+                    {t("clinicalProfileLinked")}
                   </>
                 ) : (
                   <>
                     <AlertCircle className="size-3.5 text-amber-600" aria-hidden />
-                    Needs Doctors setup —{" "}
+                    {t("needsDoctorsSetup")}{" "}
                     <Link
                       href="/admin/doctors"
                       className="font-medium text-teal-700 underline-offset-2 hover:underline dark:text-teal-300"
                     >
-                      Open Doctors
+                      {t("openDoctors")}
                     </Link>
                   </>
                 )}
@@ -149,15 +153,15 @@ function StaffCard({ member }: { member: AdminStaffMember }) {
               <Select
                 value={role}
                 onValueChange={(v) => setRole(v ?? "")}
-                items={ASSIGNABLE.map((r) => ({ value: r, label: ROLE_LABEL[r] }))}
+                items={ASSIGNABLE.map((r) => ({ value: r, label: tRoles(r) }))}
               >
-                <SelectTrigger className="w-36" aria-label={`Role for ${name}`}>
+                <SelectTrigger className="w-36" aria-label={t("roleFor", { name })}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {ASSIGNABLE.map((r) => (
                     <SelectItem key={r} value={r}>
-                      {ROLE_LABEL[r]}
+                      {tRoles(r)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -168,16 +172,16 @@ function StaffCard({ member }: { member: AdminStaffMember }) {
                 onClick={save}
                 disabled={pending || role === member.role}
               >
-                {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : "Save"}
+                {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : tc("save")}
               </Button>
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => setDemoteOpen(true)}
-                aria-label={`Demote ${name}`}
+                aria-label={t("demoteName", { name })}
               >
                 <UserMinus className="size-4" aria-hidden />
-                Demote
+                {t("demote")}
               </Button>
             </>
           )}
@@ -187,11 +191,8 @@ function StaffCard({ member }: { member: AdminStaffMember }) {
       <Dialog open={demoteOpen} onOpenChange={setDemoteOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Demote to patient?</DialogTitle>
-            <DialogDescription>
-              {name} will become a patient again and can be re-promoted later. If they have a
-              clinical doctor profile, it will be removed (open appointments must be cleared first).
-            </DialogDescription>
+            <DialogTitle>{t("demoteToPatientTitle")}</DialogTitle>
+            <DialogDescription>{t("demoteToPatientDesc", { name })}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button
@@ -200,11 +201,11 @@ function StaffCard({ member }: { member: AdminStaffMember }) {
               disabled={demoting}
               onClick={() => setDemoteOpen(false)}
             >
-              Cancel
+              {tc("cancel")}
             </Button>
             <Button type="button" disabled={demoting} onClick={() => void confirmDemote()}>
               {demoting && <Loader2 className="size-4 animate-spin" aria-hidden />}
-              Demote to patient
+              {t("demoteToPatientConfirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -220,6 +221,9 @@ export function StaffManager({
   staff: AdminStaffMember[];
   promoteAction: ReactNode;
 }) {
+  const t = useTranslations("admin");
+  const tc = useTranslations("common");
+  const tRoles = useTranslations("roles");
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
 
@@ -247,8 +251,7 @@ export function StaffManager({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          {staff.length} total · {doctors} doctors · {receptionists} receptionists · {admins}{" "}
-          admins
+          {t("staffSummary", { total: staff.length, doctors, receptionists, admins })}
         </p>
         {promoteAction}
       </div>
@@ -256,7 +259,7 @@ export function StaffManager({
       {staff.length > 0 && (
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-[12rem] flex-1 space-y-1.5">
-            <Label htmlFor="staff-search">Search</Label>
+            <Label htmlFor="staff-search">{tc("search")}</Label>
             <Input
               id="staff-search"
               value={query}
@@ -265,25 +268,25 @@ export function StaffManager({
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Role</Label>
+            <Label>{t("role")}</Label>
             <Select
               value={roleFilter}
               onValueChange={(v) => setRoleFilter((v as RoleFilter) ?? "all")}
               items={[
-                { value: "all", label: "All roles" },
-                { value: "doctor", label: "Doctor" },
-                { value: "receptionist", label: "Receptionist" },
-                { value: "hospital_admin", label: "Admin" },
+                { value: "all", label: t("allRoles") },
+                { value: "doctor", label: tRoles("doctor") },
+                { value: "receptionist", label: tRoles("receptionist") },
+                { value: "hospital_admin", label: t("admin") },
               ]}
             >
-              <SelectTrigger className="w-40" aria-label="Role filter">
+              <SelectTrigger className="w-40" aria-label={t("roleFilter")}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All roles</SelectItem>
-                <SelectItem value="doctor">Doctor</SelectItem>
-                <SelectItem value="receptionist">Receptionist</SelectItem>
-                <SelectItem value="hospital_admin">Admin</SelectItem>
+                <SelectItem value="all">{t("allRoles")}</SelectItem>
+                <SelectItem value="doctor">{tRoles("doctor")}</SelectItem>
+                <SelectItem value="receptionist">{tRoles("receptionist")}</SelectItem>
+                <SelectItem value="hospital_admin">{t("admin")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -293,14 +296,14 @@ export function StaffManager({
       {staff.length === 0 ? (
         <EmptyState
           icon={UserCog}
-          title="No staff yet"
-          description="Promote a patient or create a receptionist account to get started."
+          title={t("noStaffYet")}
+          description={t("noStaffYetDesc")}
         />
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={UserCog}
-          title="No matches"
-          description="Try a different search or role filter."
+          title={t("noMatches")}
+          description={t("noMatchesRoleDesc")}
         />
       ) : (
         <div className="space-y-3">
@@ -312,9 +315,9 @@ export function StaffManager({
 
       {staff.some((s) => s.role === "doctor" && !s.hasDoctorProfile) && (
         <p className="text-center text-sm text-muted-foreground">
-          Some doctors still need a clinical profile.{" "}
+          {t("someDoctorsNeedProfile")}{" "}
           <Link href="/admin/doctors" className={buttonVariants({ variant: "link", size: "sm" })}>
-            Manage on Doctors
+            {t("manageOnDoctors")}
           </Link>
         </p>
       )}

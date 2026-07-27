@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/session";
 import { logAudit } from "@/lib/audit";
@@ -27,9 +28,11 @@ export async function reviewPrediction(
   input: PredictionReviewInput,
 ): Promise<MutationResult> {
   const user = await requireRole(["doctor", "hospital_admin", "super_admin"]);
+  const t = await getTranslations("doctor");
+  const tn = await getTranslations("notifications");
   const parsed = predictionReviewSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid review" };
+    return { ok: false, error: parsed.error.issues[0]?.message ?? t("errInvalidReview") };
   }
   const v = parsed.data;
   const supabase = await createClient();
@@ -43,7 +46,7 @@ export async function reviewPrediction(
     .is("deleted_at", null)
     .maybeSingle();
   if (fetchErr) return { ok: false, error: fetchErr.message };
-  if (!existing) return { ok: false, error: "Screening not found or not accessible." };
+  if (!existing) return { ok: false, error: t("errScreeningNotFound") };
 
   const { data: updated, error } = await supabase
     .from("predictions")
@@ -58,14 +61,14 @@ export async function reviewPrediction(
     .maybeSingle();
 
   if (error) return { ok: false, error: error.message };
-  if (!updated) return { ok: false, error: "Screening not found or not accessible." };
+  if (!updated) return { ok: false, error: t("errScreeningNotFound") };
 
   if (updated.created_by) {
     await notify({
       recipientId: updated.created_by,
       type: "prediction_reviewed",
-      title: "Your screening was reviewed",
-      body: "A clinician has reviewed your recent AI symptom screening.",
+      title: tn("screeningReviewedTitle"),
+      body: tn("screeningReviewedBody"),
       data: { predictionId: updated.id },
     });
   }
@@ -101,6 +104,7 @@ export async function ensureClinicalSummary(
   predictionId: string,
 ): Promise<MutationResult<{ brief: ClinicalBrief; cached: boolean }>> {
   await requireRole(["doctor", "hospital_admin", "super_admin"]);
+  const t = await getTranslations("doctor");
   const supabase = await createClient();
 
   const { data: row, error } = await supabase
@@ -111,7 +115,7 @@ export async function ensureClinicalSummary(
     .maybeSingle();
 
   if (error) return { ok: false, error: error.message };
-  if (!row) return { ok: false, error: "Screening not found or not accessible." };
+  if (!row) return { ok: false, error: t("errScreeningNotFound") };
 
   const cached = parseStoredBrief(row.clinical_summary);
   if (cached) {
@@ -151,28 +155,30 @@ export async function updateAppointmentStatus(
   input: UpdateAppointmentStatusInput,
 ): Promise<MutationResult> {
   const user = await requireRole(["doctor", "receptionist", "hospital_admin", "super_admin"]);
+  const t = await getTranslations("doctor");
+  const tn = await getTranslations("notifications");
   const parsed = updateAppointmentStatusSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid status" };
+    return { ok: false, error: parsed.error.issues[0]?.message ?? t("errInvalidStatus") };
   }
   const v = parsed.data;
 
   if (v.status === "completed") {
     return {
       ok: false,
-      error: "Complete the consultation form to mark this visit completed.",
+      error: t("errCompleteViaForm"),
     };
   }
 
   if (v.status === "checked_in") {
     return {
       ok: false,
-      error: "Use check-in with fee collection from reception.",
+      error: t("errCheckInViaReception"),
     };
   }
 
   if (v.status === "in_progress" && user.profile.role !== "doctor") {
-    return { ok: false, error: "Only the attending doctor can start a consultation." };
+    return { ok: false, error: t("errOnlyDoctorStart") };
   }
 
   const supabase = await createClient();
@@ -187,12 +193,12 @@ export async function updateAppointmentStatus(
     .maybeSingle();
 
   if (apptErr) return { ok: false, error: apptErr.message };
-  if (!appt) return { ok: false, error: "Appointment not found or not accessible." };
+  if (!appt) return { ok: false, error: t("errApptNotFound") };
 
   if (user.profile.role === "doctor") {
     const doctor = await getMyDoctor();
     if (!doctor || appt.doctor_id !== doctor.id) {
-      return { ok: false, error: "You can only change appointments assigned to you." };
+      return { ok: false, error: t("errApptNotYours") };
     }
   }
 
@@ -206,7 +212,7 @@ export async function updateAppointmentStatus(
     .maybeSingle();
 
   if (error) return { ok: false, error: error.message };
-  if (!updated) return { ok: false, error: "Appointment not found or not accessible." };
+  if (!updated) return { ok: false, error: t("errApptNotFound") };
 
   if (v.status === "confirmed") {
     const { data: patient } = await supabase
@@ -218,8 +224,8 @@ export async function updateAppointmentStatus(
       await notify({
         recipientId: patient.profile_id,
         type: "appointment_confirmed",
-        title: "Appointment confirmed",
-        body: "Your appointment request has been confirmed.",
+        title: tn("appointmentConfirmed"),
+        body: tn("appointmentConfirmedBody"),
         data: { appointmentId: updated.id },
       });
     }
@@ -249,13 +255,14 @@ export async function completeConsultation(
   input: CompleteConsultationInput,
 ): Promise<MutationResult<{ noteId: string }>> {
   await requireRole(["doctor"]);
+  const t = await getTranslations("doctor");
   const parsed = completeConsultationSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid consultation" };
+    return { ok: false, error: parsed.error.issues[0]?.message ?? t("errInvalidConsultation") };
   }
   const v = parsed.data;
   const doctor = await getMyDoctor();
-  if (!doctor) return { ok: false, error: "Doctor profile not found." };
+  if (!doctor) return { ok: false, error: t("errDoctorProfileNotFound") };
 
   const supabase = await createClient();
   const { data: appt, error: apptErr } = await supabase
@@ -266,12 +273,12 @@ export async function completeConsultation(
     .maybeSingle();
 
   if (apptErr) return { ok: false, error: apptErr.message };
-  if (!appt) return { ok: false, error: "Appointment not found or not accessible." };
+  if (!appt) return { ok: false, error: t("errApptNotFound") };
   if (appt.doctor_id !== doctor.id) {
-    return { ok: false, error: "You can only complete consultations assigned to you." };
+    return { ok: false, error: t("errConsultNotYours") };
   }
   if (appt.status !== "in_progress") {
-    return { ok: false, error: "Start the consultation before completing it." };
+    return { ok: false, error: t("errStartBeforeComplete") };
   }
 
   const medsJson = (v.medications ?? []) as unknown as Json;
@@ -306,7 +313,7 @@ export async function completeConsultation(
 
   const note = noteRes.data;
   if (noteRes.error || !note) {
-    return { ok: false, error: noteRes.error?.message ?? "Could not save consultation notes." };
+    return { ok: false, error: noteRes.error?.message ?? t("errSaveNotesFailed") };
   }
 
   const { error: statusErr } = await supabase

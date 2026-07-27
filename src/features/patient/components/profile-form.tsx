@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
@@ -17,6 +18,7 @@ import { Form } from "@/components/ui/form";
 
 export function ProfileForm({ patient }: { patient: Patient }) {
   const router = useRouter();
+  const t = useTranslations("patient");
   const form = useForm<PatientOnboardingInput>({
     resolver: zodResolver(patientOnboardingSchema),
     defaultValues: {
@@ -37,7 +39,7 @@ export function ProfileForm({ patient }: { patient: Patient }) {
       toast.error(res.error);
       return;
     }
-    toast.success("Profile updated");
+    toast.success(t("profileUpdated"));
     router.refresh();
   }
 
@@ -47,7 +49,7 @@ export function ProfileForm({ patient }: { patient: Patient }) {
         <PatientDemographicsFields form={form} />
         <Button type="submit" disabled={form.formState.isSubmitting} className="justify-self-start">
           {form.formState.isSubmitting && <Loader2 className="animate-spin" aria-hidden />}
-          Save changes
+          {t("saveChanges")}
         </Button>
       </form>
     </Form>

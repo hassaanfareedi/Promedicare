@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/session";
 import { logAudit } from "@/lib/audit";
@@ -15,20 +16,21 @@ export async function registerWalkIn(
   input: WalkInPatientInput,
 ): Promise<MutationResult<{ patientId: string; patientCode: string; appointmentId: string }>> {
   const user = await requireRole(["receptionist", "hospital_admin", "super_admin"]);
+  const t = await getTranslations("reception");
   const parsed = walkInPatientSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid details" };
+    return { ok: false, error: parsed.error.issues[0]?.message ?? t("invalidDetails") };
   }
   const v = parsed.data;
   const hospitalId = user.profile.hospital_id;
   if (!hospitalId) {
-    return { ok: false, error: "Your account is not linked to a hospital." };
+    return { ok: false, error: t("notLinkedToHospital") };
   }
   const supabase = await createClient();
 
   const start = new Date(v.scheduledStart);
   if (Number.isNaN(start.getTime())) {
-    return { ok: false, error: "Enter a valid visit time." };
+    return { ok: false, error: t("invalidVisitTime") };
   }
 
   const { data: doctor, error: doctorErr } = await supabase
@@ -40,7 +42,7 @@ export async function registerWalkIn(
 
   if (doctorErr) return { ok: false, error: doctorErr.message };
   if (!doctor || !doctor.is_active || doctor.hospital_id !== hospitalId) {
-    return { ok: false, error: "Selected doctor is not available at this hospital." };
+    return { ok: false, error: t("doctorNotAvailable") };
   }
 
   const { data: availability } = await supabase
@@ -70,7 +72,7 @@ export async function registerWalkIn(
     .single();
 
   if (patientErr || !patient) {
-    return { ok: false, error: patientErr?.message ?? "Could not register patient." };
+    return { ok: false, error: patientErr?.message ?? t("couldNotRegisterPatient") };
   }
 
   const { data: appointment, error: apptErr } = await supabase
@@ -96,8 +98,8 @@ export async function registerWalkIn(
       ok: false,
       error:
         apptErr?.code === "23P01"
-          ? "That time overlaps another visit for this doctor. Choose a different time."
-          : (apptErr?.message ?? "Patient registered but the visit could not be booked."),
+          ? t("slotOverlap")
+          : (apptErr?.message ?? t("walkInBookFailed")),
     };
   }
 
@@ -127,14 +129,15 @@ export async function registerWalkIn(
 /** Reception check-in: record fee then set appointment to checked_in. */
 export async function checkInWithFee(input: CheckInWithFeeInput): Promise<MutationResult> {
   const user = await requireRole(["receptionist", "hospital_admin"]);
+  const t = await getTranslations("reception");
   const parsed = checkInWithFeeSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid fee details" };
+    return { ok: false, error: parsed.error.issues[0]?.message ?? t("invalidFeeDetails") };
   }
   const v = parsed.data;
   const hospitalId = user.profile.hospital_id;
   if (!hospitalId) {
-    return { ok: false, error: "Your account is not linked to a hospital." };
+    return { ok: false, error: t("notLinkedToHospital") };
   }
 
   const supabase = await createClient();
@@ -146,12 +149,12 @@ export async function checkInWithFee(input: CheckInWithFeeInput): Promise<Mutati
     .maybeSingle();
 
   if (apptErr) return { ok: false, error: apptErr.message };
-  if (!appt) return { ok: false, error: "Appointment not found or not accessible." };
+  if (!appt) return { ok: false, error: t("appointmentNotFound") };
   if (appt.hospital_id !== hospitalId) {
-    return { ok: false, error: "Appointment is not in your hospital." };
+    return { ok: false, error: t("appointmentNotInHospital") };
   }
   if (appt.status !== "confirmed") {
-    return { ok: false, error: "Confirm the appointment before check-in." };
+    return { ok: false, error: t("confirmBeforeCheckIn") };
   }
 
   const { data: existingPay } = await supabase
@@ -220,20 +223,24 @@ export async function bookReceptionAppointment(
   input: ReceptionBookingInput,
 ): Promise<MutationResult<{ appointmentId: string }>> {
   const user = await requireRole(["receptionist", "hospital_admin", "super_admin"]);
+  const [t, tErr] = await Promise.all([
+    getTranslations("reception"),
+    getTranslations("errors"),
+  ]);
   const parsed = receptionBookingSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid booking details" };
+    return { ok: false, error: parsed.error.issues[0]?.message ?? tErr("invalidBooking") };
   }
   const v = parsed.data;
   const hospitalId = user.profile.hospital_id;
   if (!hospitalId) {
-    return { ok: false, error: "Your account is not linked to a hospital." };
+    return { ok: false, error: t("notLinkedToHospital") };
   }
   const supabase = await createClient();
 
   const start = new Date(v.scheduledStart);
   if (Number.isNaN(start.getTime())) {
-    return { ok: false, error: "Choose a valid time slot." };
+    return { ok: false, error: t("invalidTimeSlot") };
   }
 
   const { data: doctor, error: doctorErr } = await supabase
@@ -245,7 +252,7 @@ export async function bookReceptionAppointment(
 
   if (doctorErr) return { ok: false, error: doctorErr.message };
   if (!doctor || !doctor.is_active || doctor.hospital_id !== hospitalId) {
-    return { ok: false, error: "Selected doctor is not available at this hospital." };
+    return { ok: false, error: t("doctorNotAvailable") };
   }
 
   const { data: availability } = await supabase
@@ -272,7 +279,7 @@ export async function bookReceptionAppointment(
       .maybeSingle();
     if (patientErr) return { ok: false, error: patientErr.message };
     if (!patient || patient.hospital_id !== hospitalId) {
-      return { ok: false, error: "Selected patient is not in your hospital." };
+      return { ok: false, error: t("patientNotInHospital") };
     }
     patientId = patient.id;
   } else {
@@ -290,7 +297,7 @@ export async function bookReceptionAppointment(
       .select("id")
       .single();
     if (patientErr || !patient) {
-      return { ok: false, error: patientErr?.message ?? "Could not register patient." };
+      return { ok: false, error: patientErr?.message ?? t("couldNotRegisterPatient") };
     }
     patientId = patient.id;
     createdPatientId = patient.id;
@@ -325,8 +332,8 @@ export async function bookReceptionAppointment(
       ok: false,
       error:
         apptErr?.code === "23P01"
-          ? "That time overlaps another visit for this doctor. Choose a different time."
-          : (apptErr?.message ?? "Could not book this appointment."),
+          ? t("slotOverlap")
+          : (apptErr?.message ?? tErr("bookingFailed")),
     };
   }
 

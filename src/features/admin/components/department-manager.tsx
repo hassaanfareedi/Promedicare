@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Loader2, Plus, Building2 } from "lucide-react";
 import { createDepartment, setDepartmentActive } from "@/features/admin/actions";
@@ -15,6 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { EmptyState } from "@/components/shared/empty-state";
 
 export function DepartmentManager({ departments }: { departments: Department[] }) {
+  const t = useTranslations("admin");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [togglingId, setTogglingId] = useState<string | null>(null);
@@ -28,7 +30,7 @@ export function DepartmentManager({ departments }: { departments: Department[] }
         toast.error(res.error);
         return;
       }
-      toast.success("Department created");
+      toast.success(t("departmentCreated"));
       setName("");
       setDescription("");
       router.refresh();
@@ -48,25 +50,25 @@ export function DepartmentManager({ departments }: { departments: Department[] }
     <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
       <Card>
         <CardContent className="space-y-4 p-5">
-          <h2 className="font-medium">Add department</h2>
+          <h2 className="font-medium">{t("addDepartment")}</h2>
           <div className="space-y-2">
-            <Label htmlFor="dept-name">Name</Label>
+            <Label htmlFor="dept-name">{t("name")}</Label>
             <Input id="dept-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Cardiology" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="dept-desc">Description (optional)</Label>
+            <Label htmlFor="dept-desc">{t("descriptionOptional")}</Label>
             <Textarea id="dept-desc" value={description} onChange={(e) => setDescription(e.target.value)} rows={2} />
           </div>
           <Button onClick={add} disabled={pending || name.trim().length < 2}>
             {pending ? <Loader2 className="animate-spin" /> : <Plus className="size-4" />}
-            Add department
+            {t("addDepartment")}
           </Button>
         </CardContent>
       </Card>
 
       <div className="space-y-3">
         {departments.length === 0 ? (
-          <EmptyState icon={Building2} title="No departments" description="Add your first department." />
+          <EmptyState icon={Building2} title={t("noDepartments")} description={t("noDepartmentsDesc")} />
         ) : (
           departments.map((d) => (
             <Card key={d.id}>
@@ -76,7 +78,7 @@ export function DepartmentManager({ departments }: { departments: Department[] }
                   {d.description && <p className="truncate text-sm text-muted-foreground">{d.description}</p>}
                 </div>
                 <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                  {d.is_active ? "Active" : "Inactive"}
+                  {d.is_active ? t("active") : t("inactive")}
                   <Switch
                     checked={d.is_active}
                     onCheckedChange={(c) => toggle(d.id, c)}

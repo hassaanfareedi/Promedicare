@@ -2,6 +2,7 @@
 
 import { useId, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2, Printer } from "lucide-react";
 import { completeConsultation } from "@/features/doctor/actions";
@@ -22,11 +23,11 @@ import {
 } from "@/components/ui/dialog";
 import { PrescriptionPrintView } from "@/features/clinical/components/prescription-print";
 
-const STEPS = [
-  { id: "notes", label: "Visit notes" },
-  { id: "meds", label: "Medicines" },
-  { id: "done", label: "Done" },
-];
+const STEP_IDS = [
+  { id: "notes", labelKey: "stepNotes" },
+  { id: "meds", labelKey: "stepMeds" },
+  { id: "done", labelKey: "stepDone" },
+] as const;
 
 type Props = {
   open: boolean;
@@ -59,6 +60,9 @@ export function ConsultWizard({
   doctorName,
 }: Props) {
   const router = useRouter();
+  const t = useTranslations("doctor");
+  const tc = useTranslations("common");
+  const steps = STEP_IDS.map((s) => ({ id: s.id, label: t(s.labelKey) }));
   const [pending, startTransition] = useTransition();
   const [step, setStep] = useState(0);
   const [subjective, setSubjective] = useState("");
@@ -85,16 +89,16 @@ export function ConsultWizard({
 
   function validateStep(): string | null {
     if (step === 0) {
-      if (!subjective.trim()) return "Add the patient's symptoms.";
-      if (!objective.trim()) return "Add exam findings.";
-      if (!assessment.trim()) return "Add your assessment.";
-      if (!diagnosis.trim()) return "Add a diagnosis.";
-      if (!plan.trim()) return "Add the treatment plan.";
+      if (!subjective.trim()) return t("validateSymptoms");
+      if (!objective.trim()) return t("validateExam");
+      if (!assessment.trim()) return t("validateAssessment");
+      if (!diagnosis.trim()) return t("validateDiagnosis");
+      if (!plan.trim()) return t("validatePlan");
     }
     if (step === 1) {
-      if (!prescription.trim()) return "Add prescription instructions.";
+      if (!prescription.trim()) return t("validatePrescription");
       if (medications.filter((m) => m.name.trim()).length === 0) {
-        return "Add at least one medication.";
+        return t("validateMedication");
       }
     }
     return null;
@@ -110,7 +114,7 @@ export function ConsultWizard({
       finish();
       return;
     }
-    setStep((s) => Math.min(s + 1, STEPS.length - 1));
+    setStep((s) => Math.min(s + 1, STEP_IDS.length - 1));
   }
 
   function finish() {
@@ -131,7 +135,7 @@ export function ConsultWizard({
       }
       setCompleted(true);
       setStep(2);
-      toast.success("Consultation completed");
+      toast.success(t("consultCompleted"));
       router.refresh();
     });
   }
@@ -152,7 +156,7 @@ export function ConsultWizard({
           return;
         }
       }
-      toast.success("File uploaded");
+      toast.success(t("fileUploaded"));
     } finally {
       setUploading(false);
     }
@@ -174,35 +178,35 @@ export function ConsultWizard({
       >
         <div className="shrink-0 space-y-4 border-b px-4 pt-4 pb-3">
           <DialogHeader className="pr-8">
-            <DialogTitle>Complete consultation — {patientName}</DialogTitle>
-            <DialogDescription>Document the visit, then prescribe.</DialogDescription>
+            <DialogTitle>{t("completeConsultationTitle", { name: patientName })}</DialogTitle>
+            <DialogDescription>{t("consultDialogDesc")}</DialogDescription>
           </DialogHeader>
-          <Stepper steps={STEPS} current={step} />
+          <Stepper steps={steps} current={step} />
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
           {step === 0 && (
             <div className="space-y-4">
               <Field
-                label="Symptoms"
-                hint="What the patient reports (subjective)"
+                label={t("fieldSymptoms")}
+                hint={t("fieldSymptomsHint")}
                 value={subjective}
                 onChange={setSubjective}
               />
               <Field
-                label="Exam findings"
-                hint="Vitals and exam (objective)"
+                label={t("fieldExam")}
+                hint={t("fieldExamHint")}
                 value={objective}
                 onChange={setObjective}
               />
               <Field
-                label="Assessment"
-                hint="Your clinical impression"
+                label={t("fieldAssessment")}
+                hint={t("fieldAssessmentHint")}
                 value={assessment}
                 onChange={setAssessment}
               />
               <div className="space-y-2">
-                <Label htmlFor="diagnosis">Diagnosis</Label>
+                <Label htmlFor="diagnosis">{t("fieldDiagnosis")}</Label>
                 <Input
                   id="diagnosis"
                   value={diagnosis}
@@ -211,13 +215,13 @@ export function ConsultWizard({
                 />
               </div>
               <Field
-                label="Plan"
-                hint="Follow-up, advice, and next steps"
+                label={t("fieldPlan")}
+                hint={t("fieldPlanHint")}
                 value={plan}
                 onChange={setPlan}
               />
               <div className="space-y-2">
-                <Label htmlFor="test-files">Test files (optional)</Label>
+                <Label htmlFor="test-files">{t("fieldTestFiles")}</Label>
                 <Input
                   id="test-files"
                   type="file"
@@ -226,7 +230,7 @@ export function ConsultWizard({
                   disabled={uploading || pending}
                   onChange={(e) => void onUpload(e.target.files)}
                 />
-                <p className="text-xs text-muted-foreground">PDF or images, up to 10 MB each.</p>
+                <p className="text-xs text-muted-foreground">{t("fieldTestFilesHint")}</p>
               </div>
             </div>
           )}
@@ -235,21 +239,21 @@ export function ConsultWizard({
             <div className="space-y-4">
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-2">
-                  <Label>Medications</Label>
+                  <Label>{t("medications")}</Label>
                   <Button
                     type="button"
                     size="sm"
                     variant="outline"
                     onClick={() => setMedications((m) => [...m, emptyMed()])}
                   >
-                    <Plus className="size-4" aria-hidden /> Add
+                    <Plus className="size-4" aria-hidden /> {t("addMedication")}
                   </Button>
                 </div>
                 {medications.map((med, i) => (
                   <div key={med._key} className="grid gap-2 rounded-xl border p-3 sm:grid-cols-2">
                     <Input
                       placeholder="Medication"
-                      aria-label={`Medication ${i + 1} name`}
+                      aria-label={t("medNameAria", { n: i + 1 })}
                       value={med.name}
                       onChange={(e) =>
                         setMedications((rows) =>
@@ -259,7 +263,7 @@ export function ConsultWizard({
                     />
                     <Input
                       placeholder="Dose"
-                      aria-label={`Medication ${i + 1} dose`}
+                      aria-label={t("medDoseAria", { n: i + 1 })}
                       value={med.dose ?? ""}
                       onChange={(e) =>
                         setMedications((rows) =>
@@ -269,7 +273,7 @@ export function ConsultWizard({
                     />
                     <Input
                       placeholder="Frequency"
-                      aria-label={`Medication ${i + 1} frequency`}
+                      aria-label={t("medFrequencyAria", { n: i + 1 })}
                       value={med.frequency ?? ""}
                       onChange={(e) =>
                         setMedications((rows) =>
@@ -282,7 +286,7 @@ export function ConsultWizard({
                     <div className="flex gap-2">
                       <Input
                         placeholder="Duration"
-                        aria-label={`Medication ${i + 1} duration`}
+                        aria-label={t("medDurationAria", { n: i + 1 })}
                         value={med.duration ?? ""}
                         onChange={(e) =>
                           setMedications((rows) =>
@@ -297,7 +301,7 @@ export function ConsultWizard({
                           type="button"
                           size="icon"
                           variant="ghost"
-                          aria-label="Remove medication"
+                          aria-label={t("removeMedication")}
                           onClick={() =>
                             setMedications((rows) => rows.filter((_, idx) => idx !== i))
                           }
@@ -310,8 +314,8 @@ export function ConsultWizard({
                 ))}
               </div>
               <Field
-                label="Instructions"
-                hint="How to take the medicines"
+                label={t("fieldInstructions")}
+                hint={t("fieldInstructionsHint")}
                 value={prescription}
                 onChange={setPrescription}
               />
@@ -321,7 +325,7 @@ export function ConsultWizard({
           {step === 2 && (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Visit completed. Print the prescription for the patient.
+                {t("visitCompletedPrint")}
               </p>
               <PrescriptionPrintView
                 patientName={patientName}
@@ -345,24 +349,24 @@ export function ConsultWizard({
                 disabled={pending}
                 onClick={() => setStep(0)}
               >
-                Back
+                {tc("back")}
               </Button>
             )}
             {step === 0 && (
               <Button type="button" disabled={pending || uploading} onClick={next}>
-                Next
+                {tc("next")}
               </Button>
             )}
             {step === 1 && (
               <Button type="button" disabled={pending} onClick={next}>
                 {pending && <Loader2 className="size-4 animate-spin" aria-hidden />}
-                Complete visit
+                {t("completeVisit")}
               </Button>
             )}
             {step === 2 && (
               <>
                 <Button type="button" variant="outline" onClick={() => window.print()}>
-                  <Printer className="size-4" aria-hidden /> Print
+                  <Printer className="size-4" aria-hidden /> {t("print")}
                 </Button>
                 <Button
                   type="button"
@@ -371,7 +375,7 @@ export function ConsultWizard({
                     reset();
                   }}
                 >
-                  Done
+                  {t("done")}
                 </Button>
               </>
             )}

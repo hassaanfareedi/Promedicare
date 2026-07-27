@@ -1,22 +1,37 @@
 import { Stethoscope } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import type { StaffAppointment } from "@/features/reception/data";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { getAppointmentStatusMeta } from "@/lib/constants";
 import { formatDateTime, formatDoctorName } from "@/lib/format";
 import { AppointmentStatusControl } from "@/features/doctor/components/appointment-status-control";
 import { RescheduleDialog } from "@/features/appointments/components/reschedule-dialog";
 
 const ACTIVE = new Set(["pending", "confirmed"]);
+const KNOWN_STATUSES = new Set([
+  "pending",
+  "confirmed",
+  "checked_in",
+  "in_progress",
+  "completed",
+  "cancelled",
+  "no_show",
+]);
 
-export function StaffAppointmentRow({
+export async function StaffAppointmentRow({
   a,
   allowReschedule = true,
 }: {
   a: StaffAppointment;
   allowReschedule?: boolean;
 }) {
-  const staffHint = getAppointmentStatusMeta(a.status).staffHint;
+  const [tStatus, tRoles, tReception] = await Promise.all([
+    getTranslations("status"),
+    getTranslations("roles"),
+    getTranslations("reception"),
+  ]);
+  const statusKey = KNOWN_STATUSES.has(a.status) ? a.status : "unknown";
+  const staffHint = tStatus(`${statusKey}Staff`);
 
   return (
     <Card>
@@ -26,12 +41,12 @@ export function StaffAppointmentRow({
             <Stethoscope className="size-5" aria-hidden />
           </span>
           <div className="min-w-0">
-            <p className="font-medium">{a.patientName ?? "Patient"}</p>
+            <p className="font-medium">{a.patientName ?? tRoles("patient")}</p>
             <p className="text-xs text-muted-foreground">
               {a.patientCode} · {formatDateTime(a.scheduled_start)}
             </p>
             <p className="text-xs text-muted-foreground">
-              {a.doctorName ? formatDoctorName(a.doctorName) : "Unassigned"}
+              {a.doctorName ? formatDoctorName(a.doctorName) : tReception("unassigned")}
               {a.specialtyName ? ` · ${a.specialtyName}` : ""}
             </p>
           </div>

@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { ArrowRightLeft, BriefcaseMedical, Loader2 } from "lucide-react";
 import { transferDoctor } from "@/features/platform/actions";
@@ -29,10 +30,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-function displayName(d: PlatformDoctor): string {
+function displayName(d: PlatformDoctor, fallback: string): string {
   const name = d.profile?.full_name?.trim();
   if (name) return formatDoctorName(name);
-  return d.profile?.email?.trim() || "Doctor (name missing)";
+  return d.profile?.email?.trim() || fallback;
 }
 
 export function DoctorTransferManager({
@@ -43,6 +44,9 @@ export function DoctorTransferManager({
   hospitals: Hospital[];
 }) {
   const router = useRouter();
+  const t = useTranslations("platform");
+  const tCommon = useTranslations("common");
+  const nameMissing = t("doctorNameMissing");
   const [query, setQuery] = useState("");
   const [hospitalFilter, setHospitalFilter] = useState<string>("all");
   const [transferring, setTransferring] = useState<PlatformDoctor | null>(null);
@@ -63,8 +67,12 @@ export function DoctorTransferManager({
         const hay = `${d.profile?.full_name ?? ""} ${d.profile?.email ?? ""} ${d.specialty_name ?? ""} ${d.hospital_name ?? ""}`.toLowerCase();
         return hay.includes(q);
       })
-      .sort((a, b) => displayName(a).localeCompare(displayName(b), undefined, { sensitivity: "base" }));
-  }, [doctors, query, hospitalFilter]);
+      .sort((a, b) =>
+        displayName(a, nameMissing).localeCompare(displayName(b, nameMissing), undefined, {
+          sensitivity: "base",
+        }),
+      );
+  }, [doctors, query, hospitalFilter, nameMissing]);
 
   const destinationOptions = useMemo(() => {
     if (!transferring) return activeHospitals;
@@ -87,7 +95,7 @@ export function DoctorTransferManager({
         toast.error(res.error);
         return;
       }
-      toast.success("Doctor transferred");
+      toast.success(t("doctorTransferred"));
       setTransferring(null);
       setToHospitalId("");
       router.refresh();
@@ -98,7 +106,7 @@ export function DoctorTransferManager({
     <div className="space-y-6">
       <div className="flex flex-wrap items-end gap-3">
         <div className="min-w-[12rem] flex-1 space-y-1.5">
-          <Label htmlFor="platform-doctor-search">Search</Label>
+          <Label htmlFor="platform-doctor-search">{tCommon("search")}</Label>
           <Input
             id="platform-doctor-search"
             value={query}
@@ -107,20 +115,20 @@ export function DoctorTransferManager({
           />
         </div>
         <div className="space-y-1.5">
-          <Label>Hospital</Label>
+          <Label>{t("hospital")}</Label>
           <Select
             value={hospitalFilter}
             onValueChange={(v) => setHospitalFilter(v ?? "all")}
             items={[
-              { value: "all", label: "All hospitals" },
+              { value: "all", label: t("allHospitals") },
               ...hospitals.map((h) => ({ value: h.id, label: h.name })),
             ]}
           >
-            <SelectTrigger className="w-48" aria-label="Hospital filter">
+            <SelectTrigger className="w-48" aria-label={t("hospitalFilter")}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All hospitals</SelectItem>
+              <SelectItem value="all">{t("allHospitals")}</SelectItem>
               {hospitals.map((h) => (
                 <SelectItem key={h.id} value={h.id}>
                   {h.name}
@@ -134,14 +142,14 @@ export function DoctorTransferManager({
       {doctors.length === 0 ? (
         <EmptyState
           icon={BriefcaseMedical}
-          title="No doctors yet"
-          description="Doctors appear here after a hospital admin creates or links them."
+          title={t("noDoctors")}
+          description={t("noDoctorsDesc")}
         />
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={BriefcaseMedical}
-          title="No matches"
-          description="Try a different search or hospital filter."
+          title={t("noMatches")}
+          description={t("noMatchesDoctors")}
         />
       ) : (
         <div className="space-y-3">
@@ -149,14 +157,14 @@ export function DoctorTransferManager({
             <Card key={d.id}>
               <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
                 <div className="min-w-0 space-y-0.5">
-                  <p className="truncate font-medium">{displayName(d)}</p>
+                  <p className="truncate font-medium">{displayName(d, nameMissing)}</p>
                   <p className="truncate text-sm text-muted-foreground">
-                    {[d.specialty_name ?? "General", d.hospital_name ?? "Unknown hospital"]
+                    {[d.specialty_name ?? t("general"), d.hospital_name ?? t("unknownHospital")]
                       .filter(Boolean)
                       .join(" · ")}
                   </p>
                   <p className="truncate text-xs text-muted-foreground">
-                    {[d.profile?.email, d.is_active ? "Active" : "Inactive"]
+                    {[d.profile?.email, d.is_active ? t("active") : t("inactive")]
                       .filter(Boolean)
                       .join(" · ")}
                   </p>
@@ -171,7 +179,7 @@ export function DoctorTransferManager({
                   }
                 >
                   <ArrowRightLeft className="size-4" aria-hidden />
-                  Transfer
+                  {t("transfer")}
                 </Button>
               </CardContent>
             </Card>
@@ -190,24 +198,25 @@ export function DoctorTransferManager({
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Transfer doctor</DialogTitle>
+            <DialogTitle>{t("transferDoctorTitle")}</DialogTitle>
             <DialogDescription>
-              Move {transferring ? displayName(transferring) : "this doctor"} from{" "}
-              {transferring?.hospital_name ?? "their current hospital"} to another hospital. Open
-              upcoming appointments must be resolved first. Department assignment is cleared.
+              {t("transferDoctorDesc", {
+                name: transferring ? displayName(transferring, nameMissing) : t("thisDoctor"),
+                hospital: transferring?.hospital_name ?? t("theirCurrentHospital"),
+              })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Label>Destination hospital</Label>
+            <Label>{t("destinationHospital")}</Label>
             {destinationOptions.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No other active hospitals available.</p>
+              <p className="text-sm text-muted-foreground">{t("noOtherHospitals")}</p>
             ) : (
               <Select
                 value={toHospitalId || null}
                 onValueChange={(v) => setToHospitalId(v ?? "")}
                 items={destinationOptions.map((h) => ({ value: h.id, label: h.name }))}
               >
-                <SelectTrigger aria-label="Destination hospital">
+                <SelectTrigger aria-label={t("destinationHospital")}>
                   <SelectValue placeholder="Select hospital" />
                 </SelectTrigger>
                 <SelectContent>
@@ -230,7 +239,7 @@ export function DoctorTransferManager({
                 setToHospitalId("");
               }}
             >
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               type="button"
@@ -238,7 +247,7 @@ export function DoctorTransferManager({
               onClick={submitTransfer}
             >
               {pending && <Loader2 className="size-4 animate-spin" aria-hidden />}
-              Confirm transfer
+              {t("confirmTransfer")}
             </Button>
           </DialogFooter>
         </DialogContent>

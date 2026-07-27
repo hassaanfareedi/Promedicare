@@ -2,6 +2,7 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { dayBoundsInTimeZone } from "@/lib/datetime";
+import { logDbError } from "@/lib/supabase/log";
 import type { Appointment, Patient } from "@/types";
 
 export type StaffAppointment = Appointment & {
@@ -72,13 +73,14 @@ const STAFF_APPT_COLUMNS =
 export async function getTodayAppointments(): Promise<StaffAppointment[]> {
   const supabase = await createClient();
   const { startIso, endIso } = await hospitalDayBounds();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("appointments")
     .select(STAFF_APPT_COLUMNS)
     .is("deleted_at", null)
     .gte("scheduled_start", startIso)
     .lte("scheduled_start", endIso)
     .order("scheduled_start", { ascending: true });
+  logDbError("getTodayAppointments", error);
   return enrich((data ?? []) as Appointment[]);
 }
 
@@ -90,11 +92,21 @@ export type WalkInDoctor = {
 
 /** Active doctors in the staff member's hospital for walk-in booking. */
 export async function getWalkInDoctors(): Promise<WalkInDoctor[]> {
+  const user = await getCurrentUser();
+  const hospitalId = user?.profile.hospital_id;
+  // Staff must be linked to a hospital; without it we return nothing rather
+  // than leaking every hospital's doctors (doctor_directory is a global view).
+  if (!hospitalId) return [];
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("doctor_directory")
     .select("id, full_name, specialty_name")
+    .eq("hospital_id", hospitalId)
     .order("full_name");
+  if (error) {
+    console.error("[getWalkInDoctors]", error.message);
+    return [];
+  }
   return (data ?? []).flatMap((d) =>
     d.id ? [{ id: d.id, full_name: d.full_name, specialty_name: d.specialty_name }] : [],
   );
@@ -103,32 +115,34 @@ export async function getWalkInDoctors(): Promise<WalkInDoctor[]> {
 /** All hospital appointments (RLS-scoped), most recent first. */
 export async function getHospitalAppointments(): Promise<StaffAppointment[]> {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("appointments")
     .select(STAFF_APPT_COLUMNS)
     .is("deleted_at", null)
     .order("scheduled_start", { ascending: false })
     .limit(200);
+  logDbError("getHospitalAppointments", error);
   return enrich((data ?? []) as Appointment[]);
 }
 
 /** Pending booking requests (hospital-scoped), soonest first. */
 export async function getPendingHospitalAppointments(limit = 5): Promise<StaffAppointment[]> {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("appointments")
     .select(STAFF_APPT_COLUMNS)
     .eq("status", "pending")
     .is("deleted_at", null)
     .order("scheduled_start", { ascending: true })
     .limit(limit);
+  logDbError("getPendingHospitalAppointments", error);
   return enrich((data ?? []) as Appointment[]);
 }
 
 /** Confirmed upcoming appointments (hospital-scoped), soonest first. */
 export async function getConfirmedUpcomingAppointments(limit = 5): Promise<StaffAppointment[]> {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("appointments")
     .select(STAFF_APPT_COLUMNS)
     .eq("status", "confirmed")
@@ -136,17 +150,19 @@ export async function getConfirmedUpcomingAppointments(limit = 5): Promise<Staff
     .gte("scheduled_start", new Date().toISOString())
     .order("scheduled_start", { ascending: true })
     .limit(limit);
+  logDbError("getConfirmedUpcomingAppointments", error);
   return enrich((data ?? []) as Appointment[]);
 }
 
 /** Count of pending appointment requests (hospital-scoped via RLS). */
 export async function getPendingAppointmentRequestCount(): Promise<number> {
   const supabase = await createClient();
-  const { count } = await supabase
+  const { count, error } = await supabase
     .from("appointments")
     .select("id", { count: "exact", head: true })
     .eq("status", "pending")
     .is("deleted_at", null);
+  logDbError("getPendingAppointmentRequestCount", error);
   return count ?? 0;
 }
 
@@ -163,12 +179,13 @@ export function sortAppointmentsPendingFirst(rows: StaffAppointment[]): StaffApp
 /** Patients in the receptionist's hospital (RLS-scoped). */
 export async function getHospitalPatients(): Promise<Patient[]> {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("patients")
     .select("*")
     .is("deleted_at", null)
     .order("created_at", { ascending: false })
     .limit(200);
+  logDbError("getHospitalPatients", error);
   return data ?? [];
 }
 

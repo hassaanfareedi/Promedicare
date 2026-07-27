@@ -38,26 +38,26 @@ export default async function ReceptionPatientsPage() {
               href="/reception/appointments/new"
               className={buttonVariants({ variant: "outline", size: "sm" })}
             >
-              <CalendarPlus className="size-4" aria-hidden /> Book appointment
+              <CalendarPlus className="size-4" aria-hidden /> {t("bookAppointment")}
             </Link>
             <WalkInDialog doctors={doctors} />
           </>
         }
       />
       {patients.length === 0 ? (
-        <EmptyState icon={Users} title="No patients yet" description="Register a walk-in to get started." />
+        <EmptyState icon={Users} title={t("noPatients")} description={t("noPatientsDesc")} />
       ) : (
         <Card>
           <CardContent className="p-0">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Patient ID</TableHead>
-                  <TableHead className="hidden sm:table-cell">Phone</TableHead>
-                  <TableHead className="hidden md:table-cell">Date of birth</TableHead>
-                  <TableHead className="hidden md:table-cell">Registered</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t("name")}</TableHead>
+                  <TableHead>{t("patientId")}</TableHead>
+                  <TableHead className="hidden sm:table-cell">{t("phone")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("dob")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("registered")}</TableHead>
+                  <TableHead className="text-right">{t("actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -73,7 +73,7 @@ export default async function ReceptionPatientsPage() {
                         href={`/reception/appointments/new?patient=${p.id}`}
                         className={buttonVariants({ variant: "outline", size: "sm" })}
                       >
-                        <CalendarPlus className="size-4" aria-hidden /> Book
+                        <CalendarPlus className="size-4" aria-hidden /> {t("book")}
                       </Link>
                     </TableCell>
                   </TableRow>

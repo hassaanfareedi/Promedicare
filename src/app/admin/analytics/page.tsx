@@ -32,11 +32,11 @@ export default async function AdminAnalyticsPage() {
       <PageHeader title={t("analyticsTitle")} description={t("analyticsDesc")} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total appointments" value={analytics.totalAppointments} icon={CalendarDays} />
-        <StatCard label="Doctors" value={overview.doctors} icon={BriefcaseMedical} />
-        <StatCard label="Patients" value={overview.patients} icon={Users} />
+        <StatCard label={t("totalAppointments")} value={analytics.totalAppointments} icon={CalendarDays} />
+        <StatCard label={t("doctorsTitle")} value={overview.doctors} icon={BriefcaseMedical} />
+        <StatCard label={t("patients")} value={overview.patients} icon={Users} />
         <StatCard
-          label="Fee income (PKR)"
+          label={t("feeIncomePkr")}
           value={Math.round(analytics.totalIncome).toLocaleString()}
           icon={Wallet}
         />

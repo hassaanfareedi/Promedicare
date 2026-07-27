@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -51,6 +52,8 @@ function defaultVisitTimeLocal(): string {
 
 export function WalkInDialog({ doctors }: { doctors: WalkInDoctorOption[] }) {
   const router = useRouter();
+  const t = useTranslations("reception");
+  const tAppt = useTranslations("appointments");
   const [open, setOpen] = useState(false);
   const doctorItems = useMemo(
     () =>
@@ -86,7 +89,7 @@ export function WalkInDialog({ doctors }: { doctors: WalkInDoctorOption[] }) {
       toast.error(res.error);
       return;
     }
-    toast.success(`Walk-in booked — ID ${res.data.patientCode}`);
+    toast.success(t("walkInBooked", { code: res.data.patientCode }));
     form.reset({
       fullName: "",
       dob: "",
@@ -107,15 +110,15 @@ export function WalkInDialog({ doctors }: { doctors: WalkInDoctorOption[] }) {
       <DialogTrigger
         render={
           <Button size="sm">
-            <UserPlus className="size-4" aria-hidden /> Register walk-in
+            <UserPlus className="size-4" aria-hidden /> {t("registerWalkIn")}
           </Button>
         }
       />
       <DialogContent className="max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Register walk-in patient</DialogTitle>
+          <DialogTitle>{t("registerWalkInTitle")}</DialogTitle>
           <DialogDescription>
-            Creates a patient record and a confirmed visit in today&apos;s queue.
+            {t("registerWalkInDesc")}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -125,7 +128,7 @@ export function WalkInDialog({ doctors }: { doctors: WalkInDoctorOption[] }) {
               name="fullName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Full name</FormLabel>
+                  <FormLabel>{t("fullName")}</FormLabel>
                   <FormControl>
                     <Input placeholder="Jane Doe" {...field} />
                   </FormControl>
@@ -139,7 +142,7 @@ export function WalkInDialog({ doctors }: { doctors: WalkInDoctorOption[] }) {
                 name="dob"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Date of birth</FormLabel>
+                    <FormLabel>{t("dob")}</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} />
                     </FormControl>
@@ -152,15 +155,15 @@ export function WalkInDialog({ doctors }: { doctors: WalkInDoctorOption[] }) {
                 name="gender"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Gender</FormLabel>
+                    <FormLabel>{t("gender")}</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       value={field.value}
                       items={[
-                        { value: "male", label: "Male" },
-                        { value: "female", label: "Female" },
-                        { value: "other", label: "Other" },
-                        { value: "prefer_not_to_say", label: "Prefer not to say" },
+                        { value: "male", label: t("male") },
+                        { value: "female", label: t("female") },
+                        { value: "other", label: t("other") },
+                        { value: "prefer_not_to_say", label: t("preferNotToSay") },
                       ]}
                     >
                       <FormControl>
@@ -169,10 +172,10 @@ export function WalkInDialog({ doctors }: { doctors: WalkInDoctorOption[] }) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="male">Male</SelectItem>
-                        <SelectItem value="female">Female</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                        <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem>
+                        <SelectItem value="male">{t("male")}</SelectItem>
+                        <SelectItem value="female">{t("female")}</SelectItem>
+                        <SelectItem value="other">{t("other")}</SelectItem>
+                        <SelectItem value="prefer_not_to_say">{t("preferNotToSay")}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -186,7 +189,7 @@ export function WalkInDialog({ doctors }: { doctors: WalkInDoctorOption[] }) {
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Phone</FormLabel>
+                    <FormLabel>{t("phone")}</FormLabel>
                     <FormControl>
                       <Input type="tel" autoComplete="tel" placeholder="+92 300 1234567" {...field} />
                     </FormControl>
@@ -199,7 +202,7 @@ export function WalkInDialog({ doctors }: { doctors: WalkInDoctorOption[] }) {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email (optional)</FormLabel>
+                    <FormLabel>{t("emailOptional")}</FormLabel>
                     <FormControl>
                       <Input type="email" placeholder="jane@example.com" {...field} />
                     </FormControl>
@@ -213,7 +216,7 @@ export function WalkInDialog({ doctors }: { doctors: WalkInDoctorOption[] }) {
               name="address"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Address (optional)</FormLabel>
+                  <FormLabel>{t("addressOptional")}</FormLabel>
                   <FormControl>
                     <Textarea rows={2} placeholder="Street, city" {...field} />
                   </FormControl>
@@ -226,14 +229,14 @@ export function WalkInDialog({ doctors }: { doctors: WalkInDoctorOption[] }) {
               name="doctorId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Doctor</FormLabel>
+                  <FormLabel>{tAppt("doctor")}</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     value={field.value}
                     items={doctorItems}
                   >
                     <FormControl>
-                      <SelectTrigger aria-label="Doctor">
+                      <SelectTrigger aria-label={tAppt("doctor")}>
                         <SelectValue placeholder="Select doctor" />
                       </SelectTrigger>
                     </FormControl>
@@ -255,7 +258,7 @@ export function WalkInDialog({ doctors }: { doctors: WalkInDoctorOption[] }) {
               name="scheduledStart"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Visit time</FormLabel>
+                  <FormLabel>{t("visitTime")}</FormLabel>
                   <FormControl>
                     <Input type="datetime-local" {...field} />
                   </FormControl>
@@ -268,7 +271,7 @@ export function WalkInDialog({ doctors }: { doctors: WalkInDoctorOption[] }) {
               name="reason"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Reason (optional)</FormLabel>
+                  <FormLabel>{t("reasonOptional")}</FormLabel>
                   <FormControl>
                     <Input placeholder="Walk-in complaint" {...field} />
                   </FormControl>
@@ -282,10 +285,10 @@ export function WalkInDialog({ doctors }: { doctors: WalkInDoctorOption[] }) {
               className="justify-self-end"
             >
               {form.formState.isSubmitting && <Loader2 className="animate-spin" aria-hidden />}
-              Register &amp; book visit
+              {t("registerAndBook")}
             </Button>
             {doctors.length === 0 && (
-              <p className="text-sm text-muted-foreground">Add an active doctor before registering walk-ins.</p>
+              <p className="text-sm text-muted-foreground">{t("noDoctorsWalkIn")}</p>
             )}
           </form>
         </Form>

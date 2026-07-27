@@ -37,7 +37,7 @@ export default async function ReceptionDashboard() {
               href="/reception/appointments/new"
               className={buttonVariants({ variant: "outline" })}
             >
-              <CalendarPlus className="size-4" aria-hidden /> Book appointment
+              <CalendarPlus className="size-4" aria-hidden /> {t("bookAppointment")}
             </Link>
             <WalkInDialog doctors={doctors} />
           </>
@@ -45,22 +45,22 @@ export default async function ReceptionDashboard() {
       />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Today's appointments" value={today.length} icon={CalendarDays} />
-        <StatCard label="Currently waiting" value={waiting} icon={UserCheck} />
-        <StatCard label="Patients" value={patientCount} icon={Users} />
+        <StatCard label={t("statTodayAppointments")} value={today.length} icon={CalendarDays} />
+        <StatCard label={t("statWaiting")} value={waiting} icon={UserCheck} />
+        <StatCard label={t("patientsTitle")} value={patientCount} icon={Users} />
       </div>
 
       <Card>
         <CardHeader className="flex-row items-center justify-between space-y-0">
-          <CardTitle className="text-base">Today&apos;s queue</CardTitle>
-          <SectionLink href="/reception/queue">Open queue</SectionLink>
+          <CardTitle className="text-base">{t("todayQueue")}</CardTitle>
+          <SectionLink href="/reception/queue">{t("openQueue")}</SectionLink>
         </CardHeader>
         <CardContent className="space-y-3">
           {today.length === 0 ? (
             <EmptyState
               icon={Clock}
-              title="No appointments today"
-              description="Registered walk-ins and bookings appear here."
+              title={t("noAppointmentsToday")}
+              description={t("todayQueueEmptyDesc")}
             />
           ) : (
             today.slice(0, 6).map((a) => (
@@ -73,14 +73,14 @@ export default async function ReceptionDashboard() {
       <div className="grid gap-3 sm:grid-cols-2">
         <QuickLink
           href="/reception/appointments"
-          title="Appointments"
-          description="Confirm and manage bookings"
+          title={t("appointmentsTitle")}
+          description={t("quickAppointmentsDesc")}
           icon={CalendarDays}
         />
         <QuickLink
           href="/reception/patients"
-          title="Patients"
-          description="Search and register patients"
+          title={t("patientsTitle")}
+          description={t("quickPatientsDesc")}
           icon={Users}
         />
       </div>

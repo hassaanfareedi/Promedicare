@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { updateAppointmentStatus } from "@/features/doctor/actions";
@@ -22,36 +23,36 @@ import { CheckInFeeDialog } from "@/features/reception/components/check-in-fee-d
 export type StatusControlMode = "doctor" | "reception";
 
 /** Terminal transitions that can't be undone — always ask before firing. */
-const IRREVERSIBLE: Partial<Record<AppointmentStatus, { title: string; body: string }>> = {
+const IRREVERSIBLE: Partial<Record<AppointmentStatus, { titleKey: string; bodyKey: string }>> = {
   cancelled: {
-    title: "Cancel this appointment?",
-    body: "This marks the appointment as cancelled and can't be undone. The patient and doctor are notified.",
+    titleKey: "cancelApptTitle",
+    bodyKey: "cancelApptBody",
   },
   no_show: {
-    title: "Mark as no-show?",
-    body: "This records the patient as a no-show and can't be undone.",
+    titleKey: "noShowTitle",
+    bodyKey: "noShowBody",
   },
 };
 
-const DOCTOR_ACTIONS: Partial<Record<AppointmentStatus, { label: string; to: AppointmentStatus }[]>> = {
-  checked_in: [{ label: "Start", to: "in_progress" }],
-  in_progress: [{ label: "Complete", to: "completed" }],
+const DOCTOR_ACTIONS: Partial<Record<AppointmentStatus, { labelKey: string; to: AppointmentStatus }[]>> = {
+  checked_in: [{ labelKey: "actionStart", to: "in_progress" }],
+  in_progress: [{ labelKey: "actionComplete", to: "completed" }],
 };
 
 const RECEPTION_ACTIONS: Partial<
-  Record<AppointmentStatus, { label: string; to: AppointmentStatus }[]>
+  Record<AppointmentStatus, { labelKey: string; to: AppointmentStatus }[]>
 > = {
   pending: [
-    { label: "Confirm", to: "confirmed" },
-    { label: "Cancel", to: "cancelled" },
+    { labelKey: "actionConfirm", to: "confirmed" },
+    { labelKey: "actionCancel", to: "cancelled" },
   ],
   confirmed: [
-    { label: "Check in", to: "checked_in" },
-    { label: "No show", to: "no_show" },
+    { labelKey: "actionCheckIn", to: "checked_in" },
+    { labelKey: "actionNoShow", to: "no_show" },
   ],
   checked_in: [
-    { label: "Cancel", to: "cancelled" },
-    { label: "No show", to: "no_show" },
+    { labelKey: "actionCancel", to: "cancelled" },
+    { labelKey: "actionNoShow", to: "no_show" },
   ],
 };
 
@@ -75,6 +76,9 @@ export function AppointmentStatusControl({
   consultationFee?: number | null;
 }) {
   const router = useRouter();
+  const t = useTranslations("doctor");
+  const tc = useTranslations("common");
+  const tr = useTranslations("roles");
   const [pending, startTransition] = useTransition();
   const [consultOpen, setConsultOpen] = useState(false);
   const [feeOpen, setFeeOpen] = useState(false);
@@ -85,7 +89,7 @@ export function AppointmentStatusControl({
   if (mode === "doctor" && status === "confirmed" && !consultOpen && !feeOpen) {
     return (
       <p className="max-w-[12rem] text-xs text-muted-foreground">
-        Waiting for reception check-in
+        {t("waitingReceptionCheckIn")}
       </p>
     );
   }
@@ -93,7 +97,7 @@ export function AppointmentStatusControl({
   if (mode === "doctor" && status === "pending" && !consultOpen && !feeOpen) {
     return (
       <p className="max-w-[12rem] text-xs text-muted-foreground">
-        Awaiting clinic confirmation
+        {t("awaitingClinicConfirmation")}
       </p>
     );
   }
@@ -103,7 +107,7 @@ export function AppointmentStatusControl({
   function run(to: AppointmentStatus) {
     if (mode === "doctor" && to === "completed") {
       if (!patientId || !patientName) {
-        toast.error("Patient details are required to complete the visit.");
+        toast.error(t("patientDetailsRequired"));
         return;
       }
       setConsultOpen(true);
@@ -128,7 +132,7 @@ export function AppointmentStatusControl({
         return;
       }
       setConfirmTo(null);
-      toast.success("Appointment updated");
+      toast.success(t("appointmentUpdated"));
       router.refresh();
     });
   }
@@ -147,7 +151,7 @@ export function AppointmentStatusControl({
             disabled={pending}
             onClick={() => run(a.to)}
           >
-            {a.label}
+            {t(a.labelKey)}
           </Button>
         ))}
       </div>
@@ -160,7 +164,7 @@ export function AppointmentStatusControl({
           patientId={patientId}
           patientName={patientName}
           patientCode={patientCode}
-          doctorName={doctorName ?? "Doctor"}
+          doctorName={doctorName ?? tr("doctor")}
         />
       )}
 
@@ -181,12 +185,12 @@ export function AppointmentStatusControl({
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{confirmMeta?.title ?? "Are you sure?"}</DialogTitle>
-            <DialogDescription>{confirmMeta?.body}</DialogDescription>
+            <DialogTitle>{confirmMeta ? t(confirmMeta.titleKey) : t("areYouSure")}</DialogTitle>
+            <DialogDescription>{confirmMeta ? t(confirmMeta.bodyKey) : ""}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <DialogClose render={<Button variant="outline" disabled={pending} />}>
-              Keep appointment
+              {t("keepAppointment")}
             </DialogClose>
             <Button
               variant="destructive"
@@ -194,7 +198,7 @@ export function AppointmentStatusControl({
               onClick={() => confirmTo && execute(confirmTo)}
             >
               {pending && <Loader2 className="size-4 animate-spin" aria-hidden />}
-              Confirm
+              {tc("confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>

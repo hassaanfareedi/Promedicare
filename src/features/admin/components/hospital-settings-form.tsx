@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslations } from "next-intl";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { updateHospitalSchema, type UpdateHospitalInput } from "@/schemas/platform";
@@ -21,6 +22,7 @@ import {
 } from "@/components/ui/form";
 
 export function HospitalSettingsForm({ hospital }: { hospital: Hospital }) {
+  const t = useTranslations("admin");
   const router = useRouter();
   const form = useForm<UpdateHospitalInput>({
     resolver: zodResolver(updateHospitalSchema),
@@ -40,7 +42,7 @@ export function HospitalSettingsForm({ hospital }: { hospital: Hospital }) {
       toast.error(res.error);
       return;
     }
-    toast.success("Hospital details updated");
+    toast.success(t("hospitalDetailsUpdated"));
     router.refresh();
   }
 
@@ -52,7 +54,7 @@ export function HospitalSettingsForm({ hospital }: { hospital: Hospital }) {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Hospital name</FormLabel>
+              <FormLabel>{t("hospitalName")}</FormLabel>
               <FormControl>
                 <Input {...field} />
               </FormControl>
@@ -66,7 +68,7 @@ export function HospitalSettingsForm({ hospital }: { hospital: Hospital }) {
             name="city"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>City</FormLabel>
+                <FormLabel>{t("city")}</FormLabel>
                 <FormControl>
                   <Input {...field} />
                 </FormControl>
@@ -79,7 +81,7 @@ export function HospitalSettingsForm({ hospital }: { hospital: Hospital }) {
             name="timezone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Timezone</FormLabel>
+                <FormLabel>{t("timezone")}</FormLabel>
                 <FormControl>
                   <Input placeholder="Asia/Karachi" {...field} />
                 </FormControl>
@@ -94,7 +96,7 @@ export function HospitalSettingsForm({ hospital }: { hospital: Hospital }) {
             name="phone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Phone</FormLabel>
+                <FormLabel>{t("phone")}</FormLabel>
                 <FormControl>
                   <Input type="tel" {...field} />
                 </FormControl>
@@ -107,7 +109,7 @@ export function HospitalSettingsForm({ hospital }: { hospital: Hospital }) {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>{t("email")}</FormLabel>
                 <FormControl>
                   <Input type="email" {...field} />
                 </FormControl>
@@ -121,7 +123,7 @@ export function HospitalSettingsForm({ hospital }: { hospital: Hospital }) {
           name="address"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Address</FormLabel>
+              <FormLabel>{t("address")}</FormLabel>
               <FormControl>
                 <Textarea rows={2} {...field} />
               </FormControl>
@@ -131,7 +133,7 @@ export function HospitalSettingsForm({ hospital }: { hospital: Hospital }) {
         />
         <Button type="submit" disabled={form.formState.isSubmitting} className="justify-self-start">
           {form.formState.isSubmitting && <Loader2 className="size-4 animate-spin" />}
-          Save hospital
+          {t("saveHospital")}
         </Button>
       </form>
     </Form>

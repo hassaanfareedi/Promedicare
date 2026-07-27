@@ -22,7 +22,7 @@ export default async function AdminAppointmentsPage() {
     <div className="space-y-8">
       <PageHeader title={t("appointmentsTitle")} description={t("appointmentsDesc")} />
       {appointments.length === 0 ? (
-        <EmptyState icon={CalendarDays} title="No appointments" description="Appointments will appear here." />
+        <EmptyState icon={CalendarDays} title={t("noAppointments")} description={t("noAppointmentsDesc")} />
       ) : (
         <div className="space-y-3">
           {appointments.map((a) => (

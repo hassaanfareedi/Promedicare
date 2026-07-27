@@ -2,6 +2,7 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { dayBoundsInTimeZone } from "@/lib/datetime";
+import { logDbError } from "@/lib/supabase/log";
 import type { Appointment, Doctor, Patient, Prediction } from "@/types";
 
 export type DoctorAppointment = Appointment & {
@@ -17,12 +18,13 @@ export async function getMyDoctor(): Promise<Doctor | null> {
   const user = await getCurrentUser();
   if (!user) return null;
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("doctors")
     .select("id, hospital_id, profile_id, specialty_id, department_id, license_number, years_experience, consultation_fee, bio, is_active, created_at, updated_at, deleted_at")
     .eq("profile_id", user.id)
     .is("deleted_at", null)
     .maybeSingle();
+  logDbError("getMyDoctor", error);
   return data;
 }
 
@@ -66,27 +68,31 @@ export async function getDoctorAppointments(
     const { startIso } = hid
       ? await doctorHospitalDayBounds(hid)
       : dayBoundsInTimeZone("Asia/Karachi");
-    // Future slots, plus today's active visits even if the slot time has passed.
+    // Future slots, plus today's still-open visits even if the slot time has
+    // passed (pending/confirmed/checked_in/in_progress), so the schedule does
+    // not silently drop a confirmed patient once their start time elapses.
     query = query.or(
-      `scheduled_start.gte.${nowIso},and(status.in.(checked_in,in_progress),scheduled_start.gte.${startIso})`,
+      `scheduled_start.gte.${nowIso},and(status.in.(pending,confirmed,checked_in,in_progress),scheduled_start.gte.${startIso})`,
     );
   }
 
-  const { data } = await query
+  const { data, error } = await query
     .order("scheduled_start", { ascending: range !== "all" })
     .limit(500);
+  logDbError("getDoctorAppointments", error, { doctorId, range });
   return (data ?? []) as DoctorAppointment[];
 }
 
-/** Distinct patients this doctor can access. */
+/** Patients in the doctor's hospital that they can access (RLS-scoped). */
 export async function getDoctorPatients(): Promise<Patient[]> {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("patients")
     .select("*")
     .is("deleted_at", null)
     .order("full_name")
     .limit(500);
+  logDbError("getDoctorPatients", error);
   return data ?? [];
 }
 
@@ -100,7 +106,8 @@ export async function getReviewablePredictions(
     .select("*, patient:patients(id, full_name, patient_code)")
     .is("deleted_at", null);
   if (onlyPending) query = query.eq("status", "pending_review");
-  const { data } = await query.order("created_at", { ascending: false }).limit(100);
+  const { data, error } = await query.order("created_at", { ascending: false }).limit(100);
+  logDbError("getReviewablePredictions", error);
   return (data ?? []) as PredictionWithPatient[];
 }
 

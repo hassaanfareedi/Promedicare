@@ -17,6 +17,7 @@ export default async function PlatformSettingsPage() {
   await requireRole(["super_admin"]);
   const aiReady = isGroqConfigured();
   const t = await getTranslations("platform");
+  const tPatient = await getTranslations("patient");
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -27,20 +28,20 @@ export default async function PlatformSettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Sparkles className="size-4 text-teal-600" /> AI screening
+            <Sparkles className="size-4 text-teal-600" /> {t("aiScreeningTitle")}
           </CardTitle>
         </CardHeader>
         <CardContent className="flex items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            Groq-powered symptom screening {aiReady ? "is configured and active." : "is not configured."}
+            {aiReady ? t("aiConfigured") : t("aiNotConfigured")}
           </p>
           {aiReady ? (
             <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600">
-              <CheckCircle2 className="size-4" /> Active
+              <CheckCircle2 className="size-4" /> {t("active")}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
-              <XCircle className="size-4" /> Not configured
+              <XCircle className="size-4" /> {t("notConfigured")}
             </span>
           )}
         </CardContent>
@@ -49,26 +50,23 @@ export default async function PlatformSettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <ShieldCheck className="size-4 text-teal-600" /> Security
+            <ShieldCheck className="size-4 text-teal-600" /> {t("securityTitle")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-muted-foreground">
-          <p>Row-level security is enforced on every table with per-role policies.</p>
-          <p>
-            Public record lookup requires a Patient ID plus a second verification factor and is rate
-            limited.
-          </p>
-          <p>All privileged actions are recorded in the audit log.</p>
+          <p>{t("securityRls")}</p>
+          <p>{t("securityLookup")}</p>
+          <p>{t("securityAudit")}</p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">About</CardTitle>
+          <CardTitle className="text-base">{t("aboutTitle")}</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">
-          <p>{APP_NAME} — AI-assisted early disease-risk screening and healthcare management.</p>
-          <p className="mt-1">Decision support only — not a medical diagnosis.</p>
+          <p>{t("aboutBody", { appName: APP_NAME })}</p>
+          <p className="mt-1">{tPatient("decisionSupportOnly")}</p>
         </CardContent>
       </Card>
     </div>

@@ -2,7 +2,8 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCurrentUser } from "@/lib/auth/session";
-import { dayBoundsInTimeZone } from "@/lib/datetime";
+import { dayBoundsInTimeZone, zonedDateParts } from "@/lib/datetime";
+import { logDbError } from "@/lib/supabase/log";
 import type {
   AppointmentStatus,
   Department,
@@ -19,12 +20,13 @@ export async function getMyHospital(): Promise<Hospital | null> {
   const hid = user?.profile.hospital_id;
   if (!hid) return null;
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("hospitals")
     .select("*")
     .eq("id", hid)
     .is("deleted_at", null)
     .maybeSingle();
+  logDbError("getMyHospital", error);
   return data;
 }
 
@@ -46,18 +48,20 @@ export async function getDepartments(): Promise<Department[]> {
   const hid = user?.profile.hospital_id;
   if (!hid) return [];
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("departments")
     .select("*")
     .eq("hospital_id", hid)
     .is("deleted_at", null)
     .order("name");
+  logDbError("getDepartments", error);
   return data ?? [];
 }
 
 export async function getSpecialties(): Promise<Specialty[]> {
   const supabase = await createClient();
-  const { data } = await supabase.from("specialties").select("*").order("name");
+  const { data, error } = await supabase.from("specialties").select("*").order("name");
+  logDbError("getSpecialties", error);
   return data ?? [];
 }
 
@@ -86,16 +90,18 @@ export async function getStaff(): Promise<AdminStaffMember[]> {
     query = query.eq("hospital_id", hid);
   }
 
-  const { data } = await query;
+  const { data, error } = await query;
+  logDbError("getStaff", error);
   const profiles = data ?? [];
   if (profiles.length === 0) return [];
 
   const profileIds = profiles.map((p) => p.id);
-  const { data: doctorRows } = await supabase
+  const { data: doctorRows, error: doctorErr } = await supabase
     .from("doctors")
     .select("profile_id")
     .in("profile_id", profileIds)
     .is("deleted_at", null);
+  logDbError("getStaff.doctors", doctorErr);
 
   const withClinical = new Set((doctorRows ?? []).map((d) => d.profile_id));
   return profiles.map((p) => ({
@@ -109,20 +115,57 @@ export async function getPromotableProfiles(): Promise<Profile[]> {
   const user = await getCurrentUser();
   const hid = user?.profile.hospital_id;
   const supabase = await createClient();
-  let query = supabase
+
+  // Patients link to a hospital through the `patients` table; their
+  // `profiles.hospital_id` is typically null. Resolve hospital membership via
+  // patients first so real patient accounts actually show up for promotion.
+  if (user?.profile.role !== "super_admin") {
+    if (!hid) return [];
+    const { data: patientRows, error: patientsError } = await supabase
+      .from("patients")
+      .select("profile_id")
+      .eq("hospital_id", hid)
+      .not("profile_id", "is", null)
+      .is("deleted_at", null);
+    if (patientsError) {
+      console.error("[getPromotableProfiles] patients", patientsError.message);
+      return [];
+    }
+    const profileIds = [
+      ...new Set(
+        (patientRows ?? [])
+          .map((r) => r.profile_id)
+          .filter((v): v is string => Boolean(v)),
+      ),
+    ];
+    if (profileIds.length === 0) return [];
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("role", "patient")
+      .in("id", profileIds)
+      .is("deleted_at", null)
+      .order("full_name")
+      .limit(100);
+    if (error) {
+      console.error("[getPromotableProfiles] profiles", error.message);
+      return [];
+    }
+    return data ?? [];
+  }
+
+  // Super admin: any patient account across the platform.
+  const { data, error } = await supabase
     .from("profiles")
     .select("*")
     .eq("role", "patient")
     .is("deleted_at", null)
     .order("full_name")
     .limit(100);
-
-  if (user?.profile.role !== "super_admin") {
-    if (!hid) return [];
-    query = query.eq("hospital_id", hid);
+  if (error) {
+    console.error("[getPromotableProfiles]", error.message);
+    return [];
   }
-
-  const { data } = await query;
   return data ?? [];
 }
 
@@ -144,7 +187,8 @@ export async function getDoctorsAdmin(): Promise<AdminDoctor[]> {
     query = query.eq("hospital_id", hid);
   }
 
-  const { data } = await query;
+  const { data, error } = await query;
+  logDbError("getDoctorsAdmin", error);
 
   const rows = (data ?? []) as AdminDoctor[];
   const missingIds = [
@@ -233,6 +277,14 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       .gte("scheduled_start", nowIso),
   ]);
 
+  logDbError("getAdminOverview.doctors", doctors.error);
+  logDbError("getAdminOverview.staff", staff.error);
+  logDbError("getAdminOverview.departments", departments.error);
+  logDbError("getAdminOverview.patients", patients.error);
+  logDbError("getAdminOverview.today", todayRows.error);
+  logDbError("getAdminOverview.pending", pending.error);
+  logDbError("getAdminOverview.confirmed", confirmed.error);
+
   const statusMap = new Map<AppointmentStatus, number>();
   for (const row of todayRows.data ?? []) {
     statusMap.set(row.status, (statusMap.get(row.status) ?? 0) + 1);
@@ -268,27 +320,42 @@ export type AdminAnalytics = {
 export async function getAdminAnalytics(): Promise<AdminAnalytics> {
   const supabase = await createClient();
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Align day bucketing with the dashboard, which uses the hospital timezone.
+  const hospital = await getMyHospital();
+  const timeZone = hospital?.timezone?.trim() || "Asia/Karachi";
+  const zonedKey = (date: Date): string => {
+    const { year, month, day } = zonedDateParts(timeZone, date);
+    return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  };
+
+  // Today's start as the UTC instant of hospital-local midnight.
+  const today = new Date(dayBoundsInTimeZone(timeZone).startIso);
   const weekEnd = new Date(today.getTime() + 7 * 86_400_000);
   const lookbackStart = new Date(today.getTime() - 6 * 86_400_000);
 
   // Counts are grouped in Postgres; trends read only the bounded date windows.
-  const [{ data: statusRows }, { data: riskRows }, { data: trendAppts }, { data: payments }] =
-    await Promise.all([
-      supabase.rpc("appointment_status_counts"),
-      supabase.rpc("prediction_risk_counts"),
-      supabase
-        .from("appointments")
-        .select("scheduled_start")
-        .is("deleted_at", null)
-        .gte("scheduled_start", today.toISOString())
-        .lt("scheduled_start", weekEnd.toISOString()),
-      supabase
-        .from("appointment_payments")
-        .select("amount, collected_at")
-        .gte("collected_at", lookbackStart.toISOString()),
-    ]);
+  const [statusRes, riskRes, trendRes, paymentsRes] = await Promise.all([
+    supabase.rpc("appointment_status_counts"),
+    supabase.rpc("prediction_risk_counts"),
+    supabase
+      .from("appointments")
+      .select("scheduled_start")
+      .is("deleted_at", null)
+      .gte("scheduled_start", today.toISOString())
+      .lt("scheduled_start", weekEnd.toISOString()),
+    supabase
+      .from("appointment_payments")
+      .select("amount, collected_at")
+      .gte("collected_at", lookbackStart.toISOString()),
+  ]);
+  logDbError("getAdminAnalytics.status", statusRes.error);
+  logDbError("getAdminAnalytics.risk", riskRes.error);
+  logDbError("getAdminAnalytics.trend", trendRes.error);
+  logDbError("getAdminAnalytics.payments", paymentsRes.error);
+  const { data: statusRows } = statusRes;
+  const { data: riskRows } = riskRes;
+  const { data: trendAppts } = trendRes;
+  const { data: payments } = paymentsRes;
 
   const statusMap = new Map<AppointmentStatus, number>();
   let totalAppointments = 0;
@@ -299,9 +366,7 @@ export async function getAdminAnalytics(): Promise<AdminAnalytics> {
 
   const trendMap = new Map<string, number>();
   for (const a of trendAppts ?? []) {
-    const d = new Date(a.scheduled_start);
-    d.setHours(0, 0, 0, 0);
-    const key = d.toISOString().slice(0, 10);
+    const key = zonedKey(new Date(a.scheduled_start));
     trendMap.set(key, (trendMap.get(key) ?? 0) + 1);
   }
 
@@ -310,30 +375,28 @@ export async function getAdminAnalytics(): Promise<AdminAnalytics> {
 
   const weeklyTrend: { date: string; count: number }[] = [];
   for (let i = 0; i < 7; i++) {
-    const d = new Date(today.getTime() + i * 86_400_000);
-    const key = d.toISOString().slice(0, 10);
+    const key = zonedKey(new Date(today.getTime() + i * 86_400_000));
     weeklyTrend.push({ date: key, count: trendMap.get(key) ?? 0 });
   }
 
   // All-time income is aggregated in Postgres; the trend uses the bounded rows.
-  const { data: incomeRows } = await supabase.rpc("payment_income_by_hospital");
+  const { data: incomeRows, error: incomeErr } = await supabase.rpc("payment_income_by_hospital");
+  logDbError("getAdminAnalytics.income", incomeErr);
   const totalIncome = (incomeRows ?? []).reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
 
   const incomeMap = new Map<string, number>();
   for (const p of payments ?? []) {
     const amount = Number(p.amount) || 0;
     const d = new Date(p.collected_at);
-    d.setHours(0, 0, 0, 0);
-    if (d >= lookbackStart && d <= today) {
-      const key = d.toISOString().slice(0, 10);
+    if (d >= lookbackStart && d < weekEnd) {
+      const key = zonedKey(d);
       incomeMap.set(key, (incomeMap.get(key) ?? 0) + amount);
     }
   }
 
   const incomeTrend: { date: string; amount: number }[] = [];
   for (let i = 6; i >= 0; i--) {
-    const d = new Date(today.getTime() - i * 86_400_000);
-    const key = d.toISOString().slice(0, 10);
+    const key = zonedKey(new Date(today.getTime() - i * 86_400_000));
     incomeTrend.push({ date: key, amount: incomeMap.get(key) ?? 0 });
   }
 

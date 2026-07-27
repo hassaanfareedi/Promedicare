@@ -126,6 +126,37 @@ export async function assignHospitalAdmin(
   const parsed = assignHospitalAdminSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid" };
   const supabase = await createClient();
+
+  // Server-side eligibility check (the UI filters, but never trust the client):
+  // only patients, receptionists, or doctors may be promoted to hospital admin.
+  const { data: target, error: readErr } = await supabase
+    .from("profiles")
+    .select("id, role")
+    .eq("id", parsed.data.profileId)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (readErr) return { ok: false, error: readErr.message };
+  if (!target) return { ok: false, error: "User not found." };
+  if (target.role === "super_admin") {
+    return { ok: false, error: "Super admin accounts cannot be reassigned as hospital admins." };
+  }
+  if (target.role === "hospital_admin") {
+    return { ok: false, error: "This account is already a hospital admin." };
+  }
+
+  // If they were an active doctor, retire the clinical row so it does not
+  // linger under their old hospital after the promotion.
+  if (target.role === "doctor") {
+    const { error: retireErr } = await supabase
+      .from("doctors")
+      .update({ deleted_at: new Date().toISOString(), is_active: false })
+      .eq("profile_id", target.id)
+      .is("deleted_at", null);
+    if (retireErr) {
+      console.error("[assignHospitalAdmin] retire doctor row", retireErr.message);
+    }
+  }
+
   const { error } = await supabase
     .from("profiles")
     .update({ role: "hospital_admin", hospital_id: parsed.data.hospitalId })
@@ -163,7 +194,7 @@ export async function transferDoctor(input: TransferDoctorInput): Promise<Mutati
 
   const { data: doctor, error: doctorErr } = await admin
     .from("doctors")
-    .select("id, profile_id, hospital_id")
+    .select("id, profile_id, hospital_id, department_id")
     .eq("id", doctorId)
     .is("deleted_at", null)
     .maybeSingle();
@@ -236,8 +267,18 @@ export async function transferDoctor(input: TransferDoctorInput): Promise<Mutati
     .select("id")
     .maybeSingle();
 
-  if (profileErr) return { ok: false, error: profileErr.message };
-  if (!updatedProfile) return { ok: false, error: "Could not update the doctor's profile hospital." };
+  // No DB transaction across two tables here, so on profile failure roll the
+  // doctor row back to its original hospital/department to avoid a split state.
+  if (profileErr || !updatedProfile) {
+    await admin
+      .from("doctors")
+      .update({ hospital_id: doctor.hospital_id, department_id: doctor.department_id })
+      .eq("id", doctorId);
+    return {
+      ok: false,
+      error: profileErr?.message ?? "Could not update the doctor's profile hospital.",
+    };
+  }
 
   await logAudit({
     action: "doctor.transferred",

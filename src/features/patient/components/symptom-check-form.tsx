@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Loader2, Plus, X, Activity, RotateCcw, ArrowLeft, ArrowRight } from "lucide-react";
 import { runScreening, type ScreeningResult } from "@/features/patient/actions";
@@ -13,11 +14,28 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { PredictionResult } from "@/features/patient/components/prediction-result";
 
-const COMMON_SYMPTOMS = [
-  "Fever", "Cough", "Headache", "Fatigue", "Sore throat", "Shortness of breath",
-  "Chest pain", "Nausea", "Dizziness", "Abdominal pain", "Joint pain", "Rash",
-  "Vomiting", "Diarrhea", "Back pain", "Loss of appetite",
+const COMMON_SYMPTOMS: { value: string; key: string }[] = [
+  { value: "Fever", key: "fever" },
+  { value: "Cough", key: "cough" },
+  { value: "Headache", key: "headache" },
+  { value: "Fatigue", key: "fatigue" },
+  { value: "Sore throat", key: "soreThroat" },
+  { value: "Shortness of breath", key: "shortnessOfBreath" },
+  { value: "Chest pain", key: "chestPain" },
+  { value: "Nausea", key: "nausea" },
+  { value: "Dizziness", key: "dizziness" },
+  { value: "Abdominal pain", key: "abdominalPain" },
+  { value: "Joint pain", key: "jointPain" },
+  { value: "Rash", key: "rash" },
+  { value: "Vomiting", key: "vomiting" },
+  { value: "Diarrhea", key: "diarrhea" },
+  { value: "Back pain", key: "backPain" },
+  { value: "Loss of appetite", key: "lossOfAppetite" },
 ];
+
+const SYMPTOM_KEYS: Record<string, string> = Object.fromEntries(
+  COMMON_SYMPTOMS.map((s) => [s.value, s.key]),
+);
 
 const SEVERITIES = ["mild", "moderate", "severe"] as const;
 const SEXES = ["male", "female", "other"] as const;
@@ -32,6 +50,10 @@ type Props = {
 };
 
 export function SymptomCheckForm({ prefill }: Props) {
+  const t = useTranslations("patient");
+  const tc = useTranslations("common");
+  const symptomLabel = (value: string) =>
+    SYMPTOM_KEYS[value] ? t(`symptoms.${SYMPTOM_KEYS[value]}`) : value;
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<ScreeningResult | null>(null);
   const [step, setStep] = useState<"symptoms" | "context">("symptoms");
@@ -82,7 +104,7 @@ export function SymptomCheckForm({ prefill }: Props) {
     };
     const parsed = symptomIntakeSchema.safeParse(payload);
     if (!parsed.success) {
-      toast.error(parsed.error.issues[0]?.message ?? "Please review your inputs");
+      toast.error(parsed.error.issues[0]?.message ?? t("reviewInputs"));
       return;
     }
     startTransition(async () => {
@@ -93,9 +115,9 @@ export function SymptomCheckForm({ prefill }: Props) {
       }
       setResult(res.data);
       if (res.data.degraded) {
-        toast.warning("AI screening is temporarily unavailable — showing a safe placeholder.");
+        toast.warning(t("screeningDegradedToast"));
       } else {
-        toast.success("Screening complete");
+        toast.success(t("screeningComplete"));
       }
     });
   }
@@ -113,7 +135,7 @@ export function SymptomCheckForm({ prefill }: Props) {
         />
         <div className="flex justify-center">
           <Button type="button" variant="outline" onClick={reset}>
-            <RotateCcw className="size-4" aria-hidden /> Run another check
+            <RotateCcw className="size-4" aria-hidden /> {t("runAnother")}
           </Button>
         </div>
       </div>
@@ -125,41 +147,39 @@ export function SymptomCheckForm({ prefill }: Props) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Activity className="size-5 text-teal-600" aria-hidden />
-          {step === "symptoms" ? "Step 1 — Your symptoms" : "Step 2 — Extra context (optional)"}
+          {step === "symptoms" ? t("step1Title") : t("step2Title")}
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          {step === "symptoms"
-            ? "Tap what matches how you feel. You can add detail on the next step or skip it."
-            : "Duration, severity, and notes help refine the screening. Skip if you prefer."}
+          {step === "symptoms" ? t("step1Desc") : t("step2Desc")}
         </p>
       </CardHeader>
       <CardContent>
         {step === "symptoms" ? (
           <div className="space-y-6">
             <fieldset className="space-y-3">
-              <legend className="text-sm font-medium">Common symptoms</legend>
-              <div className="flex flex-wrap gap-2" role="group" aria-label="Common symptoms">
+              <legend className="text-sm font-medium">{t("commonSymptoms")}</legend>
+              <div className="flex flex-wrap gap-2" role="group" aria-label={t("commonSymptoms")}>
                 {COMMON_SYMPTOMS.map((s) => (
                   <button
-                    key={s}
+                    key={s.value}
                     type="button"
-                    onClick={() => toggle(s)}
-                    aria-pressed={symptoms.includes(s)}
+                    onClick={() => toggle(s.value)}
+                    aria-pressed={symptoms.includes(s.value)}
                     className={cn(
                       "min-h-10 rounded-full border px-3.5 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                      symptoms.includes(s)
+                      symptoms.includes(s.value)
                         ? "border-teal-600 bg-teal-600 text-white"
                         : "border-input bg-background hover:bg-accent",
                     )}
                   >
-                    {s}
+                    {symptomLabel(s.value)}
                   </button>
                 ))}
               </div>
             </fieldset>
 
             <div className="space-y-2">
-              <Label htmlFor="custom-symptom">Add another symptom</Label>
+              <Label htmlFor="custom-symptom">{t("addSymptom")}</Label>
               <div className="flex gap-2">
                 <Input
                   id="custom-symptom"
@@ -174,7 +194,7 @@ export function SymptomCheckForm({ prefill }: Props) {
                   placeholder="e.g. blurred vision"
                 />
                 <Button type="button" variant="outline" onClick={addCustom}>
-                  <Plus className="size-4" aria-hidden /> Add
+                  <Plus className="size-4" aria-hidden /> {t("add")}
                 </Button>
               </div>
               {symptoms.length > 0 && (
@@ -184,8 +204,12 @@ export function SymptomCheckForm({ prefill }: Props) {
                       key={s}
                       className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2.5 py-1 text-sm text-teal-700 dark:bg-teal-950/50 dark:text-teal-300"
                     >
-                      {s}
-                      <button type="button" onClick={() => toggle(s)} aria-label={`Remove ${s}`}>
+                      {symptomLabel(s)}
+                      <button
+                        type="button"
+                        onClick={() => toggle(s)}
+                        aria-label={t("removeSymptom", { symptom: symptomLabel(s) })}
+                      >
                         <X className="size-3.5" aria-hidden />
                       </button>
                     </span>
@@ -197,11 +221,11 @@ export function SymptomCheckForm({ prefill }: Props) {
             <Button
               type="button"
               disabled={symptoms.length === 0}
-              title={symptoms.length === 0 ? "Select at least one symptom" : undefined}
+              title={symptoms.length === 0 ? t("selectSymptomHint") : undefined}
               className="w-full"
               onClick={() => setStep("context")}
             >
-              Continue
+              {t("continue")}
               <ArrowRight className="size-4" aria-hidden />
             </Button>
           </div>
@@ -213,14 +237,14 @@ export function SymptomCheckForm({ prefill }: Props) {
                   key={s}
                   className="rounded-full bg-teal-50 px-2.5 py-1 text-sm text-teal-700 dark:bg-teal-950/50 dark:text-teal-300"
                 >
-                  {s}
+                  {symptomLabel(s)}
                 </span>
               ))}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="duration">Duration (days)</Label>
+                <Label htmlFor="duration">{t("durationDays")}</Label>
                 <Input
                   id="duration"
                   type="number"
@@ -232,7 +256,7 @@ export function SymptomCheckForm({ prefill }: Props) {
               </div>
               {(!demographicsLocked || !prefill?.age) && (
                 <div className="space-y-2">
-                  <Label htmlFor="age">Age</Label>
+                  <Label htmlFor="age">{t("age")}</Label>
                   <Input
                     id="age"
                     type="number"
@@ -246,7 +270,7 @@ export function SymptomCheckForm({ prefill }: Props) {
               )}
               {demographicsLocked && prefill?.age != null && (
                 <div className="space-y-2">
-                  <Label>Age (from profile)</Label>
+                  <Label>{t("ageFromProfile")}</Label>
                   <p className="rounded-lg border bg-muted/40 px-3 py-2 text-sm tabular-nums">
                     {prefill.age}
                   </p>
@@ -256,8 +280,8 @@ export function SymptomCheckForm({ prefill }: Props) {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <fieldset className="space-y-2">
-                <legend className="text-sm font-medium">Severity</legend>
-                <div className="flex gap-2" role="group" aria-label="Severity">
+                <legend className="text-sm font-medium">{t("severity")}</legend>
+                <div className="flex gap-2" role="group" aria-label={t("severity")}>
                   {SEVERITIES.map((s) => (
                     <button
                       key={s}
@@ -271,15 +295,15 @@ export function SymptomCheckForm({ prefill }: Props) {
                           : "border-input hover:bg-accent",
                       )}
                     >
-                      {s}
+                      {t(`severityOptions.${s}`)}
                     </button>
                   ))}
                 </div>
               </fieldset>
               {(!demographicsLocked || !prefill?.sex) && (
                 <fieldset className="space-y-2">
-                  <legend className="text-sm font-medium">Sex</legend>
-                  <div className="flex gap-2" role="group" aria-label="Sex">
+                  <legend className="text-sm font-medium">{t("sex")}</legend>
+                  <div className="flex gap-2" role="group" aria-label={t("sex")}>
                     {SEXES.map((s) => (
                       <button
                         key={s}
@@ -293,7 +317,7 @@ export function SymptomCheckForm({ prefill }: Props) {
                             : "border-input hover:bg-accent",
                         )}
                       >
-                        {s}
+                        {t(`sexOptions.${s}`)}
                       </button>
                     ))}
                   </div>
@@ -301,16 +325,16 @@ export function SymptomCheckForm({ prefill }: Props) {
               )}
               {demographicsLocked && prefill?.sex && (
                 <div className="space-y-2">
-                  <Label>Sex (from profile)</Label>
+                  <Label>{t("sexFromProfile")}</Label>
                   <p className="rounded-lg border bg-muted/40 px-3 py-2 text-sm capitalize">
-                    {prefill.sex}
+                    {t(`sexOptions.${prefill.sex}`)}
                   </p>
                 </div>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes">Anything else? (optional)</Label>
+              <Label htmlFor="notes">{t("notesLabel")}</Label>
               <Textarea
                 id="notes"
                 value={notes}
@@ -323,7 +347,7 @@ export function SymptomCheckForm({ prefill }: Props) {
 
             {pending && (
               <p className="text-center text-sm text-muted-foreground" role="status">
-                Analysing your symptoms… usually under 20 seconds.
+                {t("analysingLong")}
               </p>
             )}
 
@@ -335,7 +359,7 @@ export function SymptomCheckForm({ prefill }: Props) {
                 onClick={() => setStep("symptoms")}
                 className="sm:flex-1"
               >
-                <ArrowLeft className="size-4" aria-hidden /> Back
+                <ArrowLeft className="size-4" aria-hidden /> {tc("back")}
               </Button>
               <Button
                 type="button"
@@ -346,7 +370,7 @@ export function SymptomCheckForm({ prefill }: Props) {
                 aria-busy={pending}
               >
                 {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-                Skip & run
+                {t("skipAndRun")}
               </Button>
               <Button
                 type="button"
@@ -360,11 +384,11 @@ export function SymptomCheckForm({ prefill }: Props) {
                 ) : (
                   <Activity className="size-4" aria-hidden />
                 )}
-                {pending ? "Analysing…" : "Run AI screening"}
+                {pending ? t("analysingShort") : t("runScreening")}
               </Button>
             </div>
             <p className="text-center text-xs text-muted-foreground">
-              Your screening is saved to your record and shared with your care team for review.
+              {t("screeningSavedNote")}
             </p>
           </div>
         )}

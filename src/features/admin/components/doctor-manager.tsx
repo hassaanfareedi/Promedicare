@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Loader2, Plus, BriefcaseMedical, Pencil } from "lucide-react";
 import { addDoctor, createDoctorAccount, updateDoctor, setDoctorActive } from "@/features/admin/actions";
 import type { AdminDoctor } from "@/features/admin/data";
 import { AvailabilityEditor } from "@/features/admin/components/availability-editor";
 import type { Department, Profile, Specialty } from "@/types";
-import { ROLE_LABEL } from "@/lib/constants";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,9 +35,9 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-function candidateLabel(c: Profile): string {
+function candidateLabel(c: Profile, roleLabel: string): string {
   const name = c.full_name ?? c.email ?? c.id;
-  return `${name} · ${ROLE_LABEL[c.role]}`;
+  return `${name} · ${roleLabel}`;
 }
 
 type Props = {
@@ -48,12 +48,15 @@ type Props = {
 };
 
 export function DoctorManager({ doctors, candidates, specialties, departments }: Props) {
+  const t = useTranslations("admin");
+  const tc = useTranslations("common");
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
   const activeCount = doctors.filter((d) => d.is_active).length;
   const noScheduleCount = doctors.filter((d) => d.availability.length === 0).length;
 
+  const missingLabel = t("doctorNameMissing");
   const filtered = doctors
     .filter((d) => {
       if (statusFilter === "active" && !d.is_active) return false;
@@ -66,14 +69,20 @@ export function DoctorManager({ doctors, candidates, specialties, departments }:
       return name.includes(q) || email.includes(q) || specialty.includes(q);
     })
     .sort((a, b) =>
-      doctorDisplayName(a).localeCompare(doctorDisplayName(b), undefined, { sensitivity: "base" }),
+      doctorDisplayName(a, missingLabel).localeCompare(doctorDisplayName(b, missingLabel), undefined, {
+        sensitivity: "base",
+      }),
     );
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          {doctors.length} total · {activeCount} active · {noScheduleCount} without schedule
+          {t("doctorsSummary", {
+            total: doctors.length,
+            active: activeCount,
+            noSchedule: noScheduleCount,
+          })}
         </p>
         <AddDoctorDialog candidates={candidates} specialties={specialties} departments={departments} />
       </div>
@@ -81,7 +90,7 @@ export function DoctorManager({ doctors, candidates, specialties, departments }:
       {doctors.length > 0 && (
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-[12rem] flex-1 space-y-1.5">
-            <Label htmlFor="doctor-search">Search</Label>
+            <Label htmlFor="doctor-search">{tc("search")}</Label>
             <Input
               id="doctor-search"
               value={query}
@@ -90,23 +99,23 @@ export function DoctorManager({ doctors, candidates, specialties, departments }:
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Status</Label>
+            <Label>{t("status")}</Label>
             <Select
               value={statusFilter}
               onValueChange={(v) => setStatusFilter((v as typeof statusFilter) ?? "all")}
               items={[
-                { value: "all", label: "All" },
-                { value: "active", label: "Active" },
-                { value: "inactive", label: "Inactive" },
+                { value: "all", label: t("all") },
+                { value: "active", label: t("active") },
+                { value: "inactive", label: t("inactive") },
               ]}
             >
-              <SelectTrigger className="w-36" aria-label="Status filter">
+              <SelectTrigger className="w-36" aria-label={t("statusFilter")}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="all">{t("all")}</SelectItem>
+                <SelectItem value="active">{t("active")}</SelectItem>
+                <SelectItem value="inactive">{t("inactive")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -116,14 +125,14 @@ export function DoctorManager({ doctors, candidates, specialties, departments }:
       {doctors.length === 0 ? (
         <EmptyState
           icon={BriefcaseMedical}
-          title="No doctors yet"
-          description="Create a new doctor account or link an existing hospital user."
+          title={t("noDoctorsYet")}
+          description={t("noDoctorsYetDesc")}
         />
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={BriefcaseMedical}
-          title="No matches"
-          description="Try a different search or status filter."
+          title={t("noMatches")}
+          description={t("noMatchesStatusDesc")}
         />
       ) : (
         <div className="space-y-4">
@@ -170,24 +179,25 @@ function ClinicalFields({
   departments: Department[];
   idPrefix: string;
 }) {
+  const t = useTranslations("admin");
   return (
     <>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label>Specialty</Label>
+          <Label>{t("specialty")}</Label>
           <Select
             value={specialtyId || null}
             onValueChange={(v) => setSpecialtyId(v ?? "")}
             items={[
-              { value: null, label: "None" },
+              { value: null, label: t("none") },
               ...specialties.map((s) => ({ value: s.id, label: s.name })),
             ]}
           >
-            <SelectTrigger aria-label="Specialty">
+            <SelectTrigger aria-label={t("specialty")}>
               <SelectValue placeholder="Optional" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={null}>None</SelectItem>
+              <SelectItem value={null}>{t("none")}</SelectItem>
               {specialties.map((s) => (
                 <SelectItem key={s.id} value={s.id}>
                   {s.name}
@@ -197,20 +207,20 @@ function ClinicalFields({
           </Select>
         </div>
         <div className="space-y-2">
-          <Label>Department</Label>
+          <Label>{t("department")}</Label>
           <Select
             value={departmentId || null}
             onValueChange={(v) => setDepartmentId(v ?? "")}
             items={[
-              { value: null, label: "None" },
+              { value: null, label: t("none") },
               ...departments.map((dep) => ({ value: dep.id, label: dep.name })),
             ]}
           >
-            <SelectTrigger aria-label="Department">
+            <SelectTrigger aria-label={t("department")}>
               <SelectValue placeholder="Optional" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={null}>None</SelectItem>
+              <SelectItem value={null}>{t("none")}</SelectItem>
               {departments.map((dep) => (
                 <SelectItem key={dep.id} value={dep.id}>
                   {dep.name}
@@ -222,7 +232,7 @@ function ClinicalFields({
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="space-y-2">
-          <Label htmlFor={`${idPrefix}-license`}>License</Label>
+          <Label htmlFor={`${idPrefix}-license`}>{t("license")}</Label>
           <Input
             id={`${idPrefix}-license`}
             value={license}
@@ -230,7 +240,7 @@ function ClinicalFields({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor={`${idPrefix}-years`}>Years exp.</Label>
+          <Label htmlFor={`${idPrefix}-years`}>{t("yearsExp")}</Label>
           <Input
             id={`${idPrefix}-years`}
             type="number"
@@ -240,7 +250,7 @@ function ClinicalFields({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor={`${idPrefix}-fee`}>Fee</Label>
+          <Label htmlFor={`${idPrefix}-fee`}>{t("fee")}</Label>
           <Input
             id={`${idPrefix}-fee`}
             type="number"
@@ -263,6 +273,8 @@ function AddDoctorDialog({
   specialties: Specialty[];
   departments: Department[];
 }) {
+  const t = useTranslations("admin");
+  const tRoles = useTranslations("roles");
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -326,7 +338,7 @@ function AddDoctorDialog({
         toast.error(res.error);
         return;
       }
-      toast.success("Doctor account created");
+      toast.success(t("doctorAccountCreated"));
       setOpen(false);
       resetForm();
       router.refresh();
@@ -347,7 +359,7 @@ function AddDoctorDialog({
         toast.error(res.error);
         return;
       }
-      toast.success("Doctor added");
+      toast.success(t("doctorAdded"));
       setOpen(false);
       resetForm();
       router.refresh();
@@ -365,16 +377,14 @@ function AddDoctorDialog({
       <DialogTrigger
         render={
           <Button size="sm">
-            <Plus className="size-4" /> Add doctor
+            <Plus className="size-4" /> {t("addDoctor")}
           </Button>
         }
       />
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Add doctor</DialogTitle>
-          <DialogDescription>
-            Create a new login for this hospital, or link someone who already has an account.
-          </DialogDescription>
+          <DialogTitle>{t("addDoctor")}</DialogTitle>
+          <DialogDescription>{t("addDoctorDesc")}</DialogDescription>
         </DialogHeader>
 
         <Tabs
@@ -383,13 +393,13 @@ function AddDoctorDialog({
           className="gap-4"
         >
           <TabsList className="w-full">
-            <TabsTrigger value="new">New doctor</TabsTrigger>
-            <TabsTrigger value="existing">Link existing</TabsTrigger>
+            <TabsTrigger value="new">{t("newDoctor")}</TabsTrigger>
+            <TabsTrigger value="existing">{t("linkExisting")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="new" className="grid gap-4">
             <div className="space-y-2">
-              <Label htmlFor="new-doc-name">Full name</Label>
+              <Label htmlFor="new-doc-name">{t("fullName")}</Label>
               <Input
                 id="new-doc-name"
                 value={fullName}
@@ -399,7 +409,7 @@ function AddDoctorDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new-doc-email">Email</Label>
+              <Label htmlFor="new-doc-email">{t("email")}</Label>
               <Input
                 id="new-doc-email"
                 type="email"
@@ -411,7 +421,7 @@ function AddDoctorDialog({
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="new-doc-password">Temporary password</Label>
+                <Label htmlFor="new-doc-password">{t("temporaryPassword")}</Label>
                 <Input
                   id="new-doc-password"
                   type="password"
@@ -421,7 +431,7 @@ function AddDoctorDialog({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="new-doc-confirm">Confirm password</Label>
+                <Label htmlFor="new-doc-confirm">{t("confirmPassword")}</Label>
                 <Input
                   id="new-doc-confirm"
                   type="password"
@@ -431,10 +441,7 @@ function AddDoctorDialog({
                 />
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">
-              At least 8 characters, with uppercase, lowercase, and a number. Share the email and
-              temporary password with the doctor — they can change it via Forgot password.
-            </p>
+            <p className="text-xs text-muted-foreground">{t("doctorPasswordHint")}</p>
             <ClinicalFields {...clinical} idPrefix="new" />
             <Button
               onClick={submitNew}
@@ -446,52 +453,49 @@ function AddDoctorDialog({
               ) : (
                 <Plus className="size-4" aria-hidden />
               )}
-              Create doctor
+              {t("createDoctor")}
             </Button>
           </TabsContent>
 
           <TabsContent value="existing" className="grid gap-4">
             {candidates.length === 0 ? (
               <div className="space-y-4 py-2">
-                <p className="text-sm text-muted-foreground">
-                  No users left to link. Create a new doctor account instead, or register a patient
-                  first.
-                </p>
+                <p className="text-sm text-muted-foreground">{t("noUsersToLink")}</p>
                 <div className="flex flex-wrap gap-2">
                   <Button type="button" size="sm" variant="outline" onClick={() => setMode("new")}>
-                    Create new doctor
+                    {t("createNewDoctor")}
                   </Button>
                   <Link
                     href="/admin/staff"
                     className={buttonVariants({ variant: "outline", size: "sm" })}
                     onClick={() => setOpen(false)}
                   >
-                    Open Staff
+                    {t("openStaff")}
                   </Link>
                 </div>
               </div>
             ) : (
               <>
                 <div className="space-y-2">
-                  <Label>User</Label>
+                  <Label>{t("user")}</Label>
                   <Select
                     value={profileId || null}
                     onValueChange={(v) => setProfileId(v ?? "")}
                     items={[
-                      { value: null, label: "Select a user" },
+                      { value: null, label: t("selectUser") },
                       ...candidates.map((c) => ({
                         value: c.id,
-                        label: candidateLabel(c),
+                        label: candidateLabel(c, tRoles(c.role)),
                       })),
                     ]}
                   >
-                    <SelectTrigger aria-label="User">
+                    <SelectTrigger aria-label={t("user")}>
                       <SelectValue placeholder="Select a user" />
                     </SelectTrigger>
                     <SelectContent>
                       {candidates.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
-                          {candidateLabel(c)}
+                          {candidateLabel(c, tRoles(c.role))}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -508,7 +512,7 @@ function AddDoctorDialog({
                   ) : (
                     <Plus className="size-4" aria-hidden />
                   )}
-                  Link as doctor
+                  {t("linkAsDoctor")}
                 </Button>
               </>
             )}
@@ -519,21 +523,21 @@ function AddDoctorDialog({
   );
 }
 
-function doctorSubtitle(doctor: AdminDoctor): string {
+function doctorSubtitle(doctor: AdminDoctor, generalLabel: string): string {
   const specialty = doctor.specialty?.name ?? null;
   const department = doctor.department?.name ?? null;
   if (specialty && department) {
     return specialty === department ? specialty : `${specialty} · ${department}`;
   }
-  return specialty ?? department ?? "General";
+  return specialty ?? department ?? generalLabel;
 }
 
-function doctorDisplayName(doctor: AdminDoctor): string {
+function doctorDisplayName(doctor: AdminDoctor, missingLabel: string): string {
   const name = doctor.profile?.full_name?.trim();
   if (name) return formatDoctorName(name);
   const email = doctor.profile?.email?.trim();
   if (email) return email;
-  return "Doctor (name missing)";
+  return missingLabel;
 }
 
 function formatFee(fee: number | null): string | null {
@@ -554,6 +558,8 @@ function DoctorCard({
   specialties: Specialty[];
   departments: Department[];
 }) {
+  const t = useTranslations("admin");
+  const tc = useTranslations("common");
   const router = useRouter();
   const [toggling, setToggling] = useState(false);
   const [confirmOff, setConfirmOff] = useState(false);
@@ -561,6 +567,7 @@ function DoctorCard({
   const email = doctor.profile?.email?.trim() || null;
   const feeLabel = formatFee(doctor.consultation_fee);
   const dayCount = new Set(doctor.availability.map((a) => a.weekday)).size;
+  const displayName = doctorDisplayName(doctor, t("doctorNameMissing"));
 
   async function applyActive(active: boolean) {
     setToggling(true);
@@ -568,7 +575,7 @@ function DoctorCard({
     if (!res.ok) {
       toast.error(res.error);
     } else {
-      toast.success(active ? "Doctor activated" : "Doctor deactivated");
+      toast.success(active ? t("doctorActivated") : t("doctorDeactivated"));
       router.refresh();
     }
     setToggling(false);
@@ -588,17 +595,18 @@ function DoctorCard({
       <CardContent className="space-y-4 p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 space-y-1">
-            <p className="truncate font-medium">{doctorDisplayName(doctor)}</p>
-            <p className="truncate text-sm text-muted-foreground">{doctorSubtitle(doctor)}</p>
+            <p className="truncate font-medium">{displayName}</p>
+            <p className="truncate text-sm text-muted-foreground">
+              {doctorSubtitle(doctor, t("general"))}
+            </p>
             <p className="truncate text-xs text-muted-foreground">
-              {[email, feeLabel, `${dayCount} day${dayCount === 1 ? "" : "s"} scheduled`]
+              {[email, feeLabel, t("daysScheduled", { count: dayCount })]
                 .filter(Boolean)
                 .join(" · ")}
             </p>
             {nameMissing && (
               <p className="text-xs text-amber-700 dark:text-amber-300">
-                Set a full name via Edit
-                {email ? ` — account: ${email}` : ""}.
+                {email ? t("setFullNameAccount", { email }) : t("setFullName")}
               </p>
             )}
           </div>
@@ -609,12 +617,12 @@ function DoctorCard({
               departments={departments}
             />
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span>{doctor.is_active ? "Active" : "Inactive"}</span>
+              <span>{doctor.is_active ? t("active") : t("inactive")}</span>
               <Switch
                 checked={doctor.is_active}
                 onCheckedChange={onCheckedChange}
                 disabled={toggling}
-                aria-label={doctor.is_active ? "Deactivate doctor" : "Activate doctor"}
+                aria-label={doctor.is_active ? t("deactivateDoctor") : t("activateDoctor")}
               />
             </div>
           </div>
@@ -626,19 +634,18 @@ function DoctorCard({
       <Dialog open={confirmOff} onOpenChange={setConfirmOff}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Deactivate doctor?</DialogTitle>
+            <DialogTitle>{t("deactivateDoctorTitle")}</DialogTitle>
             <DialogDescription>
-              {doctorDisplayName(doctor)} will be hidden from the booking directory until activated
-              again. Existing appointments are unchanged.
+              {t("deactivateDoctorDesc", { name: displayName })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button type="button" variant="outline" disabled={toggling} onClick={() => setConfirmOff(false)}>
-              Cancel
+              {tc("cancel")}
             </Button>
             <Button type="button" disabled={toggling} onClick={() => void applyActive(false)}>
               {toggling && <Loader2 className="size-4 animate-spin" aria-hidden />}
-              Deactivate
+              {t("deactivate")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -656,6 +663,8 @@ function EditDoctorDialog({
   specialties: Specialty[];
   departments: Department[];
 }) {
+  const t = useTranslations("admin");
+  const tc = useTranslations("common");
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -694,7 +703,7 @@ function EditDoctorDialog({
         toast.error(res.error);
         return;
       }
-      toast.success("Doctor updated");
+      toast.success(t("doctorUpdated"));
       setOpen(false);
       router.refresh();
     });
@@ -711,7 +720,7 @@ function EditDoctorDialog({
           setOpen(true);
         }}
       >
-        <Pencil className="size-4" aria-hidden /> Edit
+        <Pencil className="size-4" aria-hidden /> {tc("edit")}
       </Button>
       <Dialog
         open={open}
@@ -722,14 +731,12 @@ function EditDoctorDialog({
       >
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Edit doctor</DialogTitle>
-            <DialogDescription>
-              Update this doctor&apos;s profile, specialty, department, and consultation fee.
-            </DialogDescription>
+            <DialogTitle>{t("editDoctor")}</DialogTitle>
+            <DialogDescription>{t("editDoctorDesc")}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">
             <div className="space-y-2">
-              <Label htmlFor={`name-${doctor.id}`}>Full name</Label>
+              <Label htmlFor={`name-${doctor.id}`}>{t("fullName")}</Label>
               <Input
                 id={`name-${doctor.id}`}
                 value={fullName}
@@ -739,7 +746,7 @@ function EditDoctorDialog({
             </div>
             {doctor.profile?.email && (
               <div className="space-y-2">
-                <Label htmlFor={`email-${doctor.id}`}>Email</Label>
+                <Label htmlFor={`email-${doctor.id}`}>{t("email")}</Label>
                 <Input
                   id={`email-${doctor.id}`}
                   value={doctor.profile.email}
@@ -750,20 +757,20 @@ function EditDoctorDialog({
             )}
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>Specialty</Label>
+                <Label>{t("specialty")}</Label>
                 <Select
                   value={specialtyId || null}
                   onValueChange={(v) => setSpecialtyId(v ?? "")}
                   items={[
-                    { value: null, label: "None" },
+                    { value: null, label: t("none") },
                     ...specialties.map((s) => ({ value: s.id, label: s.name })),
                   ]}
                 >
-                  <SelectTrigger aria-label="Specialty">
+                  <SelectTrigger aria-label={t("specialty")}>
                     <SelectValue placeholder="Optional" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={null}>None</SelectItem>
+                    <SelectItem value={null}>{t("none")}</SelectItem>
                     {specialties.map((s) => (
                       <SelectItem key={s.id} value={s.id}>
                         {s.name}
@@ -773,20 +780,20 @@ function EditDoctorDialog({
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Department</Label>
+                <Label>{t("department")}</Label>
                 <Select
                   value={departmentId || null}
                   onValueChange={(v) => setDepartmentId(v ?? "")}
                   items={[
-                    { value: null, label: "None" },
+                    { value: null, label: t("none") },
                     ...departments.map((dep) => ({ value: dep.id, label: dep.name })),
                   ]}
                 >
-                  <SelectTrigger aria-label="Department">
+                  <SelectTrigger aria-label={t("department")}>
                     <SelectValue placeholder="Optional" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={null}>None</SelectItem>
+                    <SelectItem value={null}>{t("none")}</SelectItem>
                     {departments.map((dep) => (
                       <SelectItem key={dep.id} value={dep.id}>
                         {dep.name}
@@ -798,7 +805,7 @@ function EditDoctorDialog({
             </div>
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="space-y-2">
-                <Label htmlFor={`license-${doctor.id}`}>License</Label>
+                <Label htmlFor={`license-${doctor.id}`}>{t("license")}</Label>
                 <Input
                   id={`license-${doctor.id}`}
                   value={license}
@@ -806,7 +813,7 @@ function EditDoctorDialog({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor={`years-${doctor.id}`}>Years exp.</Label>
+                <Label htmlFor={`years-${doctor.id}`}>{t("yearsExp")}</Label>
                 <Input
                   id={`years-${doctor.id}`}
                   type="number"
@@ -816,7 +823,7 @@ function EditDoctorDialog({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor={`fee-${doctor.id}`}>Fee</Label>
+                <Label htmlFor={`fee-${doctor.id}`}>{t("fee")}</Label>
                 <Input
                   id={`fee-${doctor.id}`}
                   type="number"
@@ -829,11 +836,11 @@ function EditDoctorDialog({
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" disabled={pending} onClick={() => setOpen(false)}>
-              Cancel
+              {tc("cancel")}
             </Button>
             <Button type="button" disabled={pending || fullName.trim().length < 2} onClick={submit}>
               {pending && <Loader2 className="size-4 animate-spin" aria-hidden />}
-              Save changes
+              {t("saveChanges")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/session";
+import { logDbError } from "@/lib/supabase/log";
 import type { Appointment, Patient, Prediction } from "@/types";
 
 export type AppointmentView = Appointment & {
@@ -15,11 +16,12 @@ export async function getMyPatient(): Promise<Patient | null> {
   const user = await getCurrentUser();
   if (!user) return null;
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("patients")
     .select("*")
     .eq("profile_id", user.id)
     .maybeSingle();
+  logDbError("getMyPatient", error);
   return data;
 }
 
@@ -71,24 +73,26 @@ async function enrichAppointments(
 /** All of the patient's appointments, most recent first. */
 export async function getMyAppointments(): Promise<AppointmentView[]> {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("appointments")
     .select("*")
     .is("deleted_at", null)
     .order("scheduled_start", { ascending: false })
     .limit(200);
+  logDbError("getMyAppointments", error);
   return enrichAppointments(data ?? []);
 }
 
 /** The patient's screening history (AI predictions). */
 export async function getMyScreenings(): Promise<Prediction[]> {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("predictions")
     .select("*")
     .is("deleted_at", null)
     .order("created_at", { ascending: false })
     .limit(200);
+  logDbError("getMyScreenings", error);
   return data ?? [];
 }
 
@@ -113,24 +117,36 @@ export async function getPatientOverview(): Promise<PatientOverview> {
   const user = await getCurrentUser();
   const nowIso = new Date().toISOString();
 
-  const [apptsRes, screeningsRes, apptCountRes, screenCountRes] = await Promise.all([
-    supabase
-      .from("appointments")
-      .select(OVERVIEW_APPT_COLUMNS)
-      .is("deleted_at", null)
-      .gte("scheduled_start", nowIso)
-      .in("status", ["pending", "confirmed", "checked_in", "in_progress"])
-      .order("scheduled_start", { ascending: true })
-      .limit(5),
-    supabase
-      .from("predictions")
-      .select("id, recommended_specialty_label, risk_level, created_at")
-      .is("deleted_at", null)
-      .order("created_at", { ascending: false })
-      .limit(3),
-    supabase.from("appointments").select("id", { count: "exact", head: true }).is("deleted_at", null),
-    supabase.from("predictions").select("id", { count: "exact", head: true }).is("deleted_at", null),
-  ]);
+  const upcomingStatuses = ["pending", "confirmed", "checked_in", "in_progress"] as const;
+  const [apptsRes, screeningsRes, apptCountRes, screenCountRes, upcomingCountRes] =
+    await Promise.all([
+      supabase
+        .from("appointments")
+        .select(OVERVIEW_APPT_COLUMNS)
+        .is("deleted_at", null)
+        .gte("scheduled_start", nowIso)
+        .in("status", [...upcomingStatuses])
+        .order("scheduled_start", { ascending: true })
+        .limit(5),
+      supabase
+        .from("predictions")
+        .select("id, recommended_specialty_label, risk_level, created_at")
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(3),
+      supabase.from("appointments").select("id", { count: "exact", head: true }).is("deleted_at", null),
+      supabase.from("predictions").select("id", { count: "exact", head: true }).is("deleted_at", null),
+      supabase
+        .from("appointments")
+        .select("id", { count: "exact", head: true })
+        .is("deleted_at", null)
+        .gte("scheduled_start", nowIso)
+        .in("status", [...upcomingStatuses]),
+    ]);
+
+  logDbError("getPatientOverview.appointments", apptsRes.error);
+  logDbError("getPatientOverview.screenings", screeningsRes.error);
+  logDbError("getPatientOverview.upcomingCount", upcomingCountRes.error);
 
   const appts = apptsRes.data;
   const screenings = screeningsRes.data;
@@ -147,7 +163,8 @@ export async function getPatientOverview(): Promise<PatientOverview> {
     recentScreenings: screenings ?? [],
     stats: {
       totalAppointments: apptCount ?? 0,
-      upcomingCount: upcoming.length,
+      // Real upcoming total, not the capped preview length.
+      upcomingCount: upcomingCountRes.count ?? upcoming.length,
       screeningCount: screenCount ?? 0,
     },
   };

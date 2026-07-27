@@ -1,10 +1,23 @@
+"use client";
+
 import { CalendarDays, MapPin, Stethoscope } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { AppointmentView } from "@/features/patient/data";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { getAppointmentStatusMeta } from "@/lib/constants";
+import type { AppointmentStatus } from "@/types";
 import { formatDateTime, formatDoctorName } from "@/lib/format";
 import { cn } from "@/lib/utils";
+
+const KNOWN_STATUSES: AppointmentStatus[] = [
+  "pending",
+  "confirmed",
+  "checked_in",
+  "in_progress",
+  "completed",
+  "cancelled",
+  "no_show",
+];
 
 type Props = {
   appointment: AppointmentView;
@@ -20,7 +33,12 @@ export function PatientAppointmentCard({
   actions,
   className,
 }: Props) {
-  const hint = getAppointmentStatusMeta(a.status).hint;
+  const t = useTranslations("patient");
+  const tStatus = useTranslations("status");
+  const statusKey = KNOWN_STATUSES.includes(a.status as AppointmentStatus)
+    ? (a.status as AppointmentStatus)
+    : "unknown";
+  const hint = tStatus(`${statusKey}Hint`);
 
   return (
     <Card
@@ -53,11 +71,11 @@ export function PatientAppointmentCard({
           <div className="min-w-0 space-y-1">
             {featured ? (
               <p className="text-xs font-medium uppercase tracking-wide text-teal-800/80 dark:text-teal-300/80">
-                Next visit
+                {t("nextVisit")}
               </p>
             ) : null}
             <p className={cn("font-medium text-foreground", featured && "font-heading text-lg")}>
-              {a.doctorName ? formatDoctorName(a.doctorName) : "Doctor to be assigned"}
+              {a.doctorName ? formatDoctorName(a.doctorName) : t("doctorToBeAssigned")}
             </p>
             <p className="text-sm text-foreground/70">{formatDateTime(a.scheduled_start)}</p>
             <p className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-foreground/65">

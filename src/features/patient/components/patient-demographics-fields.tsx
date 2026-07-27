@@ -1,6 +1,7 @@
 "use client";
 
 import type { UseFormReturn } from "react-hook-form";
+import { useTranslations } from "next-intl";
 import type { PatientOnboardingInput } from "@/schemas/patient";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -34,6 +35,7 @@ export function PatientDemographicsFields({
 }: {
   form: UseFormReturn<PatientOnboardingInput>;
 }) {
+  const t = useTranslations("patient");
   return (
     <>
       <div className="grid gap-5 sm:grid-cols-2">
@@ -42,7 +44,7 @@ export function PatientDemographicsFields({
           name="fullName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Full name</FormLabel>
+              <FormLabel>{t("fullName")}</FormLabel>
               <FormControl>
                 <Input placeholder="Jane Doe" autoComplete="name" {...field} />
               </FormControl>
@@ -55,7 +57,7 @@ export function PatientDemographicsFields({
           name="dob"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Date of birth</FormLabel>
+              <FormLabel>{t("dob")}</FormLabel>
               <FormControl>
                 <Input type="date" autoComplete="bday" {...field} />
               </FormControl>
@@ -68,27 +70,27 @@ export function PatientDemographicsFields({
           name="gender"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Gender</FormLabel>
+              <FormLabel>{t("gender")}</FormLabel>
               <Select
                 onValueChange={field.onChange}
                 value={field.value}
                 items={[
-                  { value: "male", label: "Male" },
-                  { value: "female", label: "Female" },
-                  { value: "other", label: "Other" },
-                  { value: "prefer_not_to_say", label: "Prefer not to say" },
+                  { value: "male", label: t("genderMale") },
+                  { value: "female", label: t("genderFemale") },
+                  { value: "other", label: t("genderOther") },
+                  { value: "prefer_not_to_say", label: t("genderPreferNotToSay") },
                 ]}
               >
                 <FormControl>
-                  <SelectTrigger aria-label="Gender">
+                  <SelectTrigger aria-label={t("gender")}>
                     <SelectValue />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                  <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem>
+                  <SelectItem value="male">{t("genderMale")}</SelectItem>
+                  <SelectItem value="female">{t("genderFemale")}</SelectItem>
+                  <SelectItem value="other">{t("genderOther")}</SelectItem>
+                  <SelectItem value="prefer_not_to_say">{t("genderPreferNotToSay")}</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -100,7 +102,7 @@ export function PatientDemographicsFields({
           name="phone"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Phone</FormLabel>
+              <FormLabel>{t("phone")}</FormLabel>
               <FormControl>
                 <Input type="tel" autoComplete="tel" placeholder="+92 300 1234567" {...field} />
               </FormControl>
@@ -113,24 +115,24 @@ export function PatientDemographicsFields({
           name="bloodGroup"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Blood group</FormLabel>
+              <FormLabel>{t("bloodGroup")}</FormLabel>
               <Select
                 onValueChange={field.onChange}
                 value={field.value}
                 items={BLOOD_GROUPS.map((bg) => ({
                   value: bg,
-                  label: bg === "unknown" ? "Unknown" : bg,
+                  label: bg === "unknown" ? t("unknown") : bg,
                 }))}
               >
                 <FormControl>
-                  <SelectTrigger aria-label="Blood group">
+                  <SelectTrigger aria-label={t("bloodGroup")}>
                     <SelectValue />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
                   {BLOOD_GROUPS.map((bg) => (
                     <SelectItem key={bg} value={bg}>
-                      {bg === "unknown" ? "Unknown" : bg}
+                      {bg === "unknown" ? t("unknown") : bg}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -146,7 +148,7 @@ export function PatientDemographicsFields({
         name="address"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Address (optional)</FormLabel>
+            <FormLabel>{t("addressOptional")}</FormLabel>
             <FormControl>
               <Textarea rows={2} placeholder="Street, city" autoComplete="street-address" {...field} />
             </FormControl>
@@ -161,7 +163,7 @@ export function PatientDemographicsFields({
           name="emergencyContactName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Emergency contact (optional)</FormLabel>
+              <FormLabel>{t("emergencyContactOptional")}</FormLabel>
               <FormControl>
                 <Input placeholder="Contact name" {...field} />
               </FormControl>
@@ -174,7 +176,7 @@ export function PatientDemographicsFields({
           name="emergencyContactPhone"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Emergency contact phone (optional)</FormLabel>
+              <FormLabel>{t("emergencyContactPhoneOptional")}</FormLabel>
               <FormControl>
                 <Input type="tel" placeholder="+92 300 1234567" {...field} />
               </FormControl>

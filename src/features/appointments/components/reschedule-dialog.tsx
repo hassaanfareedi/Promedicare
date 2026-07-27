@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Loader2, CalendarClock, Clock } from "lucide-react";
 import { getDoctorSlots, rescheduleAppointment } from "@/features/appointments/actions";
@@ -25,6 +26,7 @@ export function RescheduleDialog({
   doctorId: string | null;
 }) {
   const router = useRouter();
+  const t = useTranslations("appointments");
   const [open, setOpen] = useState(false);
   const [slots, setSlots] = useState<SlotGroup[]>([]);
   const [loading, setLoading] = useState(false);
@@ -58,7 +60,7 @@ export function RescheduleDialog({
         void load();
         return;
       }
-      toast.success("Appointment rescheduled");
+      toast.success(t("rescheduled"));
       setOpen(false);
       router.refresh();
     });
@@ -72,24 +74,24 @@ export function RescheduleDialog({
             variant="outline"
             size="sm"
             disabled={!doctorId}
-            title={!doctorId ? "Doctor not assigned yet" : undefined}
+            title={!doctorId ? t("doctorNotAssigned") : undefined}
           >
-            <CalendarClock className="size-4" aria-hidden /> Reschedule
+            <CalendarClock className="size-4" aria-hidden /> {t("reschedule")}
           </Button>
         }
       />
       <DialogContent className="max-h-[80vh] overflow-y-auto overscroll-contain">
         <DialogHeader>
-          <DialogTitle>Reschedule appointment</DialogTitle>
-          <DialogDescription>Choose a new available time with the same doctor.</DialogDescription>
+          <DialogTitle>{t("rescheduleTitle")}</DialogTitle>
+          <DialogDescription>{t("rescheduleDesc")}</DialogDescription>
         </DialogHeader>
         {loading || pending ? (
           <div className="flex items-center justify-center py-10 text-muted-foreground" role="status">
             <Loader2 className="mr-2 size-5 animate-spin" aria-hidden />{" "}
-            {pending ? "Rescheduling…" : "Loading times…"}
+            {pending ? t("rescheduling") : t("loadingTimesShort")}
           </div>
         ) : slots.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">No available times in the next two weeks.</p>
+          <p className="py-6 text-center text-sm text-muted-foreground">{t("noTimes")}</p>
         ) : (
           <div className="space-y-4">
             {slots.map((group) => (

@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Loader2, Plus, Stethoscope, Pencil, Trash2, Search } from "lucide-react";
 import {
@@ -35,6 +36,8 @@ function slugify(value: string): string {
 
 export function SpecialtyManager({ specialties }: { specialties: Specialty[] }) {
   const router = useRouter();
+  const t = useTranslations("platform");
+  const tCommon = useTranslations("common");
   const [pending, startTransition] = useTransition();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -73,7 +76,7 @@ export function SpecialtyManager({ specialties }: { specialties: Specialty[] }) 
         toast.error(res.error);
         return;
       }
-      toast.success("Specialty created");
+      toast.success(t("specialtyCreated"));
       setName("");
       setSlug("");
       setSlugDirty(false);
@@ -104,7 +107,7 @@ export function SpecialtyManager({ specialties }: { specialties: Specialty[] }) 
         toast.error(res.error);
         return;
       }
-      toast.success("Specialty updated");
+      toast.success(t("specialtyUpdated"));
       setEditOpen(false);
       setEditing(null);
       router.refresh();
@@ -120,7 +123,7 @@ export function SpecialtyManager({ specialties }: { specialties: Specialty[] }) 
       toast.error(res.error);
       return;
     }
-    toast.success("Specialty deleted");
+    toast.success(t("specialtyDeleted"));
     setDeleteTarget(null);
     router.refresh();
   }
@@ -129,9 +132,9 @@ export function SpecialtyManager({ specialties }: { specialties: Specialty[] }) 
     <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
       <Card>
         <CardContent className="space-y-4 p-5">
-          <h2 className="font-medium">Add specialty</h2>
+          <h2 className="font-medium">{t("addSpecialty")}</h2>
           <div className="space-y-2">
-            <Label htmlFor="s-name">Name</Label>
+            <Label htmlFor="s-name">{t("name")}</Label>
             <Input
               id="s-name"
               value={name}
@@ -143,7 +146,7 @@ export function SpecialtyManager({ specialties }: { specialties: Specialty[] }) 
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="s-slug">Slug</Label>
+            <Label htmlFor="s-slug">{t("slug")}</Label>
             <Input
               id="s-slug"
               value={slug}
@@ -155,7 +158,7 @@ export function SpecialtyManager({ specialties }: { specialties: Specialty[] }) 
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="s-desc">Description (optional)</Label>
+            <Label htmlFor="s-desc">{t("descriptionOptional")}</Label>
             <Textarea
               id="s-desc"
               value={description}
@@ -169,7 +172,7 @@ export function SpecialtyManager({ specialties }: { specialties: Specialty[] }) 
             ) : (
               <Plus className="size-4" aria-hidden />
             )}
-            Add specialty
+            {t("addSpecialty")}
           </Button>
         </CardContent>
       </Card>
@@ -185,21 +188,21 @@ export function SpecialtyManager({ specialties }: { specialties: Specialty[] }) 
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search specialties…"
             className="pl-9"
-            aria-label="Search specialties"
+            aria-label={t("searchSpecialties")}
           />
         </div>
 
         {specialties.length === 0 ? (
           <EmptyState
             icon={Stethoscope}
-            title="No specialties"
-            description="Add your first specialty."
+            title={t("noSpecialties")}
+            description={t("noSpecialtiesDesc")}
           />
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={Search}
-            title="No matches"
-            description="Try a different search term."
+            title={t("noMatches")}
+            description={t("noMatchesSearch")}
           />
         ) : (
           filtered.map((s) => (
@@ -220,10 +223,10 @@ export function SpecialtyManager({ specialties }: { specialties: Specialty[] }) 
                     size="sm"
                     variant="outline"
                     onClick={() => openEdit(s)}
-                    aria-label={`Edit ${s.name}`}
+                    aria-label={t("editName", { name: s.name })}
                   >
                     <Pencil className="size-4" aria-hidden />
-                    Edit
+                    {tCommon("edit")}
                   </Button>
                   <Button
                     type="button"
@@ -231,14 +234,14 @@ export function SpecialtyManager({ specialties }: { specialties: Specialty[] }) 
                     variant="outline"
                     onClick={() => setDeleteTarget(s)}
                     disabled={deletingId === s.id}
-                    aria-label={`Delete ${s.name}`}
+                    aria-label={t("deleteName", { name: s.name })}
                   >
                     {deletingId === s.id ? (
                       <Loader2 className="size-4 animate-spin" aria-hidden />
                     ) : (
                       <Trash2 className="size-4 text-destructive" aria-hidden />
                     )}
-                    Delete
+                    {tCommon("delete")}
                   </Button>
                 </div>
               </CardContent>
@@ -256,12 +259,12 @@ export function SpecialtyManager({ specialties }: { specialties: Specialty[] }) 
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit specialty</DialogTitle>
-            <DialogDescription>Update the name, slug, or description.</DialogDescription>
+            <DialogTitle>{t("editSpecialty")}</DialogTitle>
+            <DialogDescription>{t("editSpecialtyDesc")}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-s-name">Name</Label>
+              <Label htmlFor="edit-s-name">{t("name")}</Label>
               <Input
                 id="edit-s-name"
                 value={editName}
@@ -272,7 +275,7 @@ export function SpecialtyManager({ specialties }: { specialties: Specialty[] }) 
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-s-slug">Slug</Label>
+              <Label htmlFor="edit-s-slug">{t("slug")}</Label>
               <Input
                 id="edit-s-slug"
                 value={editSlug}
@@ -283,7 +286,7 @@ export function SpecialtyManager({ specialties }: { specialties: Specialty[] }) 
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-s-desc">Description (optional)</Label>
+              <Label htmlFor="edit-s-desc">{t("descriptionOptional")}</Label>
               <Textarea
                 id="edit-s-desc"
                 value={editDescription}
@@ -294,7 +297,7 @@ export function SpecialtyManager({ specialties }: { specialties: Specialty[] }) 
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               type="button"
@@ -302,7 +305,7 @@ export function SpecialtyManager({ specialties }: { specialties: Specialty[] }) 
               disabled={editPending || editName.trim().length < 2}
             >
               {editPending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-              Save changes
+              {t("saveChanges")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -316,16 +319,19 @@ export function SpecialtyManager({ specialties }: { specialties: Specialty[] }) 
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete specialty?</DialogTitle>
+            <DialogTitle>{t("deleteSpecialty")}</DialogTitle>
             <DialogDescription>
-              Remove <span className="font-medium text-foreground">{deleteTarget?.name}</span> from
-              the global catalog. Doctors linked to it keep their profiles; the specialty link will
-              be cleared.
+              {t.rich("deleteSpecialtyDesc", {
+                name: deleteTarget?.name ?? "",
+                b: (chunks) => (
+                  <span className="font-medium text-foreground">{chunks}</span>
+                ),
+              })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setDeleteTarget(null)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button
               type="button"
@@ -334,7 +340,7 @@ export function SpecialtyManager({ specialties }: { specialties: Specialty[] }) 
               disabled={Boolean(deletingId)}
             >
               {deletingId ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-              Delete
+              {tCommon("delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

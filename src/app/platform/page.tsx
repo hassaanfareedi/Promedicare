@@ -33,43 +33,43 @@ export default async function PlatformDashboard() {
         description={t("dashboardDesc")}
         actions={
           <Link href="/platform/hospitals" className={buttonVariants()}>
-            <Building2 className="size-4" aria-hidden /> Manage hospitals
+            <Building2 className="size-4" aria-hidden /> {t("manageHospitals")}
           </Link>
         }
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard label="Hospitals" value={o.hospitals} icon={Building2} />
-        <StatCard label="Users" value={o.users} icon={Users} />
-        <StatCard label="Doctors" value={o.doctors} icon={BriefcaseMedical} />
-        <StatCard label="Patients" value={o.patients} icon={Users} />
-        <StatCard label="Appointments" value={o.appointments} icon={CalendarDays} />
-        <StatCard label="AI screenings" value={o.predictions} icon={Activity} />
+        <StatCard label={t("hospitalsTitle")} value={o.hospitals} icon={Building2} />
+        <StatCard label={t("users")} value={o.users} icon={Users} />
+        <StatCard label={t("doctorsTitle")} value={o.doctors} icon={BriefcaseMedical} />
+        <StatCard label={t("patients")} value={o.patients} icon={Users} />
+        <StatCard label={t("appointments")} value={o.appointments} icon={CalendarDays} />
+        <StatCard label={t("aiScreenings")} value={o.predictions} icon={Activity} />
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <QuickLink
           href="/platform/hospitals"
-          title="Hospitals"
-          description="Onboard and activate sites"
+          title={t("hospitalsTitle")}
+          description={t("quickHospitalsDesc")}
           icon={Building2}
         />
         <QuickLink
           href="/platform/specialties"
-          title="Specialties"
-          description="Clinical specialty catalog"
+          title={t("specialtiesTitle")}
+          description={t("quickSpecialtiesDesc")}
           icon={Stethoscope}
         />
         <QuickLink
           href="/platform/analytics"
-          title="Analytics"
-          description="Cross-hospital metrics"
+          title={t("analyticsTitle")}
+          description={t("quickAnalyticsDesc")}
           icon={Activity}
         />
         <QuickLink
           href="/platform/audit"
-          title="Audit logs"
-          description="Security and change trail"
+          title={t("auditTitle")}
+          description={t("quickAuditDesc")}
           icon={ScrollText}
         />
       </div>

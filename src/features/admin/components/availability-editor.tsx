@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Clock, Loader2, Plus, Trash2 } from "lucide-react";
 import { addAvailability, addAvailabilityBatch, removeAvailability } from "@/features/admin/actions";
@@ -16,8 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
 const MINUTES = ["00", "15", "30", "45"];
@@ -38,6 +37,7 @@ function TimeSelect({
   value: string;
   onChange: (next: string) => void;
 }) {
+  const t = useTranslations("admin");
   const { hour, minute } = splitTime(value);
   const minuteOptions = MINUTES.includes(minute) ? MINUTES : [...MINUTES, minute].sort();
 
@@ -52,7 +52,7 @@ function TimeSelect({
           onValueChange={(v) => onChange(`${v ?? hour}:${minute}`)}
           items={HOURS.map((h) => ({ value: h, label: h }))}
         >
-          <SelectTrigger id={`${id}-hour`} className="w-[4.5rem]" aria-label={`${label} hour`}>
+          <SelectTrigger id={`${id}-hour`} className="w-[4.5rem]" aria-label={t("hourAria", { label })}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -71,7 +71,7 @@ function TimeSelect({
           onValueChange={(v) => onChange(`${hour}:${v ?? minute}`)}
           items={minuteOptions.map((m) => ({ value: m, label: m }))}
         >
-          <SelectTrigger id={`${id}-minute`} className="w-[4.5rem]" aria-label={`${label} minute`}>
+          <SelectTrigger id={`${id}-minute`} className="w-[4.5rem]" aria-label={t("minuteAria", { label })}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -88,6 +88,9 @@ function TimeSelect({
 }
 
 export function AvailabilityEditor({ doctor }: { doctor: AdminDoctor }) {
+  const t = useTranslations("admin");
+  const tc = useTranslations("common");
+  const WEEKDAYS = tc.raw("weekdays") as string[];
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [weekday, setWeekday] = useState("1");
@@ -108,7 +111,7 @@ export function AvailabilityEditor({ doctor }: { doctor: AdminDoctor }) {
         toast.error(res.error);
         return;
       }
-      toast.success("Availability added");
+      toast.success(t("availabilityAdded"));
       router.refresh();
     });
   }
@@ -128,14 +131,14 @@ export function AvailabilityEditor({ doctor }: { doctor: AdminDoctor }) {
       }
       const { added, skipped } = res.data ?? { added: 0, skipped: 0 };
       if (added === 0) {
-        toast.message("Mon–Fri already scheduled", {
-          description: skipped ? `${skipped} day(s) already had a slot.` : undefined,
+        toast.message(t("monFriAlreadyScheduled"), {
+          description: skipped ? t("daysAlreadyHadSlot", { count: skipped }) : undefined,
         });
       } else {
         toast.success(
           skipped > 0
-            ? `Added ${added} day(s); skipped ${skipped} already set`
-            : `Added Mon–Fri (${added} days)`,
+            ? t("addedDaysSkipped", { added, skipped })
+            : t("addedMonFri", { count: added }),
         );
       }
       router.refresh();
@@ -153,7 +156,7 @@ export function AvailabilityEditor({ doctor }: { doctor: AdminDoctor }) {
   return (
     <div className="rounded-lg border p-4">
       <p className="mb-3 flex items-center gap-2 text-sm font-medium">
-        <Clock className="size-4 text-teal-600" aria-hidden /> Weekly availability
+        <Clock className="size-4 text-teal-600" aria-hidden /> {t("weeklyAvailability")}
       </p>
 
       {doctor.availability.length > 0 ? (
@@ -171,7 +174,7 @@ export function AvailabilityEditor({ doctor }: { doctor: AdminDoctor }) {
                   size="sm"
                   onClick={() => remove(a.id)}
                   disabled={pending}
-                  aria-label={`Remove ${WEEKDAYS[a.weekday]} availability`}
+                  aria-label={t("removeAvailability", { day: WEEKDAYS[a.weekday] })}
                 >
                   <Trash2 className="size-4 text-destructive" aria-hidden />
                 </Button>
@@ -179,20 +182,20 @@ export function AvailabilityEditor({ doctor }: { doctor: AdminDoctor }) {
             ))}
         </ul>
       ) : (
-        <p className="mb-3 text-sm text-muted-foreground">No availability set.</p>
+        <p className="mb-3 text-sm text-muted-foreground">{t("noAvailability")}</p>
       )}
 
       <div className="flex flex-wrap items-end gap-2">
         <div className="space-y-1">
           <Label className="text-xs" htmlFor={`avail-day-${doctor.id}`}>
-            Day
+            {t("day")}
           </Label>
           <Select
             value={weekday}
             onValueChange={(v) => setWeekday(v ?? "1")}
             items={WEEKDAYS.map((w, i) => ({ value: String(i), label: w }))}
           >
-            <SelectTrigger id={`avail-day-${doctor.id}`} className="w-32" aria-label="Day">
+            <SelectTrigger id={`avail-day-${doctor.id}`} className="w-32" aria-label={t("day")}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -206,14 +209,14 @@ export function AvailabilityEditor({ doctor }: { doctor: AdminDoctor }) {
         </div>
         <TimeSelect
           id={`avail-start-${doctor.id}`}
-          label="Start"
+          label={t("start")}
           value={start}
           onChange={setStart}
         />
-        <TimeSelect id={`avail-end-${doctor.id}`} label="End" value={end} onChange={setEnd} />
+        <TimeSelect id={`avail-end-${doctor.id}`} label={t("end")} value={end} onChange={setEnd} />
         <div className="space-y-1">
           <Label className="text-xs" htmlFor={`avail-slot-${doctor.id}`}>
-            Slot (min)
+            {t("slotMin")}
           </Label>
           <Input
             id={`avail-slot-${doctor.id}`}
@@ -226,10 +229,10 @@ export function AvailabilityEditor({ doctor }: { doctor: AdminDoctor }) {
         </div>
         <Button size="sm" onClick={add} disabled={pending}>
           {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Plus className="size-4" aria-hidden />}
-          Add
+          {t("add")}
         </Button>
         <Button size="sm" variant="outline" onClick={applyWeekdays} disabled={pending}>
-          Apply Mon–Fri
+          {t("applyMonFri")}
         </Button>
       </div>
     </div>

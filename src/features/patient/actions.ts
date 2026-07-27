@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser, requireRole } from "@/lib/auth/session";
 import { patientOnboardingSchema, type PatientOnboardingInput } from "@/schemas/patient";
@@ -37,9 +38,10 @@ export async function runScreening(
   input: SymptomIntakeInput,
 ): Promise<MutationResult<ScreeningResult>> {
   const user = await requireRole(["patient"]);
+  const t = await getTranslations("patient");
   const parsed = symptomIntakeSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Please review your symptoms" };
+    return { ok: false, error: parsed.error.issues[0]?.message ?? t("reviewSymptoms") };
   }
 
   const limited = rateLimit(`screening:${user.id}`, { limit: 5, windowMs: 10 * 60_000 });
@@ -47,7 +49,7 @@ export async function runScreening(
     const mins = Math.max(1, Math.ceil(limited.retryAfterMs / 60_000));
     return {
       ok: false,
-      error: `Too many screenings. Please wait about ${mins} minute(s) and try again.`,
+      error: t("tooManyScreenings", { minutes: mins }),
     };
   }
 
@@ -58,7 +60,7 @@ export async function runScreening(
     .select("id, hospital_id, dob, gender")
     .eq("profile_id", user.id)
     .maybeSingle();
-  if (!patient) return { ok: false, error: "Complete your patient profile first." };
+  if (!patient) return { ok: false, error: t("completeProfileFirst") };
 
   const intake: SymptomIntakeInput = {
     ...parsed.data,
@@ -101,7 +103,7 @@ export async function runScreening(
     .single();
 
   if (error || !row) {
-    return { ok: false, error: error?.message ?? "Could not save your screening." };
+    return { ok: false, error: error?.message ?? t("saveScreeningFailed") };
   }
 
   await logAudit({
@@ -129,9 +131,10 @@ export async function completeOnboarding(
   input: PatientOnboardingInput,
 ): Promise<MutationResult<{ patientId: string }>> {
   const user = await requireUser();
+  const t = await getTranslations("patient");
   const parsed = patientOnboardingSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid details" };
+    return { ok: false, error: parsed.error.issues[0]?.message ?? t("invalidDetails") };
   }
   const v = parsed.data;
   const supabase = await createClient();

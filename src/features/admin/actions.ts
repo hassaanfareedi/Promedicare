@@ -142,6 +142,41 @@ export async function assignRole(input: RoleAssignInput): Promise<MutationResult
     };
   }
 
+  // Moving a doctor to receptionist must retire their clinical doctor row,
+  // otherwise it lingers in /admin/doctors (mirror demoteToPatient cleanup).
+  if (profile.role === "doctor" && parsed.data.role === "receptionist") {
+    const { data: doctorRow, error: doctorReadErr } = await supabase
+      .from("doctors")
+      .select("id")
+      .eq("profile_id", profile.id)
+      .eq("hospital_id", hid)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (doctorReadErr) return { ok: false, error: doctorReadErr.message };
+    if (doctorRow) {
+      const nowIso = new Date().toISOString();
+      const { count, error: apptErr } = await supabase
+        .from("appointments")
+        .select("id", { count: "exact", head: true })
+        .eq("doctor_id", doctorRow.id)
+        .is("deleted_at", null)
+        .in("status", [...OPEN_APPOINTMENT_STATUSES])
+        .gte("scheduled_start", nowIso);
+      if (apptErr) return { ok: false, error: apptErr.message };
+      if ((count ?? 0) > 0) {
+        return {
+          ok: false,
+          error: `Cannot change role: this doctor has ${count} open upcoming appointment${count === 1 ? "" : "s"}. Resolve or cancel them first.`,
+        };
+      }
+      const { error: softErr } = await supabase
+        .from("doctors")
+        .update({ deleted_at: nowIso, is_active: false })
+        .eq("id", doctorRow.id);
+      if (softErr) return { ok: false, error: softErr.message };
+    }
+  }
+
   const { error } = await supabase
     .from("profiles")
     .update({ role: parsed.data.role, hospital_id: hid })

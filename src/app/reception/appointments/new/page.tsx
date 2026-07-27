@@ -18,13 +18,17 @@ export default async function ReceptionNewAppointmentPage({
   const { patient } = await searchParams;
   const [patients, doctors] = await Promise.all([getHospitalPatients(), getWalkInDoctors()]);
 
+  // Only honour a ?patient= deep link if it resolves to a real hospital patient,
+  // so a stale/tampered id can't pre-select a patient the wizard can't book.
+  const initialPatientId = patient && patients.some((p) => p.id === patient) ? patient : undefined;
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <PageHeader title={t("bookTitle")} description={t("bookDesc")} />
       <ReceptionBookingWizard
         patients={patients}
         doctors={doctors}
-        initialPatientId={patient}
+        initialPatientId={initialPatientId}
       />
     </div>
   );

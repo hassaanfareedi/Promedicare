@@ -65,6 +65,7 @@ type Props = {
 
 export function ReceptionBookingWizard({ patients, doctors, initialPatientId }: Props) {
   const router = useRouter();
+  const t = useTranslations("reception");
   const tAppt = useTranslations("appointments");
   const tPatient = useTranslations("patient");
   const tRoles = useTranslations("roles");
@@ -118,7 +119,7 @@ export function ReceptionBookingWizard({ patients, doctors, initialPatientId }: 
   const patientLabel =
     patientMode === "existing"
       ? (selectedPatient?.full_name ?? "—")
-      : newPatient.fullName.trim() || "New patient";
+      : newPatient.fullName.trim() || t("newPatient");
 
   async function selectDoctor(d: WalkInDoctor) {
     setDoctor(d);
@@ -170,7 +171,7 @@ export function ReceptionBookingWizard({ patients, doctors, initialPatientId }: 
             setStep(2);
             setSlot(null);
           } catch {
-            toast.error("Could not refresh available times.");
+            toast.error(t("refreshTimesFailed"));
           } finally {
             setLoadingSlots(false);
           }
@@ -194,8 +195,8 @@ export function ReceptionBookingWizard({ patients, doctors, initialPatientId }: 
             onValueChange={(v) => setPatientMode(v as "existing" | "new")}
           >
             <TabsList className="w-full">
-              <TabsTrigger value="existing">Existing patient</TabsTrigger>
-              <TabsTrigger value="new">New patient</TabsTrigger>
+              <TabsTrigger value="existing">{t("existingPatient")}</TabsTrigger>
+              <TabsTrigger value="new">{t("newPatient")}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="existing" className="space-y-3 pt-4">
@@ -206,7 +207,7 @@ export function ReceptionBookingWizard({ patients, doctors, initialPatientId }: 
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search by name, patient ID, or phone"
                   className="pl-9"
-                  aria-label="Search patients"
+                  aria-label={t("searchPatients")}
                 />
               </div>
               <div className="grid max-h-80 gap-2 overflow-y-auto">
@@ -235,7 +236,7 @@ export function ReceptionBookingWizard({ patients, doctors, initialPatientId }: 
                 ))}
                 {filteredPatients.length === 0 && (
                   <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-                    No patients match your search. Register a new patient instead.
+                    {t("noPatientsMatch")}
                   </p>
                 )}
               </div>
@@ -243,7 +244,7 @@ export function ReceptionBookingWizard({ patients, doctors, initialPatientId }: 
 
             <TabsContent value="new" className="space-y-4 pt-4">
               <div className="space-y-2">
-                <Label htmlFor="new-full-name">Full name</Label>
+                <Label htmlFor="new-full-name">{t("fullName")}</Label>
                 <Input
                   id="new-full-name"
                   value={newPatient.fullName}
@@ -255,7 +256,7 @@ export function ReceptionBookingWizard({ patients, doctors, initialPatientId }: 
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="new-dob">Date of birth</Label>
+                  <Label htmlFor="new-dob">{t("dob")}</Label>
                   <Input
                     id="new-dob"
                     type="date"
@@ -264,34 +265,34 @@ export function ReceptionBookingWizard({ patients, doctors, initialPatientId }: 
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Gender</Label>
+                  <Label>{t("gender")}</Label>
                   <Select
                     value={newPatient.gender}
                     onValueChange={(v) =>
                       setNewPatient((s) => ({ ...s, gender: v as Gender }))
                     }
                     items={[
-                      { value: "male", label: "Male" },
-                      { value: "female", label: "Female" },
-                      { value: "other", label: "Other" },
-                      { value: "prefer_not_to_say", label: "Prefer not to say" },
+                      { value: "male", label: t("male") },
+                      { value: "female", label: t("female") },
+                      { value: "other", label: t("other") },
+                      { value: "prefer_not_to_say", label: t("preferNotToSay") },
                     ]}
                   >
-                    <SelectTrigger aria-label="Gender">
+                    <SelectTrigger aria-label={t("gender")}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                      <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem>
+                      <SelectItem value="male">{t("male")}</SelectItem>
+                      <SelectItem value="female">{t("female")}</SelectItem>
+                      <SelectItem value="other">{t("other")}</SelectItem>
+                      <SelectItem value="prefer_not_to_say">{t("preferNotToSay")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="new-phone">Phone</Label>
+                  <Label htmlFor="new-phone">{t("phone")}</Label>
                   <Input
                     id="new-phone"
                     type="tel"
@@ -304,7 +305,7 @@ export function ReceptionBookingWizard({ patients, doctors, initialPatientId }: 
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="new-email">Email (optional)</Label>
+                  <Label htmlFor="new-email">{t("emailOptional")}</Label>
                   <Input
                     id="new-email"
                     type="email"
@@ -317,7 +318,7 @@ export function ReceptionBookingWizard({ patients, doctors, initialPatientId }: 
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="new-address">Address (optional)</Label>
+                <Label htmlFor="new-address">{t("addressOptional")}</Label>
                 <Textarea
                   id="new-address"
                   rows={2}
@@ -333,7 +334,7 @@ export function ReceptionBookingWizard({ patients, doctors, initialPatientId }: 
 
           <div className="flex justify-end">
             <Button disabled={!patientValid} onClick={() => setStep(1)}>
-              Continue <ArrowRight className="size-4" />
+              {t("continue")} <ArrowRight className="size-4" />
             </Button>
           </div>
         </div>
@@ -342,7 +343,7 @@ export function ReceptionBookingWizard({ patients, doctors, initialPatientId }: 
       {step === 1 && (
         <div className="space-y-3">
           <Button variant="ghost" size="sm" onClick={() => setStep(0)}>
-            <ArrowLeft className="size-4" /> Change patient
+            <ArrowLeft className="size-4" /> {t("changePatient")}
           </Button>
           <div className="grid gap-3">
             {doctors.map((d) => (
@@ -358,14 +359,14 @@ export function ReceptionBookingWizard({ patients, doctors, initialPatientId }: 
                 <div>
                   <p className="font-medium">{formatDoctorName(d.full_name)}</p>
                   <p className="text-sm text-muted-foreground">
-                    {d.specialty_name ?? "General"}
+                    {d.specialty_name ?? t("general")}
                   </p>
                 </div>
               </button>
             ))}
             {doctors.length === 0 && (
               <p className="text-sm text-muted-foreground">
-                No active doctors available at this hospital yet.
+                {t("noDoctors")}
               </p>
             )}
           </div>
@@ -379,7 +380,7 @@ export function ReceptionBookingWizard({ patients, doctors, initialPatientId }: 
           </Button>
           {loadingSlots ? (
             <div className="flex items-center justify-center py-10 text-muted-foreground">
-              <Loader2 className="mr-2 size-5 animate-spin" /> Loading available times…
+              <Loader2 className="mr-2 size-5 animate-spin" /> {t("loadingTimes")}
             </div>
           ) : slots.length === 0 ? (
             <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
@@ -421,21 +422,21 @@ export function ReceptionBookingWizard({ patients, doctors, initialPatientId }: 
         <Card>
           <CardContent className="space-y-5 p-6">
             <Button variant="ghost" size="sm" onClick={() => setStep(2)} className="-ml-2">
-              <ArrowLeft className="size-4" /> Change time
+              <ArrowLeft className="size-4" /> {t("changeTime")}
             </Button>
             <div className="grid gap-3 rounded-lg bg-muted/50 p-4 text-sm">
               <Row
-                label="Patient"
+                label={tRoles("patient")}
                 value={
-                  patientMode === "new" ? `${patientLabel} (new)` : patientLabel
+                  patientMode === "new" ? t("patientNew", { name: patientLabel }) : patientLabel
                 }
               />
-              <Row label="Doctor" value={formatDoctorName(doctor.full_name)} />
-              <Row label="Specialty" value={doctor.specialty_name ?? "General"} />
-              <Row label="When" value={formatDateTime(slot)} />
+              <Row label={tAppt("doctor")} value={formatDoctorName(doctor.full_name)} />
+              <Row label={t("specialty")} value={doctor.specialty_name ?? t("general")} />
+              <Row label={t("when")} value={formatDateTime(slot)} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="reason">Reason for visit (optional)</Label>
+              <Label htmlFor="reason">{t("reasonForVisitOptional")}</Label>
               <Textarea
                 id="reason"
                 value={reason}
@@ -452,7 +453,7 @@ export function ReceptionBookingWizard({ patients, doctors, initialPatientId }: 
                 ) : (
                   <CheckCircle2 className="size-4" />
                 )}
-                Confirm booking <ArrowRight className="size-4" />
+                {tPatient("confirmBooking")} <ArrowRight className="size-4" />
               </Button>
             </div>
           </CardContent>

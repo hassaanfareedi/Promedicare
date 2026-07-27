@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { checkInWithFee } from "@/features/reception/actions";
@@ -34,6 +35,8 @@ type Props = {
 
 export function CheckInFeeDialog({ open, onOpenChange, appointmentId, defaultFee }: Props) {
   const router = useRouter();
+  const t = useTranslations("reception");
+  const tCommon = useTranslations("common");
   const [pending, startTransition] = useTransition();
   const [amount, setAmount] = useState(String(defaultFee ?? 0));
   const [method, setMethod] = useState<"cash" | "card" | "other">("cash");
@@ -59,7 +62,7 @@ export function CheckInFeeDialog({ open, onOpenChange, appointmentId, defaultFee
         toast.error(res.error);
         return;
       }
-      toast.success("Patient checked in — fee recorded");
+      toast.success(t("checkedInFeeRecorded"));
       onOpenChange(false);
       router.refresh();
     });
@@ -69,12 +72,12 @@ export function CheckInFeeDialog({ open, onOpenChange, appointmentId, defaultFee
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Check in — collect fee</DialogTitle>
-          <DialogDescription>Record the consultation fee before marking the patient as checked in.</DialogDescription>
+          <DialogTitle>{t("checkInTitle")}</DialogTitle>
+          <DialogDescription>{t("checkInDesc")}</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="fee-amount">Amount received (PKR)</Label>
+            <Label htmlFor="fee-amount">{t("amountReceived")}</Label>
             <Input
               id="fee-amount"
               type="number"
@@ -85,30 +88,30 @@ export function CheckInFeeDialog({ open, onOpenChange, appointmentId, defaultFee
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="fee-method">Payment method</Label>
+            <Label htmlFor="fee-method">{t("paymentMethod")}</Label>
             <Select
               value={method}
               onValueChange={(v) => {
                 if (v === "cash" || v === "card" || v === "other") setMethod(v);
               }}
               items={[
-                { value: "cash", label: "Cash" },
-                { value: "card", label: "Card" },
-                { value: "other", label: "Other" },
+                { value: "cash", label: t("cash") },
+                { value: "card", label: t("card") },
+                { value: "other", label: t("other") },
               ]}
             >
-              <SelectTrigger id="fee-method" aria-label="Payment method">
+              <SelectTrigger id="fee-method" aria-label={t("paymentMethod")}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="cash">Cash</SelectItem>
-                <SelectItem value="card">Card</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
+                <SelectItem value="cash">{t("cash")}</SelectItem>
+                <SelectItem value="card">{t("card")}</SelectItem>
+                <SelectItem value="other">{t("other")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="fee-notes">Note (optional)</Label>
+            <Label htmlFor="fee-notes">{t("noteOptional")}</Label>
             <Textarea
               id="fee-notes"
               rows={2}
@@ -119,11 +122,11 @@ export function CheckInFeeDialog({ open, onOpenChange, appointmentId, defaultFee
         </div>
         <DialogFooter>
           <Button type="button" variant="outline" disabled={pending} onClick={() => onOpenChange(false)}>
-            Cancel
+            {tCommon("cancel")}
           </Button>
           <Button type="button" disabled={pending} onClick={submit}>
             {pending && <Loader2 className="size-4 animate-spin" aria-hidden />}
-            Check in
+            {t("checkIn")}
           </Button>
         </DialogFooter>
       </DialogContent>

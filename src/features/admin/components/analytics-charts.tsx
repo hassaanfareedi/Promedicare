@@ -1,9 +1,10 @@
 "use client";
 
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { useTranslations } from "next-intl";
 import type { AdminAnalytics } from "@/features/admin/data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getAppointmentStatusMeta, getRiskMeta } from "@/lib/constants";
+import { getRiskMeta } from "@/lib/constants";
 
 function weekdayLabel(iso: string): string {
   const d = new Date(iso);
@@ -21,10 +22,13 @@ const CHART_TOOLTIP = {
 const CHART_TOOLTIP_TEXT = { color: "var(--color-popover-foreground)" } as const;
 
 export function AnalyticsCharts({ analytics }: { analytics: AdminAnalytics }) {
-  const trend = analytics.weeklyTrend.map((t) => ({ label: weekdayLabel(t.date), count: t.count }));
-  const income = analytics.incomeTrend.map((t) => ({
-    label: weekdayLabel(t.date),
-    amount: t.amount,
+  const t = useTranslations("admin");
+  const tStatus = useTranslations("status");
+  const tRisk = useTranslations("risk");
+  const trend = analytics.weeklyTrend.map((d) => ({ label: weekdayLabel(d.date), count: d.count }));
+  const income = analytics.incomeTrend.map((d) => ({
+    label: weekdayLabel(d.date),
+    amount: d.amount,
   }));
   const hasTrend = trend.some((t) => t.count > 0);
   const hasIncome = income.some((t) => t.amount > 0);
@@ -33,14 +37,15 @@ export function AnalyticsCharts({ analytics }: { analytics: AdminAnalytics }) {
     <div className="grid gap-6 lg:grid-cols-2">
       <Card className="lg:col-span-2">
         <CardHeader>
-          <CardTitle className="text-base">Appointments — next 7 days</CardTitle>
+          <CardTitle className="text-base">{t("chartAppointmentsNext7")}</CardTitle>
         </CardHeader>
         <CardContent>
           {hasTrend ? (
             <div className="h-64 w-full">
               <p className="sr-only">
-                Appointments per day for the next 7 days:{" "}
-                {trend.map((t) => `${t.label}: ${t.count}`).join(", ")}.
+                {t("chartAppointmentsSr", {
+                  data: trend.map((d) => `${d.label}: ${d.count}`).join(", "),
+                })}
               </p>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart accessibilityLayer data={trend} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
@@ -58,21 +63,22 @@ export function AnalyticsCharts({ analytics }: { analytics: AdminAnalytics }) {
               </ResponsiveContainer>
             </div>
           ) : (
-            <p className="py-10 text-center text-sm text-muted-foreground">No appointments in the next 7 days.</p>
+            <p className="py-10 text-center text-sm text-muted-foreground">{t("noAppointmentsNext7")}</p>
           )}
         </CardContent>
       </Card>
 
       <Card className="lg:col-span-2">
         <CardHeader>
-          <CardTitle className="text-base">Fee income — last 7 days (PKR)</CardTitle>
+          <CardTitle className="text-base">{t("chartIncomeLast7")}</CardTitle>
         </CardHeader>
         <CardContent>
           {hasIncome ? (
             <div className="h-64 w-full">
               <p className="sr-only">
-                Fee income per day for the last 7 days (PKR):{" "}
-                {income.map((t) => `${t.label}: ${t.amount.toLocaleString()}`).join(", ")}.
+                {t("chartIncomeSr", {
+                  data: income.map((d) => `${d.label}: ${d.amount.toLocaleString()}`).join(", "),
+                })}
               </p>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart accessibilityLayer data={income} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
@@ -84,30 +90,30 @@ export function AnalyticsCharts({ analytics }: { analytics: AdminAnalytics }) {
                     contentStyle={CHART_TOOLTIP}
                     itemStyle={CHART_TOOLTIP_TEXT}
                     labelStyle={CHART_TOOLTIP_TEXT}
-                    formatter={(value) => [`${Number(value).toLocaleString()} PKR`, "Income"]}
+                    formatter={(value) => [`${Number(value).toLocaleString()} PKR`, t("income")]}
                   />
                   <Bar dataKey="amount" fill="var(--color-chart-2)" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           ) : (
-            <p className="py-10 text-center text-sm text-muted-foreground">No fee income in the last 7 days.</p>
+            <p className="py-10 text-center text-sm text-muted-foreground">{t("noFeeIncomeLast7")}</p>
           )}
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Appointments by status</CardTitle>
+          <CardTitle className="text-base">{t("appointmentsByStatus")}</CardTitle>
         </CardHeader>
         <CardContent>
           {analytics.statusCounts.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No data yet.</p>
+            <p className="text-sm text-muted-foreground">{t("noDataYet")}</p>
           ) : (
             <ul className="space-y-3">
               {analytics.statusCounts.map((s) => {
                 const pct = Math.round((s.count / Math.max(analytics.totalAppointments, 1)) * 100);
-                const label = getAppointmentStatusMeta(s.status).label;
+                const label = tStatus(s.status);
                 return (
                   <li key={s.status} className="space-y-1">
                     <div className="flex justify-between text-sm">
@@ -117,7 +123,7 @@ export function AnalyticsCharts({ analytics }: { analytics: AdminAnalytics }) {
                     <div
                       className="h-2 overflow-hidden rounded-full bg-muted"
                       role="progressbar"
-                      aria-label={`${label}: ${s.count} appointments (${pct}%)`}
+                      aria-label={t("statusBarAria", { label, count: s.count, pct })}
                       aria-valuenow={pct}
                       aria-valuemin={0}
                       aria-valuemax={100}
@@ -134,11 +140,11 @@ export function AnalyticsCharts({ analytics }: { analytics: AdminAnalytics }) {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Screening risk distribution</CardTitle>
+          <CardTitle className="text-base">{t("screeningRiskDistribution")}</CardTitle>
         </CardHeader>
         <CardContent>
           {analytics.riskCounts.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No screenings yet.</p>
+            <p className="text-sm text-muted-foreground">{t("noScreeningsYet")}</p>
           ) : (
             <ul className="space-y-3">
               {analytics.riskCounts.map((r) => (
@@ -146,7 +152,7 @@ export function AnalyticsCharts({ analytics }: { analytics: AdminAnalytics }) {
                   <span
                     className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${getRiskMeta(r.level).tone}`}
                   >
-                    {getRiskMeta(r.level).label}
+                    {tRisk(r.level)}
                   </span>
                   <span className="tabular-nums text-sm text-muted-foreground">{r.count}</span>
                 </li>

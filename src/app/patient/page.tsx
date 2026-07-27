@@ -55,17 +55,17 @@ export default async function PatientDashboard() {
       />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Upcoming" value={stats.upcomingCount} icon={CalendarDays} />
-        <StatCard label="Total visits" value={stats.totalAppointments} icon={Stethoscope} />
-        <StatCard label="Screenings" value={stats.screeningCount} icon={Activity} />
+        <StatCard label={t("upcoming")} value={stats.upcomingCount} icon={CalendarDays} />
+        <StatCard label={t("totalVisits")} value={stats.totalAppointments} icon={Stethoscope} />
+        <StatCard label={t("screeningsTitle")} value={stats.screeningCount} icon={Activity} />
       </div>
 
       <section aria-labelledby="next-visit-heading" className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <h2 id="next-visit-heading" className="font-heading text-base font-medium">
-            Next appointment
+            {t("nextAppointment")}
           </h2>
-          <SectionLink href="/patient/appointments">View all</SectionLink>
+          <SectionLink href="/patient/appointments">{t("viewAll")}</SectionLink>
         </div>
         {nextVisit ? (
           <PatientAppointmentCard
@@ -83,26 +83,26 @@ export default async function PatientDashboard() {
         ) : (
           <EmptyState
             icon={CalendarDays}
-            title="No upcoming appointments"
-            description="Use Book a visit above when you are ready, or run a symptom check first."
+            title={t("noUpcomingTitle")}
+            description={t("noUpcomingDesc")}
           />
         )}
       </section>
 
       <Card>
         <CardHeader className="flex-row items-center justify-between space-y-0">
-          <CardTitle className="text-base">Recent screenings</CardTitle>
-          <SectionLink href="/patient/screenings">View all</SectionLink>
+          <CardTitle className="text-base">{t("recentScreenings")}</CardTitle>
+          <SectionLink href="/patient/screenings">{t("viewAll")}</SectionLink>
         </CardHeader>
         <CardContent>
           {recentScreenings.length === 0 ? (
             <EmptyState
               icon={Stethoscope}
-              title="No screenings yet"
-              description="Run an AI symptom check to see your risk assessment."
+              title={t("noScreeningsTitle")}
+              description={t("noScreeningsDesc")}
               action={
                 <Link href="/patient/symptom-check" className={buttonVariants({ size: "sm" })}>
-                  <Activity className="size-4" aria-hidden /> Start now
+                  <Activity className="size-4" aria-hidden /> {t("startNow")}
                 </Link>
               }
             />
@@ -116,7 +116,7 @@ export default async function PatientDashboard() {
                   >
                     <div className="min-w-0">
                       <p className="truncate font-medium">
-                        {p.recommended_specialty_label ?? "Screening"}
+                        {p.recommended_specialty_label ?? t("screening")}
                       </p>
                       <p className="truncate text-sm text-muted-foreground">
                         {formatDate(p.created_at)}

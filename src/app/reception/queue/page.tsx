@@ -24,7 +24,7 @@ export default async function QueuePage() {
         actions={<WalkInDialog doctors={doctors} />}
       />
       {today.length === 0 ? (
-        <EmptyState icon={Clock} title="Queue is empty" description="No appointments scheduled for today." />
+        <EmptyState icon={Clock} title={t("queueEmpty")} description={t("queueEmptyDesc")} />
       ) : (
         <div className="space-y-3">
           {today.map((a) => (

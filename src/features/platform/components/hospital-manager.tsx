@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Loader2, Plus, Building2, UserCog } from "lucide-react";
 import { createHospital, setHospitalActive, assignHospitalAdmin } from "@/features/platform/actions";
@@ -44,6 +45,7 @@ export function HospitalManager({
   profiles: Profile[];
 }) {
   const router = useRouter();
+  const t = useTranslations("platform");
   const [pending, startTransition] = useTransition();
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -58,7 +60,7 @@ export function HospitalManager({
         toast.error(res.error);
         return;
       }
-      toast.success("Hospital created");
+      toast.success(t("hospitalCreated"));
       setName("");
       setSlug("");
       setSlugDirty(false);
@@ -80,9 +82,9 @@ export function HospitalManager({
     <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
       <Card>
         <CardContent className="space-y-4 p-5">
-          <h2 className="font-medium">Add hospital</h2>
+          <h2 className="font-medium">{t("addHospital")}</h2>
           <div className="space-y-2">
-            <Label htmlFor="h-name">Name</Label>
+            <Label htmlFor="h-name">{t("name")}</Label>
             <Input
               id="h-name"
               value={name}
@@ -94,7 +96,7 @@ export function HospitalManager({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="h-slug">Slug</Label>
+            <Label htmlFor="h-slug">{t("slug")}</Label>
             <Input
               id="h-slug"
               value={slug}
@@ -106,19 +108,19 @@ export function HospitalManager({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="h-city">City (optional)</Label>
+            <Label htmlFor="h-city">{t("cityOptional")}</Label>
             <Input id="h-city" value={city} onChange={(e) => setCity(e.target.value)} />
           </div>
           <Button onClick={add} disabled={pending || name.trim().length < 2}>
             {pending ? <Loader2 className="animate-spin" /> : <Plus className="size-4" />}
-            Add hospital
+            {t("addHospital")}
           </Button>
         </CardContent>
       </Card>
 
       <div className="space-y-3">
         {hospitals.length === 0 ? (
-          <EmptyState icon={Building2} title="No hospitals" description="Create your first hospital." />
+          <EmptyState icon={Building2} title={t("noHospitals")} description={t("noHospitalsDesc")} />
         ) : (
           hospitals.map((h) => (
             <Card key={h.id}>
@@ -133,7 +135,7 @@ export function HospitalManager({
                 <div className="flex items-center gap-3">
                   <AssignAdminDialog hospital={h} profiles={profiles} />
                   <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                    {h.is_active ? "Active" : "Inactive"}
+                    {h.is_active ? t("active") : t("inactive")}
                     <Switch
                       checked={h.is_active}
                       onCheckedChange={(c) => toggle(h.id, c)}
@@ -152,6 +154,8 @@ export function HospitalManager({
 
 function AssignAdminDialog({ hospital, profiles }: { hospital: Hospital; profiles: Profile[] }) {
   const router = useRouter();
+  const t = useTranslations("platform");
+  const tRoles = useTranslations("roles");
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [profileId, setProfileId] = useState("");
@@ -174,7 +178,7 @@ function AssignAdminDialog({ hospital, profiles }: { hospital: Hospital; profile
         setConfirming(false);
         return;
       }
-      toast.success("Hospital admin assigned");
+      toast.success(t("adminAssigned"));
       setOpen(false);
       setConfirming(false);
       setProfileId("");
@@ -193,20 +197,20 @@ function AssignAdminDialog({ hospital, profiles }: { hospital: Hospital; profile
       <DialogTrigger
         render={
           <Button variant="outline" size="sm">
-            <UserCog className="size-4" aria-hidden /> Assign admin
+            <UserCog className="size-4" aria-hidden /> {t("assignAdmin")}
           </Button>
         }
       />
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Assign admin — {hospital.name}</DialogTitle>
+          <DialogTitle>{t("assignAdminTitle", { name: hospital.name })}</DialogTitle>
           <DialogDescription>
-            Only staff accounts are listed. This changes their role to Hospital Admin for this hospital.
+            {t("assignAdminDesc")}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor={`assign-admin-${hospital.id}`}>User</Label>
+            <Label htmlFor={`assign-admin-${hospital.id}`}>{t("user")}</Label>
             <Select
               value={profileId || null}
               onValueChange={(v) => {
@@ -221,7 +225,7 @@ function AssignAdminDialog({ hospital, profiles }: { hospital: Hospital; profile
                 })),
               ]}
             >
-              <SelectTrigger id={`assign-admin-${hospital.id}`} aria-label="User">
+              <SelectTrigger id={`assign-admin-${hospital.id}`} aria-label={t("user")}>
                 <SelectValue placeholder="Select a user" />
               </SelectTrigger>
               <SelectContent>
@@ -235,13 +239,15 @@ function AssignAdminDialog({ hospital, profiles }: { hospital: Hospital; profile
           </div>
           {confirming && selected && (
             <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
-              Confirm: make {selected.full_name ?? selected.email} hospital admin? Their current role is{" "}
-              {selected.role}.
+              {t("assignAdminConfirm", {
+                name: selected.full_name ?? selected.email ?? "",
+                role: tRoles(selected.role),
+              })}
             </p>
           )}
           <Button onClick={submit} disabled={pending || !profileId} className="w-full">
             {pending ? <Loader2 className="animate-spin" aria-hidden /> : null}
-            {confirming ? "Confirm assign admin" : "Make hospital admin"}
+            {confirming ? t("confirmAssignAdmin") : t("makeHospitalAdmin")}
           </Button>
         </div>
       </DialogContent>

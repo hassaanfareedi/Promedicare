@@ -37,8 +37,8 @@ export default async function PatientRecordsPage() {
         <PageHeader title={t("recordsTitle")} description={t("recordsDesc")} />
         <EmptyState
           icon={FolderOpen}
-          title="No patient profile"
-          description="Complete onboarding to view your medical file."
+          title={t("noProfileTitle")}
+          description={t("noProfileDesc")}
         />
       </div>
     );
@@ -53,8 +53,8 @@ export default async function PatientRecordsPage() {
       {!patient || visits.length === 0 ? (
         <EmptyState
           icon={FolderOpen}
-          title="No records yet"
-          description="After a completed visit, notes and prescriptions will show here."
+          title={t("noRecordsTitle")}
+          description={t("noRecordsDesc")}
         />
       ) : (
         <Card>

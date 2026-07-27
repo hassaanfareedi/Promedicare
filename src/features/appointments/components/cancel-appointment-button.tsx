@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Loader2, X } from "lucide-react";
 import { cancelAppointment } from "@/features/appointments/actions";
@@ -20,6 +21,8 @@ import { Label } from "@/components/ui/label";
 
 export function CancelAppointmentButton({ appointmentId }: { appointmentId: string }) {
   const router = useRouter();
+  const t = useTranslations("appointments");
+  const tCommon = useTranslations("common");
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [pending, startTransition] = useTransition();
@@ -31,7 +34,7 @@ export function CancelAppointmentButton({ appointmentId }: { appointmentId: stri
         toast.error(res.error);
         return;
       }
-      toast.success("Appointment cancelled");
+      toast.success(t("cancelled"));
       setOpen(false);
       router.refresh();
     });
@@ -42,19 +45,17 @@ export function CancelAppointmentButton({ appointmentId }: { appointmentId: stri
       <DialogTrigger
         render={
           <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-            <X className="size-4" /> Cancel
+            <X className="size-4" /> {tCommon("cancel")}
           </Button>
         }
       />
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Cancel appointment?</DialogTitle>
-          <DialogDescription>
-            This will notify your care team. You can book a new appointment anytime.
-          </DialogDescription>
+          <DialogTitle>{t("cancelTitle")}</DialogTitle>
+          <DialogDescription>{t("cancelDesc")}</DialogDescription>
         </DialogHeader>
         <div className="space-y-2">
-          <Label htmlFor="cancel-reason">Reason (optional)</Label>
+          <Label htmlFor="cancel-reason">{t("reasonOptional")}</Label>
           <Textarea
             id="cancel-reason"
             value={reason}
@@ -66,11 +67,11 @@ export function CancelAppointmentButton({ appointmentId }: { appointmentId: stri
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)} disabled={pending}>
-            Keep it
+            {t("keepIt")}
           </Button>
           <Button variant="destructive" onClick={onCancel} disabled={pending}>
             {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-            Cancel appointment
+            {t("cancel")}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { logDbError } from "@/lib/supabase/log";
 import type { Hospital, Profile, Specialty, RiskLevel, UserRole } from "@/types";
 
 export type AuditEntry = {
@@ -13,24 +14,27 @@ export type AuditEntry = {
 
 export async function getHospitals(): Promise<Hospital[]> {
   const supabase = await createClient();
-  const { data } = await supabase.from("hospitals").select("*").order("name");
+  const { data, error } = await supabase.from("hospitals").select("*").order("name");
+  logDbError("getHospitals", error);
   return data ?? [];
 }
 
 export async function getAllSpecialties(): Promise<Specialty[]> {
   const supabase = await createClient();
-  const { data } = await supabase.from("specialties").select("*").order("name");
+  const { data, error } = await supabase.from("specialties").select("*").order("name");
+  logDbError("getAllSpecialties", error);
   return data ?? [];
 }
 
 export async function getAllProfiles(): Promise<Profile[]> {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
     .select("*")
     .is("deleted_at", null)
     .order("full_name")
     .limit(500);
+  logDbError("getAllProfiles", error);
   return data ?? [];
 }
 
@@ -45,13 +49,14 @@ export type PlatformDoctor = {
 
 export async function getPlatformDoctors(): Promise<PlatformDoctor[]> {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("doctors")
     .select(
       "id, is_active, hospital_id, profile:profiles(id, full_name, email), specialty:specialties(name), hospital:hospitals(name)",
     )
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
+  logDbError("getPlatformDoctors", error);
 
   return (data ?? []).map((row) => {
     const r = row as {
@@ -75,11 +80,12 @@ export async function getPlatformDoctors(): Promise<PlatformDoctor[]> {
 
 export async function getAuditLogs(limit = 100): Promise<AuditEntry[]> {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("audit_logs")
     .select("id, action, entity_type, entity_id, created_at, actor:profiles(full_name, email)")
     .order("created_at", { ascending: false })
     .limit(limit);
+  logDbError("getAuditLogs", error);
   return (data ?? []) as AuditEntry[];
 }
 
@@ -124,14 +130,23 @@ export type PlatformAnalytics = {
 export async function getPlatformAnalytics(): Promise<PlatformAnalytics> {
   const supabase = await createClient();
   // Grouping happens in Postgres (see 0022); we only fetch the small result sets.
-  const [{ data: hospitals }, { data: apptRows }, { data: riskRows }, { data: roleRows }, { data: incomeRows }] =
-    await Promise.all([
-      supabase.from("hospitals").select("id, name"),
-      supabase.rpc("appointments_count_by_hospital"),
-      supabase.rpc("prediction_risk_counts"),
-      supabase.rpc("profile_role_counts"),
-      supabase.rpc("payment_income_by_hospital"),
-    ]);
+  const [hospitalsRes, apptRes, riskRes, roleRes, incomeRes] = await Promise.all([
+    supabase.from("hospitals").select("id, name"),
+    supabase.rpc("appointments_count_by_hospital"),
+    supabase.rpc("prediction_risk_counts"),
+    supabase.rpc("profile_role_counts"),
+    supabase.rpc("payment_income_by_hospital"),
+  ]);
+  logDbError("getPlatformAnalytics.hospitals", hospitalsRes.error);
+  logDbError("getPlatformAnalytics.appointments", apptRes.error);
+  logDbError("getPlatformAnalytics.risk", riskRes.error);
+  logDbError("getPlatformAnalytics.roles", roleRes.error);
+  logDbError("getPlatformAnalytics.income", incomeRes.error);
+  const { data: hospitals } = hospitalsRes;
+  const { data: apptRows } = apptRes;
+  const { data: riskRows } = riskRes;
+  const { data: roleRows } = roleRes;
+  const { data: incomeRows } = incomeRes;
 
   const nameMap = new Map((hospitals ?? []).map((h) => [h.id, h.name]));
   const perHospitalMap = new Map<string, number>();

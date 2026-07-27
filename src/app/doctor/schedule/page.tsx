@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { formatDateTime } from "@/lib/format";
+import { formatDate, formatDateTime } from "@/lib/format";
 import { AppointmentStatusControl } from "@/features/doctor/components/appointment-status-control";
 import { getCurrentUser } from "@/lib/auth/session";
 
@@ -25,30 +25,32 @@ function groupByDay(rows: DoctorAppointment[]): [string, DoctorAppointment[]][] 
 }
 
 export default async function DoctorSchedulePage() {
-  const t = await getTranslations("doctor");
+  const [t, tr] = await Promise.all([getTranslations("doctor"), getTranslations("roles")]);
   const [doctor, user] = await Promise.all([getMyDoctor(), getCurrentUser()]);
   const appointments = doctor
     ? await getDoctorAppointments(doctor.id, "upcoming", doctor.hospital_id)
     : [];
   const groups = groupByDay(appointments);
-  const doctorName = user?.profile.full_name ?? "Doctor";
+  const doctorName = user?.profile.full_name ?? tr("doctor");
 
   return (
     <div className="space-y-8">
       <PageHeader title={t("scheduleTitle")} description={t("scheduleDesc")} />
 
       {groups.length === 0 ? (
-        <EmptyState icon={CalendarDays} title="No upcoming appointments" description="New bookings will appear here." />
+        <EmptyState icon={CalendarDays} title={t("noUpcomingTitle")} description={t("noUpcomingDesc")} />
       ) : (
         <div className="space-y-6">
           {groups.map(([day, rows]) => (
             <div key={day} className="space-y-3">
-              <h2 className="text-sm font-medium text-muted-foreground">{day}</h2>
+              <h2 className="text-sm font-medium text-muted-foreground">
+                {formatDate(rows[0]?.scheduled_start)}
+              </h2>
               {rows.map((a) => (
                 <Card key={a.id}>
                   <CardContent className="flex flex-wrap items-center justify-between gap-4 p-4">
                     <div>
-                      <p className="font-medium">{a.patient?.full_name ?? "Patient"}</p>
+                      <p className="font-medium">{a.patient?.full_name ?? tr("patient")}</p>
                       <p className="text-sm text-muted-foreground">{formatDateTime(a.scheduled_start)}</p>
                       {a.reason && <p className="mt-1 text-sm text-muted-foreground">{a.reason}</p>}
                     </div>
@@ -59,7 +61,7 @@ export default async function DoctorSchedulePage() {
                         appointmentId={a.id}
                         status={a.status}
                         patientId={a.patient?.id ?? a.patient_id}
-                        patientName={a.patient?.full_name ?? "Patient"}
+                        patientName={a.patient?.full_name ?? tr("patient")}
                         patientCode={a.patient?.patient_code}
                         doctorName={doctorName}
                       />

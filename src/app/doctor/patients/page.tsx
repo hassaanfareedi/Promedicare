@@ -32,8 +32,8 @@ export default async function DoctorPatientsPage() {
       {patients.length === 0 ? (
         <EmptyState
           icon={Users}
-          title="No patients yet"
-          description="Hospital patients will appear here once they are registered."
+          title={t("noPatientsTitle")}
+          description={t("noPatientsDesc")}
         />
       ) : (
         <Card>
@@ -41,11 +41,11 @@ export default async function DoctorPatientsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Patient ID</TableHead>
-                  <TableHead className="hidden sm:table-cell">Gender</TableHead>
-                  <TableHead className="hidden sm:table-cell">Date of birth</TableHead>
-                  <TableHead className="hidden md:table-cell">Phone</TableHead>
+                  <TableHead>{t("colName")}</TableHead>
+                  <TableHead>{t("colPatientId")}</TableHead>
+                  <TableHead className="hidden sm:table-cell">{t("colGender")}</TableHead>
+                  <TableHead className="hidden sm:table-cell">{t("colDob")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("colPhone")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

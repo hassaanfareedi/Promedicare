@@ -25,7 +25,6 @@ import { QuickLink } from "@/components/shared/quick-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { StaffAppointmentRow } from "@/features/reception/components/staff-appointment-row";
-import { APPOINTMENT_STATUS_META } from "@/lib/constants";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("admin");
@@ -34,6 +33,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function AdminDashboard() {
   const t = await getTranslations("admin");
+  const ts = await getTranslations("status");
   const [o, pendingList, confirmedList] = await Promise.all([
     getAdminOverview(),
     getPendingHospitalAppointments(5),
@@ -48,22 +48,22 @@ export default async function AdminDashboard() {
         description={t("dashboardDesc")}
         actions={
           <Link href="/admin/analytics" className={buttonVariants({ variant: "outline" })}>
-            <BarChart3 className="size-4" aria-hidden /> Analytics
+            <BarChart3 className="size-4" aria-hidden /> {t("analyticsTitle")}
           </Link>
         }
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Doctors" value={o.doctors} icon={BriefcaseMedical} />
-        <StatCard label="Staff" value={o.staff} icon={UserCog} />
-        <StatCard label="Departments" value={o.departments} icon={Building2} />
-        <StatCard label="Patients" value={o.patients} icon={Users} />
+        <StatCard label={t("doctorsTitle")} value={o.doctors} icon={BriefcaseMedical} />
+        <StatCard label={t("staffTitle")} value={o.staff} icon={UserCog} />
+        <StatCard label={t("departmentsTitle")} value={o.departments} icon={Building2} />
+        <StatCard label={t("patients")} value={o.patients} icon={Users} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-4">
         <Card className="lg:col-span-2">
           <CardHeader className="flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-base">Appointments today</CardTitle>
+            <CardTitle className="text-base">{t("appointmentsToday")}</CardTitle>
             <span className="font-heading text-2xl font-semibold tabular-nums">
               {o.appointmentsToday}
             </span>
@@ -85,26 +85,26 @@ export default async function AdminDashboard() {
 
         <Card>
           <CardHeader className="flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-base">Pending requests</CardTitle>
+            <CardTitle className="text-base">{t("pendingRequests")}</CardTitle>
             <Inbox className="size-4 text-muted-foreground" aria-hidden />
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="font-heading text-3xl font-semibold tabular-nums">{o.pendingRequests}</p>
             <p className="text-sm text-muted-foreground">
-              Awaiting confirmation ({APPOINTMENT_STATUS_META.pending.label}).
+              {t("awaitingConfirmation", { status: ts("pending") })}
             </p>
             <Link
               href="/admin/appointments"
               className={buttonVariants({ variant: "outline", size: "sm" })}
             >
-              Review
+              {t("review")}
             </Link>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-base">Confirmed upcoming</CardTitle>
+            <CardTitle className="text-base">{t("confirmedUpcoming")}</CardTitle>
             <CalendarCheck className="size-4 text-muted-foreground" aria-hidden />
           </CardHeader>
           <CardContent className="space-y-3">
@@ -112,13 +112,13 @@ export default async function AdminDashboard() {
               {o.confirmedUpcoming}
             </p>
             <p className="text-sm text-muted-foreground">
-              Scheduled from now onward ({APPOINTMENT_STATUS_META.confirmed.label}).
+              {t("scheduledFromNow", { status: ts("confirmed") })}
             </p>
             <Link
               href="/admin/appointments"
               className={buttonVariants({ variant: "outline", size: "sm" })}
             >
-              View
+              {t("view")}
             </Link>
           </CardContent>
         </Card>
@@ -127,15 +127,15 @@ export default async function AdminDashboard() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader className="flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-base">Latest booking requests</CardTitle>
-            <SectionLink href="/admin/appointments">View all</SectionLink>
+            <CardTitle className="text-base">{t("latestBookingRequests")}</CardTitle>
+            <SectionLink href="/admin/appointments">{t("viewAll")}</SectionLink>
           </CardHeader>
           <CardContent className="space-y-3">
             {pendingList.length === 0 ? (
               <EmptyState
                 icon={CalendarDays}
-                title="No pending requests"
-                description="New patient bookings will appear here until confirmed."
+                title={t("noPendingRequests")}
+                description={t("noPendingRequestsDesc")}
               />
             ) : (
               pendingList.map((a) => <StaffAppointmentRow key={a.id} a={a} />)
@@ -145,15 +145,15 @@ export default async function AdminDashboard() {
 
         <Card>
           <CardHeader className="flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-base">Upcoming confirmed</CardTitle>
-            <SectionLink href="/admin/appointments">View all</SectionLink>
+            <CardTitle className="text-base">{t("upcomingConfirmed")}</CardTitle>
+            <SectionLink href="/admin/appointments">{t("viewAll")}</SectionLink>
           </CardHeader>
           <CardContent className="space-y-3">
             {confirmedList.length === 0 ? (
               <EmptyState
                 icon={CalendarCheck}
-                title="No confirmed upcoming"
-                description="Confirmed appointments stay visible here until their visit time."
+                title={t("noConfirmedUpcoming")}
+                description={t("noConfirmedUpcomingDesc")}
               />
             ) : (
               confirmedList.map((a) => <StaffAppointmentRow key={a.id} a={a} />)
@@ -163,10 +163,10 @@ export default async function AdminDashboard() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <QuickLink href="/admin/doctors" title="Doctors" description="Clinical profiles" icon={BriefcaseMedical} />
-        <QuickLink href="/admin/staff" title="Staff" description="Roles & access" icon={UserCog} />
-        <QuickLink href="/admin/departments" title="Departments" description="Hospital units" icon={Building2} />
-        <QuickLink href="/admin/appointments" title="Appointments" description="All bookings" icon={CalendarDays} />
+        <QuickLink href="/admin/doctors" title={t("doctorsTitle")} description={t("quickDoctorsDesc")} icon={BriefcaseMedical} />
+        <QuickLink href="/admin/staff" title={t("staffTitle")} description={t("quickStaffDesc")} icon={UserCog} />
+        <QuickLink href="/admin/departments" title={t("departmentsTitle")} description={t("quickDepartmentsDesc")} icon={Building2} />
+        <QuickLink href="/admin/appointments" title={t("appointmentsTitle")} description={t("quickAppointmentsDesc")} icon={CalendarDays} />
       </div>
     </div>
   );

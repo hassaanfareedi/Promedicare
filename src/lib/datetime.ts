@@ -1,3 +1,32 @@
+/** Calendar Y/M/D for `now` as seen in `timeZone`. */
+export function zonedDateParts(
+  timeZone: string,
+  now = new Date(),
+): { year: number; month: number; day: number } {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(now);
+
+  const get = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((p) => p.type === type)?.value ?? "00";
+
+  return { year: Number(get("year")), month: Number(get("month")), day: Number(get("day")) };
+}
+
+/** Format the wall-clock time of a UTC instant as seen in `timeZone` (e.g. "9:30 AM"). */
+export function formatTimeInZone(date: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).format(date);
+}
+
 /**
  * Calendar day bounds in an IANA timezone (e.g. Asia/Karachi).
  * Avoids Vercel UTC midnight skew for "today" dashboards.
@@ -6,23 +35,7 @@ export function dayBoundsInTimeZone(
   timeZone: string,
   now = new Date(),
 ): { startIso: string; endIso: string } {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hourCycle: "h23",
-  }).formatToParts(now);
-
-  const get = (type: Intl.DateTimeFormatPartTypes) =>
-    parts.find((p) => p.type === type)?.value ?? "00";
-
-  const y = Number(get("year"));
-  const m = Number(get("month"));
-  const d = Number(get("day"));
+  const { year: y, month: m, day: d } = zonedDateParts(timeZone, now);
 
   const startUtc = zonedWallTimeToUtc(y, m, d, 0, 0, 0, 0, timeZone);
   const endUtc = zonedWallTimeToUtc(y, m, d, 23, 59, 59, 999, timeZone);
@@ -31,7 +44,7 @@ export function dayBoundsInTimeZone(
 }
 
 /** Convert a wall-clock time in `timeZone` to a UTC Date. */
-function zonedWallTimeToUtc(
+export function zonedWallTimeToUtc(
   year: number,
   month: number,
   day: number,
