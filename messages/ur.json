@@ -88,36 +88,46 @@
     "disclaimer": "ProMediCare AI صرف فیصلہ معاونت فراہم کرتا ہے اور طبی تشخیص نہیں ہے۔ یہ لائسنس یافتہ طبی پیشہ ور سے مشاورت کا متبادل نہیں۔ ہنگامی صورت میں فوری طور پر مقامی ایمرجنسی سروسز سے رابطہ کریں۔"
   },
   "nav": {
-    "patient.dashboard": "ڈیش بورڈ",
-    "patient.symptomCheck": "علامت چیک",
-    "patient.appointments": "اپائنٹمنٹس",
-    "patient.records": "ریکارڈز",
-    "patient.screenings": "اسکریننگز",
-    "patient.profile": "پروفائل",
-    "doctor.dashboard": "ڈیش بورڈ",
-    "doctor.schedule": "شیڈول",
-    "doctor.patients": "مریض",
-    "doctor.reviews": "اے آئی جائزے",
-    "doctor.settings": "ترتیبات",
-    "reception.dashboard": "ڈیش بورڈ",
-    "reception.queue": "قطار",
-    "reception.appointments": "اپائنٹمنٹس",
-    "reception.patients": "مریض",
-    "reception.settings": "ترتیبات",
-    "admin.dashboard": "ڈیش بورڈ",
-    "admin.doctors": "ڈاکٹرز",
-    "admin.staff": "اسٹاف",
-    "admin.departments": "محکمے",
-    "admin.appointments": "اپائنٹمنٹس",
-    "admin.analytics": "تجزیات",
-    "admin.settings": "ترتیبات",
-    "platform.dashboard": "ڈیش بورڈ",
-    "platform.hospitals": "ہسپتال",
-    "platform.doctors": "ڈاکٹرز",
-    "platform.specialties": "خصوصیات",
-    "platform.analytics": "تجزیات",
-    "platform.audit": "آڈٹ لاگز",
-    "platform.settings": "ترتیبات"
+    "patient": {
+      "dashboard": "ڈیش بورڈ",
+      "symptomCheck": "علامت چیک",
+      "appointments": "اپائنٹمنٹس",
+      "records": "ریکارڈز",
+      "screenings": "اسکریننگز",
+      "profile": "پروفائل"
+    },
+    "doctor": {
+      "dashboard": "ڈیش بورڈ",
+      "schedule": "شیڈول",
+      "patients": "مریض",
+      "reviews": "اے آئی جائزے",
+      "settings": "ترتیبات"
+    },
+    "reception": {
+      "dashboard": "ڈیش بورڈ",
+      "queue": "قطار",
+      "appointments": "اپائنٹمنٹس",
+      "patients": "مریض",
+      "settings": "ترتیبات"
+    },
+    "admin": {
+      "dashboard": "ڈیش بورڈ",
+      "doctors": "ڈاکٹرز",
+      "staff": "اسٹاف",
+      "departments": "محکمے",
+      "appointments": "اپائنٹمنٹس",
+      "analytics": "تجزیات",
+      "settings": "ترتیبات"
+    },
+    "platform": {
+      "dashboard": "ڈیش بورڈ",
+      "hospitals": "ہسپتال",
+      "doctors": "ڈاکٹرز",
+      "specialties": "خصوصیات",
+      "analytics": "تجزیات",
+      "audit": "آڈٹ لاگز",
+      "settings": "ترتیبات"
+    }
   },
   "auth": {
     "loginTitle": "سائن ان",

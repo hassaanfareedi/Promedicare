@@ -88,36 +88,46 @@
     "disclaimer": "ProMediCare AI provides decision support only and is not a medical diagnosis. It does not replace consultation with a licensed medical professional. In an emergency, contact your local emergency services immediately."
   },
   "nav": {
-    "patient.dashboard": "Dashboard",
-    "patient.symptomCheck": "Symptom Check",
-    "patient.appointments": "Appointments",
-    "patient.records": "Records",
-    "patient.screenings": "Screenings",
-    "patient.profile": "Profile",
-    "doctor.dashboard": "Dashboard",
-    "doctor.schedule": "Schedule",
-    "doctor.patients": "Patients",
-    "doctor.reviews": "AI Reviews",
-    "doctor.settings": "Settings",
-    "reception.dashboard": "Dashboard",
-    "reception.queue": "Queue",
-    "reception.appointments": "Appointments",
-    "reception.patients": "Patients",
-    "reception.settings": "Settings",
-    "admin.dashboard": "Dashboard",
-    "admin.doctors": "Doctors",
-    "admin.staff": "Staff",
-    "admin.departments": "Departments",
-    "admin.appointments": "Appointments",
-    "admin.analytics": "Analytics",
-    "admin.settings": "Settings",
-    "platform.dashboard": "Dashboard",
-    "platform.hospitals": "Hospitals",
-    "platform.doctors": "Doctors",
-    "platform.specialties": "Specialties",
-    "platform.analytics": "Analytics",
-    "platform.audit": "Audit Logs",
-    "platform.settings": "Settings"
+    "patient": {
+      "dashboard": "Dashboard",
+      "symptomCheck": "Symptom Check",
+      "appointments": "Appointments",
+      "records": "Records",
+      "screenings": "Screenings",
+      "profile": "Profile"
+    },
+    "doctor": {
+      "dashboard": "Dashboard",
+      "schedule": "Schedule",
+      "patients": "Patients",
+      "reviews": "AI Reviews",
+      "settings": "Settings"
+    },
+    "reception": {
+      "dashboard": "Dashboard",
+      "queue": "Queue",
+      "appointments": "Appointments",
+      "patients": "Patients",
+      "settings": "Settings"
+    },
+    "admin": {
+      "dashboard": "Dashboard",
+      "doctors": "Doctors",
+      "staff": "Staff",
+      "departments": "Departments",
+      "appointments": "Appointments",
+      "analytics": "Analytics",
+      "settings": "Settings"
+    },
+    "platform": {
+      "dashboard": "Dashboard",
+      "hospitals": "Hospitals",
+      "doctors": "Doctors",
+      "specialties": "Specialties",
+      "analytics": "Analytics",
+      "audit": "Audit Logs",
+      "settings": "Settings"
+    }
   },
   "auth": {
     "loginTitle": "Sign in",
