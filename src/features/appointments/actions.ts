@@ -165,7 +165,7 @@ export async function rescheduleAppointment(
   const newStart = new Date(parsed.data.scheduledStart);
   const newEnd = new Date(newStart.getTime() + (durationMs > 0 ? durationMs : 30 * 60_000));
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("appointments")
     .update({
       scheduled_start: newStart.toISOString(),
@@ -173,11 +173,19 @@ export async function rescheduleAppointment(
       // Preserve workflow status (do not auto-confirm a pending request).
       status: appt.status,
     })
-    .eq("id", appt.id);
+    .eq("id", appt.id)
+    // Compare-and-swap: refuse if another actor cancelled/completed meanwhile,
+    // so a stale read cannot resurrect a cancelled appointment.
+    .eq("status", appt.status)
+    .select("id")
+    .maybeSingle();
 
   if (error) {
     const conflict = error.code === "23P01" || /overlap|exclusion/i.test(error.message);
     return { ok: false, error: conflict ? "That time slot is unavailable. Please choose another." : error.message };
+  }
+  if (!updated) {
+    return { ok: false, error: "This appointment can no longer be rescheduled." };
   }
 
   if (appt.created_by) {

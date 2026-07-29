@@ -96,7 +96,11 @@ export async function getDoctorPatients(): Promise<Patient[]> {
   return data ?? [];
 }
 
-/** AI screenings visible to this doctor, optionally filtered by review status. */
+/**
+ * AI screenings visible to this doctor, optionally filtered by review status.
+ * When `onlyPending` is true the status filter is applied before the limit so
+ * older pending (including urgent) rows are not displaced by newer reviewed ones.
+ */
 export async function getReviewablePredictions(
   onlyPending = false,
 ): Promise<PredictionWithPatient[]> {

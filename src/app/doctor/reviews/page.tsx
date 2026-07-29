@@ -68,8 +68,12 @@ async function ReviewRow({ p }: { p: PredictionWithPatient }) {
 
 export default async function DoctorReviewsPage() {
   const t = await getTranslations("doctor");
-  const all = await getReviewablePredictions(false);
-  const pending = all.filter((p) => p.status === "pending_review");
+  // Fetch pending separately so a flood of newer reviewed rows cannot push
+  // older urgent screenings out of the shared limit(100) window.
+  const [all, pending] = await Promise.all([
+    getReviewablePredictions(false),
+    getReviewablePredictions(true),
+  ]);
 
   return (
     <div className="space-y-8">
