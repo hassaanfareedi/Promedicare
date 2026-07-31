@@ -145,15 +145,35 @@ export async function assignHospitalAdmin(
   }
 
   // If they were an active doctor, retire the clinical row so it does not
-  // linger under their old hospital after the promotion.
+  // linger under their old hospital after the promotion. Block while they
+  // still have open caseload (including overdue checked_in / in_progress).
   if (target.role === "doctor") {
-    const { error: retireErr } = await supabase
+    const { data: doctorRow, error: doctorReadErr } = await supabase
       .from("doctors")
-      .update({ deleted_at: new Date().toISOString(), is_active: false })
+      .select("id")
       .eq("profile_id", target.id)
-      .is("deleted_at", null);
-    if (retireErr) {
-      console.error("[assignHospitalAdmin] retire doctor row", retireErr.message);
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (doctorReadErr) return { ok: false, error: doctorReadErr.message };
+    if (doctorRow) {
+      const { count, error: apptErr } = await supabase
+        .from("appointments")
+        .select("id", { count: "exact", head: true })
+        .eq("doctor_id", doctorRow.id)
+        .is("deleted_at", null)
+        .in("status", [...OPEN_APPOINTMENT_STATUSES]);
+      if (apptErr) return { ok: false, error: apptErr.message };
+      if ((count ?? 0) > 0) {
+        return {
+          ok: false,
+          error: `Cannot promote: this doctor has ${count} open appointment${count === 1 ? "" : "s"}. Resolve or cancel them first.`,
+        };
+      }
+      const { error: retireErr } = await supabase
+        .from("doctors")
+        .update({ deleted_at: new Date().toISOString(), is_active: false })
+        .eq("id", doctorRow.id);
+      if (retireErr) return { ok: false, error: retireErr.message };
     }
   }
 
@@ -230,20 +250,20 @@ export async function transferDoctor(input: TransferDoctorInput): Promise<Mutati
     return { ok: false, error: "Destination hospital is inactive." };
   }
 
-  const nowIso = new Date().toISOString();
+  // Include overdue checked_in / in_progress visits (start time may already
+  // be in the past). Filtering to future starts orphaned active caseload.
   const { count, error: apptErr } = await admin
     .from("appointments")
     .select("id", { count: "exact", head: true })
     .eq("doctor_id", doctorId)
     .is("deleted_at", null)
-    .in("status", [...OPEN_APPOINTMENT_STATUSES])
-    .gte("scheduled_start", nowIso);
+    .in("status", [...OPEN_APPOINTMENT_STATUSES]);
 
   if (apptErr) return { ok: false, error: apptErr.message };
   if ((count ?? 0) > 0) {
     return {
       ok: false,
-      error: `Cannot transfer: this doctor has ${count} open upcoming appointment${count === 1 ? "" : "s"}. Resolve or cancel them first.`,
+      error: `Cannot transfer: this doctor has ${count} open appointment${count === 1 ? "" : "s"}. Resolve or cancel them first.`,
     };
   }
 
