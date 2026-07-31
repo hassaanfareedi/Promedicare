@@ -163,19 +163,10 @@ export async function checkInWithFee(input: CheckInWithFeeInput): Promise<Mutati
     .eq("appointment_id", appt.id)
     .maybeSingle();
 
-  if (existingPay) {
-    const { error: payErr } = await supabase
-      .from("appointment_payments")
-      .update({
-        amount: v.amount,
-        currency: v.currency ?? "PKR",
-        method: v.method,
-        notes: v.notes || null,
-        collected_by: user.id,
-      })
-      .eq("id", existingPay.id);
-    if (payErr) return { ok: false, error: payErr.message };
-  } else {
+  // Receptionists may INSERT payments but not UPDATE them (RLS). If a prior
+  // attempt recorded the fee and then failed before status flip, reuse the
+  // existing row instead of trying a forbidden UPDATE that wedges check-in.
+  if (!existingPay) {
     const { error: payErr } = await supabase.from("appointment_payments").insert({
       appointment_id: appt.id,
       hospital_id: hospitalId,
@@ -188,15 +179,22 @@ export async function checkInWithFee(input: CheckInWithFeeInput): Promise<Mutati
     if (payErr) return { ok: false, error: payErr.message };
   }
 
-  const { error: statusErr } = await supabase
+  const { data: updated, error: statusErr } = await supabase
     .from("appointments")
     .update({
       status: "checked_in",
       checked_in_at: new Date().toISOString(),
     })
-    .eq("id", appt.id);
+    .eq("id", appt.id)
+    // Compare-and-swap: refuse if cancelled/completed concurrently.
+    .eq("status", "confirmed")
+    .select("id")
+    .maybeSingle();
 
   if (statusErr) return { ok: false, error: statusErr.message };
+  if (!updated) {
+    return { ok: false, error: t("confirmBeforeCheckIn") };
+  }
 
   await logAudit({
     action: "appointment.checked_in_with_fee",

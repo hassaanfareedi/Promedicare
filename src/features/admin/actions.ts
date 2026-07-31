@@ -36,6 +36,8 @@ import {
 import type { MutationResult } from "@/features/patient/actions";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+const OPEN_APPOINTMENT_STATUSES = ["pending", "confirmed", "checked_in", "in_progress"] as const;
+
 async function hospitalId(): Promise<string | null> {
   const user = await requireRole(["hospital_admin", "super_admin"]);
   return user.profile.hospital_id;
@@ -154,24 +156,24 @@ export async function assignRole(input: RoleAssignInput): Promise<MutationResult
       .maybeSingle();
     if (doctorReadErr) return { ok: false, error: doctorReadErr.message };
     if (doctorRow) {
-      const nowIso = new Date().toISOString();
+      // Include overdue checked_in / in_progress visits (start time may already
+      // be in the past). Filtering to future starts orphaned active caseload.
       const { count, error: apptErr } = await supabase
         .from("appointments")
         .select("id", { count: "exact", head: true })
         .eq("doctor_id", doctorRow.id)
         .is("deleted_at", null)
-        .in("status", [...OPEN_APPOINTMENT_STATUSES])
-        .gte("scheduled_start", nowIso);
+        .in("status", [...OPEN_APPOINTMENT_STATUSES]);
       if (apptErr) return { ok: false, error: apptErr.message };
       if ((count ?? 0) > 0) {
         return {
           ok: false,
-          error: `Cannot change role: this doctor has ${count} open upcoming appointment${count === 1 ? "" : "s"}. Resolve or cancel them first.`,
+          error: `Cannot change role: this doctor has ${count} open appointment${count === 1 ? "" : "s"}. Resolve or cancel them first.`,
         };
       }
       const { error: softErr } = await supabase
         .from("doctors")
-        .update({ deleted_at: nowIso, is_active: false })
+        .update({ deleted_at: new Date().toISOString(), is_active: false })
         .eq("id", doctorRow.id);
       if (softErr) return { ok: false, error: softErr.message };
     }
@@ -234,8 +236,6 @@ export async function promoteToStaff(input: PromoteStaffInput): Promise<Mutation
   return { ok: true };
 }
 
-const OPEN_APPOINTMENT_STATUSES = ["pending", "confirmed", "checked_in", "in_progress"] as const;
-
 /** Demote a doctor/receptionist back to patient (keeps hospital link for re-promote). */
 export async function demoteToPatient(input: DemoteStaffInput): Promise<MutationResult> {
   const hid = await hospitalId();
@@ -268,25 +268,25 @@ export async function demoteToPatient(input: DemoteStaffInput): Promise<Mutation
     .maybeSingle();
 
   if (doctorRow) {
-    const nowIso = new Date().toISOString();
+    // Include overdue checked_in / in_progress visits (start time may already
+    // be in the past). Filtering to future starts orphaned active caseload.
     const { count, error: apptErr } = await supabase
       .from("appointments")
       .select("id", { count: "exact", head: true })
       .eq("doctor_id", doctorRow.id)
       .is("deleted_at", null)
-      .in("status", [...OPEN_APPOINTMENT_STATUSES])
-      .gte("scheduled_start", nowIso);
+      .in("status", [...OPEN_APPOINTMENT_STATUSES]);
     if (apptErr) return { ok: false, error: apptErr.message };
     if ((count ?? 0) > 0) {
       return {
         ok: false,
-        error: `Cannot demote: this doctor has ${count} open upcoming appointment${count === 1 ? "" : "s"}. Resolve or cancel them first.`,
+        error: `Cannot demote: this doctor has ${count} open appointment${count === 1 ? "" : "s"}. Resolve or cancel them first.`,
       };
     }
 
     const { error: softErr } = await supabase
       .from("doctors")
-      .update({ deleted_at: nowIso, is_active: false })
+      .update({ deleted_at: new Date().toISOString(), is_active: false })
       .eq("id", doctorRow.id);
     if (softErr) return { ok: false, error: softErr.message };
   }
