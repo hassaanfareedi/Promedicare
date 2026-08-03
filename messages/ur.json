@@ -497,6 +497,7 @@
     "errInvalidReview": "غلط جائزہ",
     "errScreeningNotFound": "اسکریننگ نہیں ملی یا قابلِ رسائی نہیں۔",
     "errInvalidStatus": "غلط اسٹیٹس",
+    "errInvalidStatusTransition": "اس اپائنٹمنٹ کے لیے یہ اسٹیٹس تبدیلی جائز نہیں۔",
     "errCompleteViaForm": "اس وزٹ کو مکمل قرار دینے کے لیے مشاورت فارم مکمل کریں۔",
     "errCheckInViaReception": "استقبالیہ سے فیس وصولی کے ساتھ چیک اِن کا استعمال کریں۔",
     "errOnlyDoctorStart": "صرف متعلقہ ڈاکٹر ہی مشاورت شروع کر سکتا ہے۔",

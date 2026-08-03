@@ -497,6 +497,7 @@
     "errInvalidReview": "Invalid review",
     "errScreeningNotFound": "Screening not found or not accessible.",
     "errInvalidStatus": "Invalid status",
+    "errInvalidStatusTransition": "That status change is not allowed for this appointment.",
     "errCompleteViaForm": "Complete the consultation form to mark this visit completed.",
     "errCheckInViaReception": "Use check-in with fee collection from reception.",
     "errOnlyDoctorStart": "Only the attending doctor can start a consultation.",
