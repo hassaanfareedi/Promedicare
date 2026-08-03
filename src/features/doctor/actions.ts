@@ -18,10 +18,11 @@ import {
 import type { MutationResult } from "@/features/patient/actions";
 import type { Json, TablesUpdate } from "@/types/database";
 import { getMyDoctor } from "@/features/doctor/data";
+import { canTransitionAppointmentStatus } from "@/features/appointments/status-transitions";
 import { runClinicalBrief } from "@/lib/ai/groq-client";
 import { parseScreeningIntake } from "@/features/patient/intake-parser";
 import { toAiPrediction } from "@/features/patient/prediction-mapper";
-import type { Prediction } from "@/types";
+import type { AppointmentStatus, Prediction } from "@/types";
 
 /** Doctor reviews an AI screening, recording an outcome and optional notes. */
 export async function reviewPrediction(
@@ -187,7 +188,7 @@ export async function updateAppointmentStatus(
   // than trusting RLS alone: a doctor may only act on their own appointments.
   const { data: appt, error: apptErr } = await supabase
     .from("appointments")
-    .select("id, patient_id, doctor_id")
+    .select("id, patient_id, doctor_id, status")
     .eq("id", v.appointmentId)
     .is("deleted_at", null)
     .maybeSingle();
@@ -202,17 +203,24 @@ export async function updateAppointmentStatus(
     }
   }
 
+  const fromStatus = appt.status as AppointmentStatus;
+  if (!canTransitionAppointmentStatus(fromStatus, v.status)) {
+    return { ok: false, error: t("errInvalidStatusTransition") };
+  }
+
   const patch: TablesUpdate<"appointments"> = { status: v.status };
 
+  // Compare-and-swap on status so a concurrent cancel/check-in cannot be overwritten.
   const { data: updated, error } = await supabase
     .from("appointments")
     .update(patch)
     .eq("id", v.appointmentId)
+    .eq("status", fromStatus)
     .select("id, patient_id")
     .maybeSingle();
 
   if (error) return { ok: false, error: error.message };
-  if (!updated) return { ok: false, error: t("errApptNotFound") };
+  if (!updated) return { ok: false, error: t("errInvalidStatusTransition") };
 
   if (v.status === "confirmed") {
     const { data: patient } = await supabase
@@ -316,15 +324,20 @@ export async function completeConsultation(
     return { ok: false, error: noteRes.error?.message ?? t("errSaveNotesFailed") };
   }
 
-  const { error: statusErr } = await supabase
+  // Compare-and-swap: refuse if the visit was cancelled concurrently.
+  const { data: completed, error: statusErr } = await supabase
     .from("appointments")
     .update({
       status: "completed",
       checked_out_at: new Date().toISOString(),
     })
-    .eq("id", appt.id);
+    .eq("id", appt.id)
+    .eq("status", "in_progress")
+    .select("id")
+    .maybeSingle();
 
   if (statusErr) return { ok: false, error: statusErr.message };
+  if (!completed) return { ok: false, error: t("errStartBeforeComplete") };
 
   await logAudit({
     action: "appointment.consultation_completed",
