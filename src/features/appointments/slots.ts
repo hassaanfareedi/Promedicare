@@ -20,6 +20,67 @@ function parseTime(t: string): { h: number; m: number } {
   return { h: Number(h), m: Number(m ?? 0) };
 }
 
+function timeToMinutes(t: string): number {
+  const { h, m } = parseTime(t);
+  return h * 60 + m;
+}
+
+/** Wall-clock weekday (0=Sun) + minutes-from-midnight for `instant` in `timeZone`. */
+export function zonedWeekdayAndMinutes(
+  instant: Date,
+  timeZone: string,
+): { weekday: number; minutes: number } {
+  const { year, month, day } = zonedDateParts(timeZone, instant);
+  const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(instant);
+  const hour = Number(parts.find((p) => p.type === "hour")?.value ?? "0");
+  const minute = Number(parts.find((p) => p.type === "minute")?.value ?? "0");
+  return { weekday, minutes: hour * 60 + minute };
+}
+
+export type CoveringAvailability = Pick<
+  DoctorAvailability,
+  "weekday" | "start_time" | "end_time" | "slot_minutes" | "is_active"
+>;
+
+/**
+ * Resolves the availability row that covers `start` in the hospital timezone
+ * and returns that row's slot length. Mirrors buildSlots(): start must land on
+ * a slot boundary and the visit must fit inside the window.
+ *
+ * Returns null when no active window covers the instant — callers must reject
+ * the booking rather than falling back to a global min(slot_minutes), which
+ * shortens longer visits and lets the overlap exclusion miss real conflicts.
+ */
+export function resolveCoveringSlotMinutes(
+  availability: CoveringAvailability[],
+  start: Date,
+  timeZone = DEFAULT_TIME_ZONE,
+): number | null {
+  const zone = timeZone || DEFAULT_TIME_ZONE;
+  const { weekday, minutes } = zonedWeekdayAndMinutes(start, zone);
+
+  let best: number | null = null;
+  for (const row of availability) {
+    if (row.is_active === false) continue;
+    if (row.weekday !== weekday) continue;
+    const step = row.slot_minutes > 0 ? row.slot_minutes : 30;
+    const windowStart = timeToMinutes(row.start_time);
+    const windowEnd = timeToMinutes(row.end_time);
+    if (minutes < windowStart || minutes >= windowEnd) continue;
+    if ((minutes - windowStart) % step !== 0) continue;
+    if (minutes + step > windowEnd) continue;
+    if (best === null || step > best) best = step;
+  }
+  return best;
+}
+
 /**
  * Builds bookable slots for a doctor across the next `days` days from their
  * weekly availability, in the hospital's timezone. Patients can't see others'
