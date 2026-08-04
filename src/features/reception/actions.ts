@@ -9,7 +9,22 @@ import { notify } from "@/lib/notifications";
 import { walkInPatientSchema, type WalkInPatientInput } from "@/schemas/patient";
 import { checkInWithFeeSchema, type CheckInWithFeeInput } from "@/schemas/clinical";
 import { receptionBookingSchema, type ReceptionBookingInput } from "@/schemas/appointment";
+import { resolveCoveringSlotMinutes } from "@/features/appointments/slots";
 import type { MutationResult } from "@/features/patient/actions";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/types/database";
+
+async function hospitalTimeZone(
+  supabase: SupabaseClient<Database>,
+  hospitalId: string,
+): Promise<string> {
+  const { data } = await supabase
+    .from("hospitals")
+    .select("timezone")
+    .eq("id", hospitalId)
+    .maybeSingle();
+  return data?.timezone?.trim() || "Asia/Karachi";
+}
 
 /** Registers a walk-in patient and books them into today's queue. */
 export async function registerWalkIn(
@@ -45,16 +60,19 @@ export async function registerWalkIn(
     return { ok: false, error: t("doctorNotAvailable") };
   }
 
-  const { data: availability } = await supabase
-    .from("doctor_availability")
-    .select("slot_minutes")
-    .eq("doctor_id", doctor.id)
-    .eq("is_active", true)
-    .order("slot_minutes", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+  const [{ data: availability }, timeZone] = await Promise.all([
+    supabase
+      .from("doctor_availability")
+      .select("weekday, start_time, end_time, slot_minutes, is_active")
+      .eq("doctor_id", doctor.id)
+      .eq("is_active", true),
+    hospitalTimeZone(supabase, hospitalId),
+  ]);
 
-  const slotMinutes = availability?.slot_minutes ?? 30;
+  const slotMinutes = resolveCoveringSlotMinutes(availability ?? [], start, timeZone);
+  if (slotMinutes == null) {
+    return { ok: false, error: t("invalidVisitTime") };
+  }
   const end = new Date(start.getTime() + slotMinutes * 60_000);
 
   const { data: patient, error: patientErr } = await supabase
@@ -255,16 +273,19 @@ export async function bookReceptionAppointment(
     return { ok: false, error: t("doctorNotAvailable") };
   }
 
-  const { data: availability } = await supabase
-    .from("doctor_availability")
-    .select("slot_minutes")
-    .eq("doctor_id", doctor.id)
-    .eq("is_active", true)
-    .order("slot_minutes", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+  const [{ data: availability }, timeZone] = await Promise.all([
+    supabase
+      .from("doctor_availability")
+      .select("weekday, start_time, end_time, slot_minutes, is_active")
+      .eq("doctor_id", doctor.id)
+      .eq("is_active", true),
+    hospitalTimeZone(supabase, hospitalId),
+  ]);
 
-  const slotMinutes = availability?.slot_minutes ?? 30;
+  const slotMinutes = resolveCoveringSlotMinutes(availability ?? [], start, timeZone);
+  if (slotMinutes == null) {
+    return { ok: false, error: t("invalidTimeSlot") };
+  }
   const end = new Date(start.getTime() + slotMinutes * 60_000);
 
   // Resolve the patient — reuse an existing record or register a new one.
