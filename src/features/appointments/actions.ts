@@ -80,17 +80,25 @@ export async function bookAppointment(
     return { ok: false, error: error?.message ?? "Could not book this appointment." };
   }
 
-  // Tenant link: on a patient's first booking, tie their profile to that
-  // hospital so hospital staff can discover them (e.g. for staff promotion).
-  // profiles.hospital_id is a privileged field the patient can't self-set, so
-  // use the service-role client. Only set it once (when currently unassigned).
-  if (user.profile.role === "patient" && !user.profile.hospital_id) {
+  // Tenant link: on a patient's first booking, tie both the profile and the
+  // clinical chart to that hospital. Reception rebook and staff promotion key
+  // off patients.hospital_id; profiles.hospital_id alone is not enough.
+  // Both columns are privileged (and may be frozen for JWT callers by RLS
+  // guards), so use the service-role client. Only set when currently null.
+  if (user.profile.role === "patient") {
     try {
       const admin = createAdminClient();
+      if (!user.profile.hospital_id) {
+        await admin
+          .from("profiles")
+          .update({ hospital_id: v.hospitalId })
+          .eq("id", user.id)
+          .is("hospital_id", null);
+      }
       await admin
-        .from("profiles")
+        .from("patients")
         .update({ hospital_id: v.hospitalId })
-        .eq("id", user.id)
+        .eq("profile_id", user.id)
         .is("hospital_id", null);
     } catch {
       // Non-fatal: the booking already succeeded.

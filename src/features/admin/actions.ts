@@ -412,14 +412,27 @@ export async function addDoctor(input: DoctorInput): Promise<MutationResult> {
     return { ok: false, error: "User belongs to another hospital." };
   }
 
-  const { data: existingDoctor } = await supabase
-    .from("doctors")
-    .select("id")
-    .eq("profile_id", v.profileId)
-    .is("deleted_at", null)
-    .maybeSingle();
+  // RLS hides soft-deleted doctor rows from hospital admins, but profile_id
+  // remains UNIQUE across them. Use the service-role client to detect an
+  // active vs retired clinical row for this profile.
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Admin client is not configured.",
+    };
+  }
 
-  if (existingDoctor) {
+  const { data: existingDoctor, error: existingErr } = await admin
+    .from("doctors")
+    .select("id, deleted_at, hospital_id")
+    .eq("profile_id", v.profileId)
+    .maybeSingle();
+  if (existingErr) return { ok: false, error: existingErr.message };
+
+  if (existingDoctor && existingDoctor.deleted_at === null) {
     return { ok: false, error: "This staff member already has a doctor profile." };
   }
 
@@ -438,17 +451,47 @@ export async function addDoctor(input: DoctorInput): Promise<MutationResult> {
     });
   }
 
+  const doctorFields = {
+    hospital_id: hid,
+    specialty_id: v.specialtyId || null,
+    department_id: v.departmentId || null,
+    license_number: v.licenseNumber || null,
+    years_experience: v.yearsExperience ?? null,
+    consultation_fee: v.consultationFee ?? null,
+    bio: v.bio || null,
+    is_active: true,
+  };
+
+  // Soft-delete (demote / role-change) leaves the unique profile_id occupied.
+  // Revive that row instead of INSERT, which would always hit 23505.
+  if (existingDoctor?.deleted_at) {
+    const { data, error } = await admin
+      .from("doctors")
+      .update({ ...doctorFields, deleted_at: null })
+      .eq("id", existingDoctor.id)
+      .select("id")
+      .single();
+    if (error) return { ok: false, error: error.message };
+
+    await logAudit({
+      action: "doctor.revived",
+      entityType: "doctor",
+      entityId: data.id,
+      metadata: {
+        profileId: v.profileId,
+        fromHospitalId: existingDoctor.hospital_id,
+      },
+    });
+    revalidatePath("/admin/doctors");
+    revalidatePath("/admin/staff");
+    return { ok: true };
+  }
+
   const { data, error } = await supabase
     .from("doctors")
     .insert({
-      hospital_id: hid,
+      ...doctorFields,
       profile_id: v.profileId,
-      specialty_id: v.specialtyId || null,
-      department_id: v.departmentId || null,
-      license_number: v.licenseNumber || null,
-      years_experience: v.yearsExperience ?? null,
-      consultation_fee: v.consultationFee ?? null,
-      bio: v.bio || null,
     })
     .select("id")
     .single();

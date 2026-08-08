@@ -116,57 +116,85 @@ export async function getPromotableProfiles(): Promise<Profile[]> {
   const hid = user?.profile.hospital_id;
   const supabase = await createClient();
 
-  // Patients link to a hospital through the `patients` table; their
-  // `profiles.hospital_id` is typically null. Resolve hospital membership via
-  // patients first so real patient accounts actually show up for promotion.
-  if (user?.profile.role !== "super_admin") {
-    if (!hid) return [];
-    const { data: patientRows, error: patientsError } = await supabase
-      .from("patients")
-      .select("profile_id")
-      .eq("hospital_id", hid)
-      .not("profile_id", "is", null)
-      .is("deleted_at", null);
-    if (patientsError) {
-      console.error("[getPromotableProfiles] patients", patientsError.message);
-      return [];
-    }
-    const profileIds = [
-      ...new Set(
-        (patientRows ?? [])
-          .map((r) => r.profile_id)
-          .filter((v): v is string => Boolean(v)),
-      ),
-    ];
-    if (profileIds.length === 0) return [];
+  // Super admin: any patient account across the platform.
+  if (user?.profile.role === "super_admin") {
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("role", "patient")
-      .in("id", profileIds)
       .is("deleted_at", null)
       .order("full_name")
       .limit(100);
     if (error) {
-      console.error("[getPromotableProfiles] profiles", error.message);
+      console.error("[getPromotableProfiles]", error.message);
       return [];
     }
     return data ?? [];
   }
 
-  // Super admin: any patient account across the platform.
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("role", "patient")
-    .is("deleted_at", null)
-    .order("full_name")
-    .limit(100);
-  if (error) {
-    console.error("[getPromotableProfiles]", error.message);
-    return [];
+  if (!hid) return [];
+
+  // Two membership signals:
+  // 1. patients.hospital_id — online bookers / walk-ins with linked accounts
+  // 2. profiles.hospital_id — demoted staff kept at the hospital for re-hire
+  //    (they often have no patients row, so chart-only lookup misses them)
+  const [{ data: patientRows, error: patientsError }, { data: profileRows, error: profilesError }] =
+    await Promise.all([
+      supabase
+        .from("patients")
+        .select("profile_id")
+        .eq("hospital_id", hid)
+        .not("profile_id", "is", null)
+        .is("deleted_at", null),
+      supabase
+        .from("profiles")
+        .select("*")
+        .eq("role", "patient")
+        .eq("hospital_id", hid)
+        .is("deleted_at", null)
+        .order("full_name")
+        .limit(100),
+    ]);
+
+  if (patientsError) {
+    console.error("[getPromotableProfiles] patients", patientsError.message);
   }
-  return data ?? [];
+  if (profilesError) {
+    console.error("[getPromotableProfiles] profiles", profilesError.message);
+  }
+
+  const byId = new Map<string, Profile>();
+  for (const row of profileRows ?? []) {
+    byId.set(row.id, row);
+  }
+
+  const missingFromProfiles = [
+    ...new Set(
+      (patientRows ?? [])
+        .map((r) => r.profile_id)
+        .filter((id): id is string => typeof id === "string" && !byId.has(id)),
+    ),
+  ];
+
+  if (missingFromProfiles.length > 0) {
+    const { data: chartProfiles, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("role", "patient")
+      .in("id", missingFromProfiles)
+      .is("deleted_at", null);
+    if (error) {
+      console.error("[getPromotableProfiles] chart profiles", error.message);
+    } else {
+      for (const row of chartProfiles ?? []) {
+        byId.set(row.id, row);
+      }
+    }
+  }
+
+  return [...byId.values()]
+    .sort((a, b) => (a.full_name ?? "").localeCompare(b.full_name ?? ""))
+    .slice(0, 100);
 }
 
 export async function getDoctorsAdmin(): Promise<AdminDoctor[]> {
